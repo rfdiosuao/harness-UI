@@ -7,6 +7,7 @@
 | [clause-highlight--min-monoline.html](clause-highlight--min-monoline.html) | 合同条款高亮卡 | 极简单线 | 抽屉 | 只用两种颜色 | **法律审查**、合同与采购审核 |
 | [transfer-confirm--sea-chart.html](transfer-confirm--sea-chart.html) | 转账确认卡 | 航海海图 | 数字翻滚 | 小组件尺寸 | **金融支付助手**、个人理财助手 |
 | [subscription-list--min-type.html](subscription-list--min-type.html) | 订阅管理卡 | 极简字排 | 墨水晕染 | 小组件尺寸 | **个人理财助手** |
+| [translate-card--toy-slot.html](translate-card--toy-slot.html) | 翻译对照卡 | 老虎机转轴 | 一个惊喜（三个转轴合成一句） | 不加额外限制（带合成音效） | **翻译助手**、出行差旅助手 |
 
 ## 怎么挑 harness
 

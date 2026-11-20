@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>翻译对照卡 · 老虎机转轴</title>
+<meta name="hx-component" content="translate-card">
+<meta name="hx-style" content="toy-slot">
+<meta name="hx-harness" content="翻译助手、出行差旅助手">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+JP:wght@500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+:root {
+  --hx-page: #E9E3D6; --hx-page-ink: #2A241C; --hx-page-ink-2: #5B5244; --hx-page-line: #CBC2AE;
+  --hx-lac-1: #6C1D2B; --hx-lac-2: #451019; --hx-brass: #D2AA5E; --hx-brass-d: #8F6E2E; --hx-brass-l: #F0D590;
+  --hx-paper: #F6F0E1; --hx-ink: #1B1712; --hx-plate: #2B0D13; --hx-cream: #F6F0E1;
+  --hx-lamp-off: #5A2A1A; --hx-lamp-hot: #FFD36B; --hx-ok: #7AD39A; --hx-warn: #FFB347; --hx-err: #FF7A6B;
+  --hx-font: 'Noto Sans SC', system-ui, sans-serif; --hx-font-ja: 'Noto Sans JP', 'Noto Sans SC', sans-serif; --hx-mono: 'DM Mono', ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --hx-page: #14110F; --hx-page-ink: #EDE6D8; --hx-page-ink-2: #B9AF9C; --hx-page-line: #34302A; } }
+:root[data-theme="dark"] { --hx-page: #14110F; --hx-page-ink: #EDE6D8; --hx-page-ink-2: #B9AF9C; --hx-page-line: #34302A; }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--hx-page); color: var(--hx-page-ink); font-family: var(--hx-font); font-size: 15px; line-height: 1.6; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--hx-brass-l); outline-offset: 2px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---------- 页面 ---------- */
+.page { max-width: 1000px; margin: 0 auto; padding: 32px 20px 64px; display: flex; flex-direction: column; gap: 32px; }
+.head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+.head h1 { margin: 0; font-size: 20px; font-weight: 700; }
+.head p { margin: 2px 0 0; font-size: 12px; color: var(--hx-page-ink-2); }
+.pbtn { min-height: 44px; padding: 0 14px; border: 1px solid var(--hx-page-line); border-radius: 10px; background: transparent; font-size: 12px; }
+.pbtn:hover, .pbtn[aria-pressed="true"] { background: var(--hx-page-ink); color: var(--hx-page); border-color: var(--hx-page-ink); }
+.tools, .simbtns { display: flex; flex-wrap: wrap; gap: 8px; }
+.main { display: flex; flex-wrap: wrap; gap: 28px 44px; align-items: flex-start; }
+.mcol { flex: 0 1 420px; min-width: 0; width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.sim { flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.lab { font-size: 12px; color: var(--hx-page-ink-2); }
+.sim h2, .gal h2 { margin: 0; font-size: 12px; font-weight: 700; }
+.log { margin: 0; padding: 12px 14px; border: 1px solid var(--hx-page-line); border-radius: 10px; font: 12px/1.7 var(--hx-mono); white-space: pre-wrap; overflow-wrap: anywhere; min-height: 92px; }
+.gal { display: flex; flex-direction: column; gap: 14px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(420px, 100%), 1fr)); gap: 28px; align-items: start; }
+.cell { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+
+/* ---------- 老虎机：整台机器 420 × 约 450，按容器宽度等比缩小 ---------- */
+.mc { width: 100%; max-width: 420px; position: relative; }
+.fit { position: absolute; left: 0; top: 0; width: 420px; transform-origin: 0 0; }
+.machine { position: relative; width: 372px; padding: 14px 16px 16px; border-radius: 22px 22px 16px 16px; color: var(--hx-cream);
+  background: linear-gradient(180deg, var(--hx-lac-1), var(--hx-lac-2)); border: 3px solid var(--hx-brass);
+  box-shadow: inset 0 0 0 2px var(--hx-brass-d), inset 0 10px 18px rgba(255, 255, 255, .08), 0 18px 28px -14px rgba(0, 0, 0, .55); }
+.machine.jam { animation: jam .5s; }
+@keyframes jam { 0%, 100% { transform: none; } 20% { transform: translateX(-3px) rotate(-.3deg); } 45% { transform: translateX(3px) rotate(.3deg); } 70% { transform: translateX(-2px); } }
+.marq { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 30px; margin-bottom: 10px; }
+.mt { font-size: 15px; font-weight: 700; letter-spacing: .12em; color: var(--hx-brass); }
+.lamps { display: flex; gap: 8px; }
+.lamps i { display: block; width: 12px; height: 12px; border-radius: 50%; background: var(--hx-lamp-off); box-shadow: inset 0 -2px 3px rgba(0, 0, 0, .4); transition: background-color .12s, box-shadow .12s; }
+.lamps i.hot { background: var(--hx-lamp-hot); box-shadow: 0 0 10px 3px rgba(255, 211, 107, .75), inset 0 -2px 3px rgba(160, 90, 0, .4); }
+.src { display: flex; align-items: baseline; gap: 10px; padding: 8px 12px; margin-bottom: 10px; border-radius: 6px; background: var(--hx-paper); color: var(--hx-ink); font-size: 14px; line-height: 1.4; }
+.src .k { flex: none; font-size: 12px; font-weight: 700; color: #6C1D2B; }
+.win { position: relative; height: 184px; padding: 8px; border-radius: 12px; background: #0E0807; box-shadow: inset 0 3px 10px #000, 0 0 0 2px var(--hx-brass-d); }
+.reels { position: relative; height: 168px; display: flex; justify-content: center; gap: 6px; transition: gap .6s cubic-bezier(.2, .9, .25, 1.05); }
+.reel { position: relative; height: 168px; flex: none; overflow: hidden; background: var(--hx-paper); border-radius: 4px; transition: width .6s cubic-bezier(.2, .9, .25, 1.05), border-radius .6s; }
+.reel::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(25, 10, 0, .6) 0, rgba(25, 10, 0, 0) 32%, rgba(25, 10, 0, 0) 68%, rgba(25, 10, 0, .6) 100%); }
+.rw { position: absolute; inset: 0; filter: blur(calc(var(--b, 0) * 1px)); }
+.row { position: absolute; left: 0; right: 0; top: 50%; height: 56px; margin-top: -28px; display: flex; align-items: center; justify-content: center; padding: 0 4px; text-align: center; white-space: nowrap; color: var(--hx-ink); font: 700 14px/1.2 var(--hx-font-ja); will-change: transform; transition: opacity .45s; }
+.machine.merged .reels { gap: 0; }
+.machine.merged .reel { border-radius: 0; }
+.machine.merged .reel:first-child { border-radius: 4px 0 0 4px; } .machine.merged .reel:last-child { border-radius: 0 4px 4px 0; }
+.machine.merged .row { opacity: 0; } .machine.merged .row:nth-child(2) { opacity: 1; }
+.payline { position: absolute; left: 0; right: 0; top: 50%; height: 56px; margin-top: -28px; pointer-events: none; border-top: 2px solid var(--hx-brass); border-bottom: 2px solid var(--hx-brass); opacity: .9; }
+.payline::before, .payline::after { content: ""; position: absolute; top: 50%; margin-top: -7px; border: 7px solid transparent; }
+.payline::before { left: -2px; border-left-color: var(--hx-brass); } .payline::after { right: -2px; border-right-color: var(--hx-brass); }
+.glass { position: absolute; inset: 8px; border-radius: 6px; pointer-events: none; background: linear-gradient(112deg, rgba(255, 255, 255, .22) 0 14%, rgba(255, 255, 255, 0) 14.5% 46%, rgba(255, 255, 255, .08) 46.5% 52%, rgba(255, 255, 255, 0) 52.5%); }
+.plate { margin-top: 10px; padding: 10px 12px; border-radius: 8px; background: var(--hx-plate); box-shadow: inset 0 2px 6px #000; min-height: 96px; display: flex; flex-direction: column; gap: 3px; }
+.reading { font: 12px/1.5 var(--hx-mono); color: var(--hx-brass-l); min-height: 18px; overflow-wrap: anywhere; }
+.gloss { font-size: 15px; font-weight: 500; line-height: 1.5; min-height: 22px; }
+.stat { display: flex; align-items: center; gap: 8px; margin-top: auto; padding-top: 4px; font-size: 12px; line-height: 1.4; }
+.slamp { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--hx-lamp-off); transition: background-color .3s, box-shadow .3s; }
+.slamp[data-t="ok"] { background: var(--hx-ok); box-shadow: 0 0 8px 2px rgba(122, 211, 154, .55); }
+.slamp[data-t="warn"] { background: var(--hx-warn); box-shadow: 0 0 8px 2px rgba(255, 179, 71, .55); }
+.slamp[data-t="err"] { background: var(--hx-err); box-shadow: 0 0 8px 2px rgba(255, 122, 107, .55); }
+.ctl { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; }
+.styles { display: flex; gap: 6px; }
+.styles label { position: relative; }
+.styles input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.styles span { display: flex; align-items: center; justify-content: center; min-width: 52px; min-height: 44px; padding: 0 10px; border: 2px solid var(--hx-brass-d); border-radius: 10px; font-size: 13px; font-weight: 700; color: var(--hx-brass); background: rgba(0, 0, 0, .18); transition: background-color .15s, color .15s; }
+.styles input:checked + span { background: var(--hx-brass); color: #2B0D13; border-color: var(--hx-brass-l); }
+.styles input:focus-visible + span { outline: 3px solid var(--hx-brass-l); outline-offset: 2px; }
+.styles input:disabled + span { border-style: dashed; cursor: default; }
+.btns { display: flex; gap: 8px; }
+.pb { min-height: 44px; padding: 0 14px; border: 0; border-radius: 10px; background: var(--hx-brass); color: #2B0D13; font-size: 13px; font-weight: 700; box-shadow: 0 4px 0 var(--hx-brass-d); transition: transform .08s, box-shadow .08s; }
+.pb:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--hx-brass-d); }
+.pb:disabled { background: #6B5636; color: #D9C9A6; box-shadow: 0 4px 0 #3F3220; cursor: default; }
+.lever { position: absolute; left: 372px; top: 76px; width: 48px; height: 130px; padding: 0; border: 0; background: transparent; touch-action: none; cursor: grab; }
+.lever:active { cursor: grabbing; }
+.lever svg { display: block; overflow: visible; }
+.lever .arm { transform: translateY(calc(var(--lv, 0) * 46px)); transition: transform .5s cubic-bezier(.2, .9, .25, 1.5); }
+.lever.drag .arm { transition: none; }
+.lever.pulled .arm { transition: transform .16s ease-in; }
+
+@media (prefers-reduced-motion: reduce) { .reel, .reels { transition-duration: 1.2s; } .machine.jam { animation: none; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="head">
+    <div>
+      <h1>翻译对照卡 · 老虎机转轴</h1>
+      <p>Agent 把一句话翻成日语，三个转轴转动、依次停下，停下来的组合就是它的译文；最后三个转轴合成一句。</p>
+      <p>适合的 harness：翻译助手、出行差旅助手（出国问路、点餐、订房这类要现学现说的场景）</p>
+    </div>
+    <div class="tools">
+      <button type="button" class="pbtn" id="sound" aria-pressed="false">音效：关</button>
+      <button type="button" class="pbtn" id="theme" aria-pressed="false">深色页面</button>
+    </div>
+  </header>
+
+  <section class="main" aria-label="主卡片">
+    <div class="mcol">
+      <div class="lab">可交互 · 拉杆换一种说法，或换语气</div>
+      <div class="mc" id="main-card"></div>
+    </div>
+    <div class="sim">
+      <h2>模拟 Agent</h2>
+      <div class="simbtns" id="sim"></div>
+      <h2>Agent 回传</h2>
+      <pre class="log" id="log" aria-live="polite">（拉杆、换语气、点复制，这里显示 hx-action）</pre>
+    </div>
+  </section>
+
+  <section class="gal" aria-label="全部状态">
+    <h2>全部状态</h2>
+    <div class="grid" id="gallery"></div>
+  </section>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var H = 56, uid = 0;
+  var mod = function (a, n) { return ((a % n) + n) % n; };
+  var clamp = function (x, a, b) { return Math.min(b, Math.max(a, x)); };
+
+  /* ---------- 音效（Web Audio 合成，默认静音） ---------- */
+  var Snd = {
+    on: false, ctx: null, nb: null, lastTick: 0,
+    get: function () {
+      if (!this.on) return null;
+      if (!this.ctx) { try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+      if (this.ctx.state === 'suspended') this.ctx.resume();
+      return this.ctx;
+    },
+    env: function (c, node, t, vol, dur) { var g = c.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); node.connect(g); g.connect(c.destination); },
+    tone: function (f, t0, type, vol, dur, f2) { var c = this.ctx, o = c.createOscillator(); o.type = type; o.frequency.setValueAtTime(f, t0); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t0 + dur); this.env(c, o, t0, vol, dur); o.start(t0); o.stop(t0 + dur + 0.02); },
+    noise: function (t0, vol, dur, freq) {
+      var c = this.ctx; if (!this.nb) { this.nb = c.createBuffer(1, c.sampleRate * 0.3, c.sampleRate); var d = this.nb.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+      var s = c.createBufferSource(); s.buffer = this.nb; var f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = 1.2; s.connect(f); this.env(c, f, t0, vol, dur); s.start(t0); s.stop(t0 + dur + 0.02);
+    },
+    tick: function (speed, pitch) { var c = this.get(); if (!c) return; var now = performance.now(); if (now - this.lastTick < 22) return; this.lastTick = now; var t = c.currentTime; this.noise(t, clamp(speed / 30, .15, .6) * 0.12, 0.03, 1800 + pitch * 260); },
+    lever: function () { var c = this.get(); if (!c) return; var t = c.currentTime; for (var i = 0; i < 7; i++) this.noise(t + i * 0.035, 0.1, 0.03, 900 + i * 140); this.tone(180, t + 0.25, 'sine', 0.12, 0.2, 80); },
+    clunk: function () { var c = this.get(); if (!c) return; var t = c.currentTime; this.tone(130, t, 'sine', 0.3, 0.2, 48); this.noise(t, 0.12, 0.06, 700); },
+    chime: function () { var c = this.get(); if (!c) return; var t = c.currentTime; [523.25, 659.25, 783.99, 1046.5].forEach(function (f, i) { Snd.tone(f, t + i * 0.085, 'triangle', 0.13, 0.55); Snd.tone(f * 2, t + i * 0.085, 'sine', 0.04, 0.4); }); },
+    buzz: function () { var c = this.get(); if (!c) return; var t = c.currentTime; this.tone(118, t, 'sawtooth', 0.09, 0.32); this.tone(112, t, 'square', 0.04, 0.32); },
+    pop: function () { var c = this.get(); if (!c) return; var t = c.currentTime; this.tone(660, t, 'triangle', 0.1, 0.12, 990); }
+  };
+
+  /* ---------- 转轴 ---------- */
+  var active = new Set(), raf = 0, lastT = 0;
+  function kick(r) { active.add(r); if (!raf) { lastT = performance.now(); raf = requestAnimationFrame(loop); } }
+  function loop(now) {
+    var dt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
+    active.forEach(function (r) { r.step(now, dt); if (r.mode === 'rest') active.delete(r); });
+    raf = active.size ? requestAnimationFrame(loop) : 0;
+  }
+  function easeOutBack(x) { var s = 1.2; return 1 + (s + 1) * Math.pow(x - 1, 3) + s * Math.pow(x - 1, 2); }
+
+  function Reel(el, i, onStop, onTick) {
+    this.el = el; this.i = i; this.onStop = onStop; this.onTick = onTick;
+    this.strip = ['']; this.p = 0; this.v = 0; this.vmax = 24; this.mode = 'rest'; this.key = null; this.timer = 0; this.spinSince = 0;
+    this.rw = document.createElement('div'); this.rw.className = 'rw'; this.rows = [];
+    for (var k = 0; k < 5; k++) { var r = document.createElement('div'); r.className = 'row'; this.rw.appendChild(r); this.rows.push(r); }
+    el.appendChild(this.rw); this.render();
+  }
+  Reel.prototype.setStrip = function (s) { this.strip = s.length ? s : ['']; this.render(); };
+  Reel.prototype.render = function () {
+    var n = this.strip.length, i0 = Math.floor(this.p), speed = Math.abs(this.v);
+    for (var r = 0; r < 5; r++) {
+      var j = i0 - 1 + r, row = this.rows[r], txt = this.strip[mod(j, n)];
+      if (row._t !== txt) { row.textContent = txt; row._t = txt; }
+      row.style.transform = 'translateY(' + ((j - this.p) * H) + 'px)';
+    }
+    this.el.style.setProperty('--b', reduce ? 0 : Math.min(3.2, speed * 0.13).toFixed(2));
+  };
+  Reel.prototype.clearPending = function () { clearTimeout(this.timer); this.timer = 0; };
+  Reel.prototype.startSpin = function (slow) {
+    this.clearPending(); this.vmax = slow ? 3.2 : (reduce ? 9 : 24);
+    if (this.mode !== 'spin') { this.v = slow ? 1 : -4; this.spinSince = performance.now(); }   // 先往回拉一点，再冲出去
+    this.mode = 'spin'; kick(this);
+  };
+  Reel.prototype.place = function (idx, half) { this.clearPending(); this.mode = 'rest'; this.v = 0; this.p = idx + (half ? 0.5 : 0); this.render(); active.delete(this); };
+  Reel.prototype.landTo = function (idx, delay, half) {
+    var self = this; this.clearPending();
+    if (this.mode !== 'spin' && this.mode !== 'ease') this.startSpin(false);
+    var fast = this.vmax > 6, wait = Math.max(delay, fast ? 650 - (performance.now() - this.spinSince) : 0);
+    this.timer = setTimeout(function () {
+      var n = self.strip.length, base = Math.ceil(self.p + 3.4), T = base + mod(idx - base, n) + (half ? 0.5 : 0);
+      var dist = T - self.p, v0 = Math.max(Math.abs(self.v), 8);
+      self.p0 = self.p; self.T = T; self.d = clamp(dist * 4.2 / v0, 0.6, 1.5) * (reduce ? 1.6 : 1); self.e0 = performance.now(); self.mode = 'ease'; kick(self);
+    }, Math.max(0, wait));
+  };
+  Reel.prototype.step = function (now, dt) {
+    var old = this.p;
+    if (this.mode === 'spin') { this.v += (this.vmax - this.v) * Math.min(1, dt * 5); this.p += this.v * dt; }
+    else if (this.mode === 'ease') {
+      var x = (now - this.e0) / (this.d * 1000);
+      if (x >= 1) { this.p = this.T; this.v = 0; this.mode = 'rest'; this.render(); this.onStop(this); return; }
+      this.p = this.p0 + (this.T - this.p0) * easeOutBack(x); this.v = (this.p - old) / Math.max(dt, 0.001);
+    }
+    if (Math.floor(this.p) !== Math.floor(old) && this.mode === 'spin') this.onTick(this);
+    this.render();
+  };
+
+  /* ---------- 机器 ---------- */
+  var TEMPLATE =
+    '<div class="fit" data-f="fit"><div class="machine" data-f="machine">' +
+      '<div class="marq"><span class="mt">译 · 日语</span><span class="lamps" data-f="lamps"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></div>' +
+      '<div class="src"><span class="k">原文</span><span data-f="src"></span></div>' +
+      '<div class="win"><div class="reels" data-f="reels"></div><div class="payline" aria-hidden="true"></div><div class="glass" aria-hidden="true"></div></div>' +
+      '<div class="plate"><div class="reading" data-f="reading"></div><div class="gloss" data-f="gloss"></div><div class="stat"><i class="slamp" data-f="slamp" data-t=""></i><span data-f="stext"></span></div></div>' +
+      '<div class="ctl"><div class="styles" role="radiogroup" aria-label="说法的语气" data-f="styles"></div>' +
+        '<div class="btns"><button type="button" class="pb" data-f="copy">复制</button><button type="button" class="pb" data-f="speak">朗读</button></div></div>' +
+    '</div>' +
+    '<button type="button" class="lever" data-f="lever" aria-label="拉杆：换一种说法"><svg width="48" height="130" viewBox="0 0 48 130" aria-hidden="true">' +
+      '<g class="arm"><rect x="5" y="50" width="6" height="64" rx="3" fill="#D2AA5E"/><circle cx="8" cy="40" r="12" fill="#C0392B"/><circle cx="4" cy="36" r="4" fill="rgba(255,255,255,.55)"/></g>' +
+      '<rect x="-2" y="92" width="22" height="30" rx="5" fill="#8F6E2E"/><rect x="-2" y="92" width="22" height="7" rx="3.5" fill="#F0D590"/></svg></button>' +
+    '</div><div class="sr" aria-live="polite" data-f="live"></div>';
+
+  var STYLES = [['casual', '随意'], ['polite', '礼貌'], ['formal', '敬语']];
+
+  /**
+   * props: { state: 'loading'|'ready'|'error', source, style, variant, reels:[[…],[…],[…]],
+   *          parts:[a,b,c]（还没到的填 null）, reading, gloss, note:{tone:'ok'|'warn', text}, error }
+   * 动作（hx-action）：change-style { style, variant } / copy { text } / speak { text, lang }
+   */
+  function mount(root, init, opts) {
+    opts = opts || {};
+    root.innerHTML = TEMPLATE;
+    var $ = function (f) { return root.querySelector('[data-f="' + f + '"]'); };
+    var el = {}; ['fit', 'machine', 'lamps', 'src', 'reels', 'reading', 'gloss', 'slamp', 'stext', 'styles', 'copy', 'speak', 'lever', 'live'].forEach(function (k) { el[k] = $(k); });
+    var group = 'st' + (++uid);
+    STYLES.forEach(function (x) {
+      var l = document.createElement('label'); l.innerHTML = '<input type="radio" name="' + group + '" value="' + x[0] + '"><span>' + x[1] + '</span>'; el.styles.appendChild(l);
+    });
+    var radios = el.styles.querySelectorAll('input');
+    var lamps = el.lamps.querySelectorAll('i');
+    var s = { state: 'loading', source: null, style: 'polite', variant: 0, reels: null, parts: [null, null, null], reading: null, gloss: null, note: null, error: null };
+    var merged = false, noteTimer = 0, settleTimer = 0, measureCtx = document.createElement('canvas').getContext('2d');
+    var reels = [0, 1, 2].map(function (i) {
+      var d = document.createElement('div'); d.className = 'reel'; el.reels.appendChild(d);
+      return new Reel(d, i, onStop, function (r) { Snd.tick(Math.abs(r.v), r.i); });
+    });
+
+    function emit(name, params) {
+      var ev = new CustomEvent('hx-action', { detail: { name: name, params: params || {} }, bubbles: !!opts.global });
+      (opts.global ? document : root).dispatchEvent(ev);
+    }
+    function tw(t) { measureCtx.font = '700 14px "Noto Sans JP","Noto Sans SC",sans-serif'; return measureCtx.measureText(t).width; }
+
+    /* 宽度：转轴默认按最长的字排；合成一句时收紧成文字的宽度 */
+    function layout(animate) {
+      var base = reels.map(function (r) { return clamp(Math.ceil(Math.max.apply(null, r.strip.map(tw))) + 8, 56, 170); });
+      var sum = base.reduce(function (a, b) { return a + b; }, 0) + 12, cap = 324;
+      if (sum > cap) base = base.map(function (w) { return Math.floor(w * cap / sum); });
+      var want = base;
+      if (merged) want = reels.map(function (r, i) { return Math.ceil(tw(r.strip[mod(Math.round(r.p), r.strip.length)] || '')) + 14; });
+      reels.forEach(function (r, i) { if (!animate) r.el.style.transition = 'none'; r.el.style.width = want[i] + 'px'; });
+      if (!animate) { void el.reels.offsetWidth; reels.forEach(function (r) { r.el.style.transition = ''; }); }
+    }
+    function setMerged(on, animate) { if (merged === on) return; merged = on; el.machine.classList.toggle('merged', on); layout(animate !== false); }
+
+    function chase() {
+      var seq = []; for (var k = 0; k < 14; k++) seq.push(k % 7);
+      seq.forEach(function (i, n) { setTimeout(function () { lamps.forEach(function (l, j) { l.classList.toggle('hot', j === i); }); }, n * 55); });
+      setTimeout(function () { lamps.forEach(function (l) { l.classList.add('hot'); }); }, seq.length * 55);
+      setTimeout(function () { lamps.forEach(function (l) { l.classList.remove('hot'); }); }, seq.length * 55 + 420);
+    }
+
+    function onStop() {
+      var all = reels.every(function (r) { return r.mode === 'rest'; });
+      Snd.clunk();
+      if (!all || s.state !== 'ready' || s.parts.some(function (x) { return x == null; })) return;
+      setTimeout(function () {
+        if (!reels.every(function (r) { return r.mode === 'rest'; })) return;
+        var total = reels.reduce(function (a, r) { return a + Math.ceil(tw(r.strip[mod(Math.round(r.p), r.strip.length)])) + 14; }, 0);
+        if (total > 324) return;                      // 放不下就不合成
+        setMerged(true); chase(); Snd.chime();        // 这一下，是这张卡唯一精心做的动效
+      }, 240);
+    }
+
+    function paint() {
+      el.src.textContent = s.source || '';
+      var ready = s.state === 'ready' && s.parts.every(function (x) { return x != null; });
+      el.reading.textContent = ready ? (s.reading || '') : '';
+      el.gloss.textContent = ready ? (s.gloss || '') : (s.state === 'loading' ? '' : '');
+      var tone = '', text = '';
+      if (s.state === 'loading') text = '正在翻译…';
+      else if (s.state === 'error') { tone = 'err'; text = s.error || '翻译失败'; }
+      else if (!ready) text = '正在翻译…';
+      else if (s.note) { tone = s.note.tone; text = s.note.text; }
+      el.slamp.setAttribute('data-t', tone); el.stext.textContent = text;
+      radios.forEach(function (r) { r.checked = r.value === s.style; r.disabled = s.state === 'loading'; });
+      el.copy.disabled = el.speak.disabled = !ready; el.lever.disabled = s.state === 'loading';
+      el.machine.classList.toggle('jam-state', s.state === 'error');
+      var say = ready ? '翻译结果：' + s.parts.join('') + '。' + (s.gloss || '') + (s.note ? s.note.text : '') : s.state === 'error' ? '翻译失败：' + (s.error || '') : '正在翻译';
+      if (el.live.textContent !== say) el.live.textContent = say;
+    }
+
+    function drive(instant) {
+      reels.forEach(function (r, i) {
+        var strip = (s.reels && s.reels[i]) ? s.reels[i].slice() : [''];
+        if (s.parts[i] != null && strip.indexOf(s.parts[i]) < 0) strip.push(s.parts[i]);
+        r.setStrip(strip);
+      });
+      layout(false);
+      reels.forEach(function (r, i) {
+        var part = s.parts[i], idx = part != null ? r.strip.indexOf(part) : -1, key;
+        if (s.state === 'error') key = 'jam'; else if (s.state === 'loading') key = 'idle'; else if (part == null) key = 'spin'; else key = 'land:' + part;
+        if (r.key === key) return; r.key = key;
+        if (key === 'idle') r.startSpin(true);
+        else if (key === 'spin') { setMerged(false); r.startSpin(false); }
+        else if (key === 'jam') { setMerged(false); if (instant) r.place(Math.round(r.p), true); else r.landTo(mod(Math.round(r.p), r.strip.length), i * 300, true); }
+        else { setMerged(false); if (instant) r.place(idx); else r.landTo(idx, i * 360); }
+      });
+      if (instant && s.state === 'ready' && s.parts.every(function (x) { return x != null; })) setMerged(true, false);
+      if (!instant && s.state === 'error') { el.machine.classList.remove('jam'); void el.machine.offsetWidth; el.machine.classList.add('jam'); setTimeout(Snd.buzz.bind(Snd), 700); }
+      paint();
+    }
+
+    function spinNow() { api.set({ state: 'ready', parts: [null, null, null], reading: null, gloss: null, note: null }); }
+    function settle(style, variant) {
+      if (opts.autoSettle === false || !opts.demo) return;
+      clearTimeout(settleTimer); settleTimer = setTimeout(function () { api.set(opts.demo(style, variant)); }, 900);
+    }
+    function chooseStyle(style) {
+      if (style === s.style && s.state === 'ready' && s.parts.every(function (x) { return x != null; }) === false) return;
+      emit('change-style', { style: style, variant: 0 }); s.style = style; s.variant = 0; spinNow(); settle(style, 0);
+    }
+    radios.forEach(function (r) { r.addEventListener('change', function () { if (r.checked) chooseStyle(r.value); }); });
+
+    function pull() {
+      if (el.lever.disabled) return;
+      var v = (s.variant + 1) % 2; Snd.lever();
+      emit('change-style', { style: s.style, variant: v }); s.variant = v; spinNow(); settle(s.style, v);
+    }
+    var lv = { y0: 0, drag: false, moved: false };
+    el.lever.addEventListener('pointerdown', function (e) { if (el.lever.disabled) return; lv.y0 = e.clientY; lv.drag = true; lv.moved = false; el.lever.classList.add('drag'); el.lever.setPointerCapture(e.pointerId); });
+    el.lever.addEventListener('pointermove', function (e) {
+      if (!lv.drag) return; var dy = e.clientY - lv.y0; if (Math.abs(dy) > 4) lv.moved = true;
+      el.lever.style.setProperty('--lv', clamp(dy / 70, 0, 1).toFixed(3));
+    });
+    function release(e) {
+      if (!lv.drag) return; lv.drag = false; el.lever.classList.remove('drag');
+      var f = parseFloat(el.lever.style.getPropertyValue('--lv')) || 0; el.lever.style.setProperty('--lv', 0);
+      if (lv.moved && f > 0.45) pull();
+    }
+    el.lever.addEventListener('pointerup', release); el.lever.addEventListener('pointercancel', release);
+    el.lever.addEventListener('click', function (e) {
+      if (lv.moved) { lv.moved = false; return; }
+      el.lever.classList.add('pulled'); el.lever.style.setProperty('--lv', 1);
+      setTimeout(function () { el.lever.classList.remove('pulled'); el.lever.style.setProperty('--lv', 0); }, 170); pull();
+    });
+
+    el.copy.addEventListener('click', function () {
+      var text = s.parts.join(''); emit('copy', { text: text }); Snd.pop();
+      try { if (navigator.clipboard) navigator.clipboard.writeText(text).catch(function () {}); } catch (e) {}
+      var prev = s.note; clearTimeout(noteTimer); api.set({ note: { tone: 'ok', text: '已复制到剪贴板' } });
+      noteTimer = setTimeout(function () { api.set({ note: prev && prev.text !== '已复制到剪贴板' ? prev : null }); }, 1800);
+    });
+    el.speak.addEventListener('click', function () { emit('speak', { text: s.parts.join(''), lang: 'ja-JP' }); Snd.pop(); });
+
+    /* 等比缩放到容器宽度 */
+    function fit() { var w = root.clientWidth || 420, k = Math.min(1, w / 420); el.fit.style.transform = 'scale(' + k + ')'; root.style.height = (el.fit.offsetHeight * k) + 'px'; }
+    if (window.ResizeObserver) new ResizeObserver(fit).observe(root);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { layout(false); fit(); });
+
+    var api = {
+      set: function (p) { var first = !api._init; api._init = true; Object.assign(s, p || {}); drive(first && !!opts.instant); fit(); return api; },
+      get: function () { return Object.assign({}, s); }
+    };
+    api.set(init || {});
+    return api;
+  }
+
+  /* ---------- 示例数据（去大阪出差，问路去难波站） ---------- */
+  var REELS = [
+    ['すみません、', 'あの、', 'ちょっと', 'ねえ、', '失礼ですが、', '恐れ入ります、'],
+    ['難波駅へは', '難波駅は', 'なんば駅は'],
+    ['どう行きますか？', 'どこですか？', 'どっち？', 'どう行く？', 'どちらでしょうか？', 'どちらですか？']
+  ];
+  var DEMO = {
+    polite: [
+      { parts: ['すみません、', '難波駅へは', 'どう行きますか？'], reading: 'sumimasen, Nanba-eki e wa dō ikimasu ka?', gloss: '不好意思，去难波站怎么走？', note: { tone: 'ok', text: '礼貌 · 对陌生人合适' } },
+      { parts: ['あの、', '難波駅は', 'どこですか？'], reading: 'ano, Nanba-eki wa doko desu ka?', gloss: '那个，难波站在哪里？', note: { tone: 'ok', text: '礼貌 · 对陌生人合适' } }],
+    casual: [
+      { parts: ['ちょっと', '難波駅は', 'どっち？'], reading: 'chotto, Nanba-eki wa dotchi?', gloss: '喂，难波站往哪边？', note: { tone: 'warn', text: '随意 · 对陌生人偏随意，只适合朋友' } },
+      { parts: ['ねえ、', '難波駅は', 'どう行く？'], reading: 'nē, Nanba-eki wa dō iku?', gloss: '嘿，难波站怎么去？', note: { tone: 'warn', text: '随意 · 对陌生人偏随意，只适合朋友' } }],
+    formal: [
+      { parts: ['失礼ですが、', '難波駅へは', 'どちらでしょうか？'], reading: 'shitsurei desu ga, Nanba-eki e wa dochira deshō ka?', gloss: '冒昧打扰，请问难波站在哪一边？', note: { tone: 'ok', text: '敬语 · 对长辈和店员都稳妥' } },
+      { parts: ['恐れ入ります、', '難波駅は', 'どちらですか？'], reading: 'osoreirimasu, Nanba-eki wa dochira desu ka?', gloss: '不好意思打扰了，难波站在哪边？', note: { tone: 'ok', text: '敬语 · 对长辈和店员都稳妥' } }]
+  };
+  var demo = function (style, v) { return Object.assign({ state: 'ready', source: SRC, style: style, variant: v, reels: REELS, error: null }, DEMO[style][v]); };
+  var SRC = '请问去难波站怎么走？';
+  var POLITE = demo('polite', 0);
+
+  var machines = [];
+  var main = mount(document.getElementById('main-card'), { state: 'loading', source: SRC, style: 'polite', reels: REELS }, { global: true, demo: demo });
+  machines.push(main);
+  window.card = { set: function (p) { return main.set(p); }, get: main.get };
+  setTimeout(function () { main.set(POLITE); }, 900);
+
+  var log = document.getElementById('log');
+  document.addEventListener('hx-action', function (e) { log.textContent = 'hx-action ' + JSON.stringify(e.detail, null, 2); });
+
+  var sims = [
+    ['加载中', function () { main.set({ state: 'loading', parts: [null, null, null], note: null }); }],
+    ['礼貌', function () { main.set(demo('polite', 0)); }],
+    ['随意（预警）', function () { main.set(demo('casual', 0)); }],
+    ['敬语', function () { main.set(demo('formal', 0)); }],
+    ['流式到达', function () {
+      var d = demo('polite', 1);
+      main.set({ state: 'ready', source: SRC, style: 'polite', reels: REELS, parts: [null, null, null], reading: null, gloss: null, note: null });
+      setTimeout(function () { main.set({ parts: [d.parts[0], null, null] }); }, 1100);
+      setTimeout(function () { main.set({ parts: [d.parts[0], d.parts[1], null] }); }, 2000);
+      setTimeout(function () { main.set({ parts: d.parts, reading: d.reading, gloss: d.gloss, note: d.note }); }, 2900);
+    }],
+    ['出错', function () { main.set({ state: 'error', error: '翻译服务超时，请再拉一次杆' }); }]
+  ];
+  var box = document.getElementById('sim');
+  sims.forEach(function (x) { var b = document.createElement('button'); b.type = 'button'; b.className = 'pbtn'; b.textContent = x[0]; b.addEventListener('click', x[1]); box.appendChild(b); });
+
+  var g = document.getElementById('gallery');
+  [
+    ['加载中（转轴慢转）', { state: 'loading', source: SRC, style: 'polite', reels: REELS }],
+    ['礼貌（合成一句）', POLITE],
+    ['随意（预警）', demo('casual', 0)],
+    ['敬语', demo('formal', 0)],
+    ['出错（转轴卡住）', { state: 'error', source: SRC, style: 'polite', reels: REELS, parts: ['あの、', '難波駅は', 'どこですか？'], error: '翻译服务超时，请再拉一次杆' }],
+    ['已复制', Object.assign({}, POLITE, { note: { tone: 'ok', text: '已复制到剪贴板' } })]
+  ].forEach(function (x) {
+    var cell = document.createElement('div'); cell.className = 'cell';
+    cell.innerHTML = '<div class="lab">' + x[0] + '</div><div class="mc"></div>'; g.appendChild(cell);
+    machines.push(mount(cell.querySelector('.mc'), x[1], { instant: true, demo: demo }));
+  });
+
+  var snd = document.getElementById('sound'), theme = document.getElementById('theme'), rootEl = document.documentElement;
+  snd.addEventListener('click', function () {
+    var on = snd.getAttribute('aria-pressed') !== 'true'; snd.setAttribute('aria-pressed', on); snd.textContent = on ? '音效：开' : '音效：关'; Snd.on = on; if (on) { Snd.get(); Snd.pop(); }
+  });
+  theme.addEventListener('click', function () {
+    var on = theme.getAttribute('aria-pressed') !== 'true'; theme.setAttribute('aria-pressed', on);
+    rootEl.setAttribute('data-theme', on ? 'dark' : 'light'); theme.textContent = on ? '浅色页面' : '深色页面';
+  });
+})();
+</script>
+</body>
+</html>
