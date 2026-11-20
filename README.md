@@ -70,6 +70,7 @@ designs/       浏览器直接打开的静态页和截图
   b-ledger/
   c-recorder/
 source/        设计画布格式的源文件（.dc.html）和画布索引
+prompts/       生成 Agent 卡片组件用的随机提示词组合器（roll.mjs + pools.json）和样例
 tools/
   render.mjs   source → designs 的导出脚本：node tools/render.mjs
   shoot.py     给 designs 截图：python3 tools/shoot.py
