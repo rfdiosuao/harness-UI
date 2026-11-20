@@ -9,6 +9,7 @@
 | [subscription-list--min-type.html](subscription-list--min-type.html) | 订阅管理卡 | 极简字排 | 墨水晕染 | 小组件尺寸 | **个人理财助手** |
 | [tool-call-row--min-type.html](tool-call-row--min-type.html) | 工具调用行（列表） | 极简字排 | 丝滑连续 | 只用键盘 | **通用核心**（任何 harness 都要有） |
 | [permission-prompt--min-type.html](permission-prompt--min-type.html) | 权限确认卡 | 极简字排 | 丝滑连续 | 流式进场 | **通用核心**（任何 harness 都要有） |
+| [cost-ticker--lab-instrument.html](cost-ticker--lab-instrument.html) | 费用计数 | 实验室仪器 | 待机的生命感 | 流式进场 | **通用核心**（长时间自动运行的 Agent 尤其需要） |
 | [translate-card--toy-slot.html](translate-card--toy-slot.html) | 翻译对照卡 | 老虎机转轴 | 一个惊喜（三个转轴合成一句） | 不加额外限制（带合成音效） | **翻译助手**、出行差旅助手 |
 
 ## 怎么挑 harness

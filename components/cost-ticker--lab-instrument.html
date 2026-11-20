@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>费用计数 · 实验室仪器</title>
+<meta name="hx-component" content="cost-ticker">
+<meta name="hx-style" content="lab-instrument">
+<meta name="hx-harness" content="通用核心">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+:root {
+  --hx-page: #D8D3C6; --hx-page-ink: #2A261E; --hx-page-ink-2: #5A5346; --hx-page-line: #B9B2A1;
+  --hx-face-1: #E9E3D2; --hx-face-2: #D9D1BB; --hx-edge: #8B8470; --hx-silk: #3B352B; --hx-silk-2: #5C5546;
+  --hx-lcd: #1B241E; --hx-phos: #B9F5A6; --hx-phos-dim: #3C5A3A;
+  --hx-ok: #3F9A5B; --hx-warn: #E39A1F; --hx-bad: #C23B2A; --hx-led-off: #B8B09A;
+  --hx-font: 'Noto Sans SC', system-ui, sans-serif; --hx-mono: 'DM Mono', ui-monospace, monospace;
+  --hx-ease: cubic-bezier(.2, .8, .2, 1);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --hx-page: #14120F; --hx-page-ink: #ECE6D6; --hx-page-ink-2: #B8AF9A; --hx-page-line: #38332A; } }
+:root[data-theme="dark"] { --hx-page: #14120F; --hx-page-ink: #ECE6D6; --hx-page-ink-2: #B8AF9A; --hx-page-line: #38332A; }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--hx-page); color: var(--hx-page-ink); font-family: var(--hx-font); font-size: 15px; line-height: 1.6; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--hx-warn); outline-offset: 2px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---------- 页面 ---------- */
+.page { max-width: 1000px; margin: 0 auto; padding: 32px 20px 72px; display: flex; flex-direction: column; gap: 36px; }
+.head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+.head h1 { margin: 0; font-size: 20px; font-weight: 700; }
+.head p { margin: 2px 0 0; font-size: 12px; color: var(--hx-page-ink-2); }
+.pbtn { min-height: 44px; padding: 0 14px; border: 1px solid var(--hx-page-line); border-radius: 10px; background: transparent; font-size: 12px; }
+.pbtn:hover, .pbtn[aria-pressed="true"] { background: var(--hx-page-ink); color: var(--hx-page); border-color: var(--hx-page-ink); }
+.simbtns { display: flex; flex-wrap: wrap; gap: 8px; }
+.main { display: flex; flex-wrap: wrap; gap: 28px 40px; align-items: flex-start; }
+.mcol { flex: 0 1 540px; min-width: 0; width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.sim { flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.lab { font-size: 12px; color: var(--hx-page-ink-2); }
+.sim h2, .gal h2 { margin: 0; font-size: 12px; font-weight: 700; }
+.log { margin: 0; padding: 12px 14px; border: 1px solid var(--hx-page-line); border-radius: 10px; font: 12px/1.7 var(--hx-mono); white-space: pre-wrap; overflow-wrap: anywhere; min-height: 92px; }
+.gal { display: flex; flex-direction: column; gap: 14px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(480px, 100%), 1fr)); gap: 28px; align-items: start; }
+.cell { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+
+/* ---------- 仪器面板 ---------- */
+.inst { position: relative; width: 100%; max-width: 540px; padding: 18px 22px 18px; border-radius: 16px; color: var(--hx-silk);
+  background: linear-gradient(172deg, var(--hx-face-1), var(--hx-face-2));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), inset 0 -2px 0 rgba(0, 0, 0, .12), 0 0 0 2px var(--hx-edge), 0 22px 34px -18px rgba(0, 0, 0, .55); }
+.inst::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: .5;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .22) 0 1px, rgba(0, 0, 0, .04) 1px 3px); mix-blend-mode: soft-light; }
+.inst { -webkit-user-select: none; user-select: none; }
+.screw { position: absolute; width: 9px; height: 9px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #F4F0E4, #9C957F); box-shadow: 0 0 0 1px rgba(0, 0, 0, .25); }
+.screw::after { content: ""; position: absolute; left: 1px; right: 1px; top: 4px; height: 1px; background: rgba(0, 0, 0, .45); transform: rotate(35deg); }
+.screw.a { left: 8px; top: 8px; } .screw.b { right: 8px; top: 8px; } .screw.c { left: 8px; bottom: 8px; } .screw.d { right: 8px; bottom: 8px; }
+.silk { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--hx-silk); }
+.silk small { font-weight: 500; letter-spacing: .04em; color: var(--hx-silk-2); text-transform: none; margin-left: 6px; }
+.row1 { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 6px 10px; }
+.pwr { display: inline-flex; align-items: center; gap: 8px; }
+.led { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--hx-led-off); box-shadow: inset 0 -1px 2px rgba(0, 0, 0, .3); transition: background-color .4s, box-shadow .4s; }
+.led.on { background: var(--hx-ok); box-shadow: 0 0 8px 2px rgba(63, 154, 91, .6); }
+.inst[data-t="warn"] .led.st { background: var(--hx-warn); box-shadow: 0 0 8px 2px rgba(227, 154, 31, .65); }
+.inst[data-t="bad"] .led.st { background: var(--hx-bad); box-shadow: 0 0 8px 2px rgba(194, 59, 42, .65); }
+.led.blink { animation: blink .14s steps(2) 1; }
+@keyframes blink { 0% { opacity: .15; } 100% { opacity: 1; } }
+
+.mid { position: relative; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 14px 18px; align-items: stretch; }
+.gauge { position: relative; padding: 8px 6px 2px; border-radius: 10px; background: #F7F3E6; box-shadow: inset 0 2px 5px rgba(0, 0, 0, .25), 0 0 0 1.5px var(--hx-edge); }
+.gauge svg { display: block; width: 100%; height: auto; overflow: visible; }
+.g-tick { stroke: var(--hx-silk); stroke-width: 1.2; } .g-tick.s { stroke-width: .8; opacity: .7; }
+.g-num { font: 500 9px var(--hx-mono); fill: var(--hx-silk); text-anchor: middle; }
+.g-red { fill: none; stroke: var(--hx-bad); stroke-width: 5; opacity: 0; transition: opacity .6s .2s; }
+.inst[data-cap="1"] .g-red { opacity: .95; }
+.g-needle { transform-origin: 120px 124px; }
+.g-needle line { stroke: #B3261E; stroke-width: 1.8; stroke-linecap: round; }
+.g-hub { fill: #3B352B; }
+.g-label { font: 700 8px var(--hx-font); fill: var(--hx-silk-2); letter-spacing: .12em; text-anchor: middle; }
+.g-glass { position: absolute; inset: 8px 6px 2px; border-radius: 6px; pointer-events: none; background: linear-gradient(120deg, rgba(255, 255, 255, .5) 0 20%, transparent 20.5%); }
+
+.read { display: flex; flex-direction: column; gap: 10px; }
+.lcd { position: relative; padding: 10px 14px 8px; border-radius: 8px; background: var(--hx-lcd); box-shadow: inset 0 3px 8px #000, 0 0 0 1.5px var(--hx-edge); color: var(--hx-phos); min-height: 78px; }
+.lcd .lbl { font: 500 10px var(--hx-mono); letter-spacing: .12em; color: var(--hx-phos-dim); }
+.digits { display: flex; align-items: center; height: 40px; font: 500 34px/1 var(--hx-mono); letter-spacing: -.02em; text-shadow: 0 0 8px rgba(185, 245, 166, .45); }
+.digits .cur { margin-right: 4px; font-size: 20px; color: var(--hx-phos-dim); }
+.digits .col { display: inline-block; width: .62em; height: 1em; overflow: hidden; }
+.digits .strip { display: block; transform: translateY(calc(var(--d, 0) * -1em)); transition: transform 1s cubic-bezier(.2, .9, .25, 1.06) var(--delay, 0s); }
+.digits .strip span { display: block; height: 1em; text-align: center; }
+.digits .sep { display: inline-block; width: .34em; text-align: center; }
+.digits .dash { color: var(--hx-phos-dim); text-shadow: none; animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
+.lcd .eta { margin-top: 2px; font: 400 11px var(--hx-mono); color: var(--hx-phos-dim); min-height: 15px; }
+.ratebox { display: flex; flex-direction: column; gap: 5px; }
+.bar { display: flex; gap: 3px; height: 14px; }
+.bar i { flex: 1; border-radius: 2px; background: var(--hx-led-off); box-shadow: inset 0 -1px 2px rgba(0, 0, 0, .25); transition: background-color .25s var(--d, 0s), box-shadow .25s var(--d, 0s); }
+.bar i.on { background: var(--hx-ok); box-shadow: 0 0 6px rgba(63, 154, 91, .55); }
+.bar i.on.w { background: var(--hx-warn); box-shadow: 0 0 6px rgba(227, 154, 31, .6); }
+.bar i.on.x { background: var(--hx-bad); box-shadow: 0 0 6px rgba(194, 59, 42, .6); }
+.bar i.top { animation: breathe 6s ease-in-out infinite; }
+@keyframes breathe { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+.rate { font: 500 12px var(--hx-mono); display: flex; justify-content: space-between; gap: 8px; }
+
+.low { position: relative; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 14px 18px; margin-top: 14px; align-items: stretch; }
+.scope { position: relative; border-radius: 8px; background: var(--hx-lcd); box-shadow: inset 0 3px 8px #000, 0 0 0 1.5px var(--hx-edge); overflow: hidden; min-height: 96px; }
+.scope canvas { display: block; width: 100%; height: 100%; }
+.scope .tag { position: absolute; left: 8px; top: 5px; font: 500 9px var(--hx-mono); letter-spacing: .1em; color: var(--hx-phos-dim); pointer-events: none; }
+.ctl { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.knobbox { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.knobwrap { position: relative; width: 72px; height: 72px; border-radius: 50%; touch-action: none; cursor: grab; }
+.knobwrap:active { cursor: grabbing; }
+.knobwrap:focus-within { outline: 3px solid var(--hx-warn); outline-offset: 3px; }
+.knobwrap input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; margin: 0; cursor: inherit; pointer-events: none; }
+.knobwrap svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.k-cap { transform-origin: 36px 36px; transition: transform .35s cubic-bezier(.2, .9, .25, 1.3); }
+.knobwrap.drag .k-cap { transition: none; }
+.k-num { font: 500 8px var(--hx-mono); fill: var(--hx-silk); text-anchor: middle; }
+.inst[data-off="1"] .knobwrap { opacity: .5; pointer-events: none; }
+.swbox { display: flex; flex-direction: column; align-items: stretch; gap: 6px; min-width: 0; }
+.sw { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 4px 6px; border: 0; border-radius: 8px; background: transparent; text-align: left; }
+.sw .track { position: relative; flex: none; width: 46px; height: 24px; border-radius: 12px; background: #A59E88; box-shadow: inset 0 2px 4px rgba(0, 0, 0, .4); transition: background-color .3s; }
+.sw .lever { position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #FFF, #C9C2AC); box-shadow: 0 1px 3px rgba(0, 0, 0, .5); transition: transform .45s cubic-bezier(.2, .9, .25, 1.35); }
+.sw[aria-checked="true"] .track { background: var(--hx-ok); } .sw[aria-checked="true"] .lever { transform: translateX(22px); }
+.sw:disabled { opacity: .5; cursor: default; }
+.sw .t { font-size: 12px; line-height: 1.35; font-weight: 500; }
+.sw .t small { display: block; font-size: 11px; font-weight: 400; color: var(--hx-silk-2); }
+.dbtn { min-height: 44px; padding: 0 12px; border: 0; border-radius: 8px; background: linear-gradient(#F4EFE0, #CFC7B0); box-shadow: 0 3px 0 #8B8470, 0 0 0 1px rgba(0, 0, 0, .15); font-size: 12px; font-weight: 700; letter-spacing: .06em; color: var(--hx-silk); transition: transform .08s, box-shadow .08s; }
+.dbtn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #8B8470, 0 0 0 1px rgba(0, 0, 0, .15); }
+.dbtn:disabled { opacity: .5; cursor: default; }
+.detail { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .5s var(--hx-ease); margin-top: 0; }
+.detail.open { grid-template-rows: 1fr; }
+.detail > div { overflow: hidden; min-height: 0; }
+.detail ul { list-style: none; margin: 12px 4px 0; padding: 10px 12px; border-radius: 8px; background: var(--hx-lcd); color: var(--hx-phos); font: 12px/1.9 var(--hx-mono); box-shadow: inset 0 3px 8px #000; }
+.detail li { display: flex; justify-content: space-between; gap: 12px; }
+.status { margin: 12px 6px 0; min-height: 22px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 13px; font-weight: 500; }
+.status button { min-height: 44px; padding: 0 10px; border: 0; background: none; text-decoration: underline; text-underline-offset: 4px; font-weight: 700; }
+.inst[data-t="bad"] .status .m, .inst[data-t="bad"][data-st="error"] .status .m { color: var(--hx-bad); font-weight: 700; }
+
+@media (max-width: 440px) { .mid, .low { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .digits .strip { transition-duration: 2s; } .bar i.top, .digits .dash { animation: none; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="head">
+    <div>
+      <h1>费用计数 · 实验室仪器</h1>
+      <p>一台桌面仪器：指针表盘、液晶读数、LED 速率条、示波屏、限额旋钮。Agent 一路花钱，你一眼看到离上限多远。</p>
+      <p>适合的 harness：通用核心（任何 harness 都要有，长时间自动运行的 Agent 尤其需要）</p>
+    </div>
+    <div class="simbtns"><button type="button" class="pbtn" id="theme" aria-pressed="false">深色页面</button></div>
+  </header>
+
+  <section class="main" aria-label="主组件">
+    <div class="mcol">
+      <div class="lab">可交互 · 拖动或用方向键转旋钮改上限，拨动开关切换更便宜的模型（演示按 6 倍速计费）</div>
+      <div id="main"></div>
+    </div>
+    <div class="sim">
+      <h2>模拟 Agent</h2>
+      <div class="simbtns" id="sim"></div>
+      <h2>Agent 回传</h2>
+      <pre class="log" id="log" aria-live="polite">（转旋钮、拨开关、看明细，这里显示 hx-action）</pre>
+    </div>
+  </section>
+
+  <section class="gal" aria-label="全部状态">
+    <h2>全部状态</h2>
+    <div class="grid" id="gallery"></div>
+  </section>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var clamp = function (x, a, b) { return Math.min(b, Math.max(a, x)); };
+  var CAPS = [5, 10, 15, 20, 30, 50], RATE_MAX = 0.4, SEG = 10, N0 = 0;
+
+  var TEMPLATE =
+    '<i class="screw a"></i><i class="screw b"></i><i class="screw c"></i><i class="screw d"></i>' +
+    '<div class="row1"><span class="silk">SESSION COST<small>本次花费</small></span><span class="pwr"><span class="silk" data-f="model">—</span><i class="led on" data-f="pwr" aria-hidden="true"></i><i class="led st" aria-hidden="true"></i></span></div>' +
+    '<div class="mid">' +
+      '<div class="gauge"><svg viewBox="0 0 240 140" aria-hidden="true"><g data-f="ticks"></g>' +
+        '<path class="g-red" data-f="red" d="M0 0"/>' +
+        '<text class="g-label" x="120" y="92">预算占用</text>' +
+        '<g class="g-needle" data-f="needle"><line x1="120" y1="124" x2="120" y2="30"/><line x1="120" y1="124" x2="120" y2="136" style="stroke-width:4"/></g><circle class="g-hub" cx="120" cy="124" r="7"/></svg><div class="g-glass" aria-hidden="true"></div></div>' +
+      '<div class="read">' +
+        '<div class="lcd"><div class="lbl">SPEND · CNY</div><div class="digits" data-f="digits" role="img"></div><div class="eta" data-f="eta"></div></div>' +
+        '<div class="ratebox"><div class="rate"><span class="silk">速率</span><span data-f="rate">—</span></div><div class="bar" data-f="bar"></div></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="low">' +
+      '<div class="scope"><canvas data-f="scope" aria-hidden="true"></canvas><span class="tag">COST / TIME</span></div>' +
+      '<div class="ctl">' +
+        '<div class="knobbox"><div class="knobwrap" data-f="knobwrap"><input type="range" min="0" max="' + (CAPS.length - 1) + '" step="1" value="1" data-f="knob" aria-label="费用上限（元）">' +
+          '<svg viewBox="0 0 72 72" aria-hidden="true"><g data-f="knobticks"></g><g class="k-cap" data-f="kcap"><circle cx="36" cy="36" r="22" fill="#2E2A22"/><circle cx="36" cy="36" r="19" fill="#4A443A"/><circle cx="36" cy="36" r="19" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="1"/><path d="M36 20v10" stroke="#F4EFE0" stroke-width="2.5" stroke-linecap="round"/></g></svg></div><span class="silk">上限<small data-f="capv">—</small></span></div>' +
+        '<div class="swbox"><button type="button" class="sw" role="switch" aria-checked="false" data-f="sw"><span class="track" aria-hidden="true"><i class="lever"></i></span><span class="t"><span data-f="swt">改用更便宜的模型</span><small data-f="sws"></small></span></button>' +
+          '<button type="button" class="dbtn" data-f="dbtn" aria-expanded="false">看明细</button></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="detail" data-f="detail"><div><ul data-f="dlist" aria-label="花费明细"></ul></div></div>' +
+    '<div class="status" data-f="status" aria-live="polite"></div>';
+
+  function fmt(n) { return Number(n).toFixed(2); }
+
+  /**
+   * props: { state: 'loading'|'ready'|'error', spend, rate（元/分钟）, cap, model, cheaper: { name, saving }, switched, series: [元…], items: [[名称, 金额]…], error }
+   * 字段还没到就是 null：位置已经留好，到了再动起来。
+   * 动作（hx-action）：set-cap { cap } / switch-model { to } / show-details { open } / retry
+   */
+  var loopSet = [], raf = 0, last = 0;
+  function loop(now) {
+    var dt = Math.min(.05, (now - last) / 1000); last = now;
+    loopSet.forEach(function (f) { f(now, dt); });
+    raf = requestAnimationFrame(loop);
+  }
+  function addLoop(f) { loopSet.push(f); if (!raf) { last = performance.now(); raf = requestAnimationFrame(loop); } }
+
+  function mount(root, init, opts) {
+    opts = opts || {};
+    root.classList.add('inst'); root.innerHTML = TEMPLATE; root.setAttribute('role', 'group'); root.setAttribute('aria-label', '费用计数');
+    var $ = function (f) { return root.querySelector('[data-f="' + f + '"]'); };
+    var el = {}; ['model', 'pwr', 'ticks', 'red', 'needle', 'digits', 'eta', 'rate', 'bar', 'scope', 'knobwrap', 'knob', 'knobticks', 'kcap', 'capv', 'sw', 'swt', 'sws', 'dbtn', 'detail', 'dlist', 'status'].forEach(function (k) { el[k] = $(k); });
+    var s = { state: 'loading', spend: null, rate: null, cap: null, model: null, cheaper: null, switched: false, series: null, items: null, error: null, open: false };
+    var ang = -80, vel = 0, calmUntil = 0, nextBlink = performance.now() + 5000, lastDigits = '', lastLen = -1, liveT = 0;
+    var ctx = el.scope.getContext('2d'), segs = [];
+
+    for (var i = 0; i < SEG; i++) { var b = document.createElement('i'); b.style.setProperty('--d', (i * 0.045) + 's'); el.bar.appendChild(b); segs.push(b); }
+    (function drawKnobTicks() { var h = ''; for (var k = 0; k < CAPS.length; k++) { var a = (-120 + k * 240 / (CAPS.length - 1)) * Math.PI / 180, x = 36 + Math.sin(a) * 31, y = 36 - Math.cos(a) * 31; h += '<text class="k-num" x="' + x.toFixed(1) + '" y="' + (y + 3).toFixed(1) + '">' + CAPS[k] + '</text>'; } el.knobticks.innerHTML = h; })();
+
+    function emit(name, params) {
+      var ev = new CustomEvent('hx-action', { detail: { name: name, params: params || {} }, bubbles: !!opts.global });
+      (opts.global ? document : root).dispatchEvent(ev);
+    }
+    var NS = 'http://www.w3.org/2000/svg';
+    function polar(r, deg) { var a = deg * Math.PI / 180; return [120 + Math.sin(a) * r, 124 - Math.cos(a) * r]; }
+    function drawGauge() {
+      var h = '', cap = s.cap;
+      for (var t = 0; t <= 20; t++) { var d = -80 + t * 8, big = t % 5 === 0, p1 = polar(big ? 82 : 86, d), p2 = polar(96, d); h += '<line class="g-tick' + (big ? '' : ' s') + '" x1="' + p1[0].toFixed(1) + '" y1="' + p1[1].toFixed(1) + '" x2="' + p2[0].toFixed(1) + '" y2="' + p2[1].toFixed(1) + '"/>'; }
+      [0, 0.5, 1].forEach(function (f) { var p = polar(106, -80 + 160 * f); h += '<text class="g-num" x="' + p[0].toFixed(1) + '" y="' + (p[1] + 3).toFixed(1) + '">' + (cap == null ? '—' : '¥' + (cap * f).toFixed(cap * f % 1 ? 1 : 0)) + '</text>'; });
+      el.ticks.innerHTML = h;
+      var a0 = polar(92, -80 + 160 * .8), a1 = polar(92, 80);
+      el.red.setAttribute('d', 'M' + a0[0].toFixed(1) + ' ' + a0[1].toFixed(1) + ' A92 92 0 0 1 ' + a1[0].toFixed(1) + ' ' + a1[1].toFixed(1));
+    }
+
+    function setDigits(str) {
+      var a = el.digits;
+      if (str == null) { if (lastLen !== -2) { a.innerHTML = '<span class="cur">¥</span><span class="dash">-</span><span class="dash">-</span><span class="sep dash">.</span><span class="dash">-</span><span class="dash">-</span>'; a.setAttribute('aria-label', '花费加载中'); lastLen = -2; lastDigits = ''; } return; }
+      if (a.getAttribute('aria-label') !== str + ' 元') a.setAttribute('aria-label', str + ' 元');
+      var chars = str.split(''), rebuild = lastLen !== chars.length;
+      if (rebuild) {
+        a.innerHTML = '<span class="cur" aria-hidden="true">¥</span>';
+        chars.forEach(function (c) {
+          if (/\d/.test(c)) { var col = document.createElement('span'); col.className = 'col'; col.setAttribute('aria-hidden', 'true'); var st = document.createElement('span'); st.className = 'strip'; st.style.setProperty('--d', 0); for (var i = 0; i < 10; i++) { var d = document.createElement('span'); d.textContent = i; st.appendChild(d); } col.appendChild(st); a.appendChild(col); }
+          else { var sp = document.createElement('span'); sp.className = 'sep'; sp.textContent = c; sp.setAttribute('aria-hidden', 'true'); a.appendChild(sp); }
+        });
+        void a.offsetWidth;
+      }
+      var ds = chars.filter(function (c) { return /\d/.test(c); }), strips = a.querySelectorAll('.strip');
+      strips.forEach(function (st, i) { var t = +ds[i]; if (rebuild || t !== (+st.style.getPropertyValue('--d') || 0)) st.style.setProperty('--delay', ((ds.length - 1 - i) * 0.05) + 's'); st.style.setProperty('--d', t); });
+      lastLen = chars.length;
+    }
+
+    function setBar(rate) {
+      var n = rate == null ? 0 : clamp(Math.round(rate / RATE_MAX * SEG), 0, SEG);
+      segs.forEach(function (b, i) { b.classList.toggle('on', i < n); b.classList.toggle('w', i >= 6 && i < 9); b.classList.toggle('x', i >= 9); b.classList.toggle('top', i === n - 1 && n > 0); });
+    }
+
+    function tone() {
+      if (s.state === 'error') return 'bad';
+      if (s.spend == null || s.cap == null) return 'none';
+      var r = s.spend / s.cap; return r >= 1 ? 'bad' : r >= .8 ? 'warn' : 'ok';
+    }
+    function render() {
+      var t = tone(), ready = s.state === 'ready';
+      root.dataset.t = t; root.dataset.st = s.state; root.dataset.cap = (s.cap != null && ready) ? '1' : '0'; root.dataset.off = (s.cap == null || !ready) ? '1' : '0';
+      el.model.textContent = s.switched && s.cheaper ? s.cheaper.name : (s.model || '—');
+      drawGauge();
+      setDigits(s.state === 'error' || s.spend == null ? null : fmt(s.spend));
+      if (s.state === 'error') { el.digits.innerHTML = '<span class="cur">¥</span><span style="color:#E8705F">E R R</span>'; lastLen = -3; el.digits.setAttribute('aria-label', '读不到费用'); }
+      setBar(ready ? s.rate : null);
+      el.rate.textContent = ready && s.rate != null ? '¥' + s.rate.toFixed(2) + ' / 分钟' : '—';
+      var rem = ready && s.spend != null && s.cap != null && s.rate ? (s.cap - s.spend) / s.rate : null;
+      el.eta.textContent = rem == null ? '' : rem <= 0 ? 'LIMIT REACHED' : '还能跑约 ' + Math.floor(rem) + ' 分钟';
+      var ci = s.cap == null ? 1 : Math.max(0, CAPS.indexOf(s.cap)); el.knob.value = ci; el.knob.disabled = s.cap == null || !ready;
+      el.kcap.style.transform = 'rotate(' + (-120 + ci * 240 / (CAPS.length - 1)) + 'deg)';
+      el.capv.textContent = s.cap == null ? '' : ' ¥' + s.cap;
+      el.sw.disabled = !ready || !s.cheaper; el.sw.setAttribute('aria-checked', !!s.switched);
+      el.swt.textContent = s.switched ? '正在用省钱的模型' : '改用更便宜的模型'; el.sws.textContent = s.cheaper ? (s.switched ? '随时可以改回去' : s.cheaper.name + ' · 约省 ' + s.cheaper.saving) : '';
+      el.dbtn.disabled = !ready || !s.items;
+      el.detail.classList.toggle('open', !!s.open && !!s.items); el.dbtn.setAttribute('aria-expanded', !!s.open);
+      el.dlist.innerHTML = (s.items || []).map(function (x) { return '<li><span>' + x[0] + '</span><span>¥' + x[1] + '</span></li>'; }).join('');
+      var msg = '', btn = '';
+      if (s.state === 'loading') msg = '正在接入计费…';
+      else if (s.state === 'error') { msg = s.error || '没读到费用'; btn = '<button type="button" data-f="retry">重试</button>'; }
+      else if (t === 'bad') msg = '已到上限，Agent 已暂停。调高上限后会继续。';
+      else if (t === 'warn') msg = '接近上限了，要不要换个便宜的模型？';
+      else if (t === 'ok') msg = '运行正常';
+      el.status.innerHTML = '<span class="m">' + msg + '</span>' + btn;
+      var rb = el.status.querySelector('[data-f="retry"]'); if (rb) rb.addEventListener('click', function () { emit('retry', {}); api.set({ state: 'loading', error: null }); if (opts.demo && opts.autoSettle !== false) setTimeout(function () { api.set(opts.demo()); }, 900); });
+      drawScope();
+    }
+
+    /* 示波屏：花费随时间的曲线 */
+    function drawScope(now) {
+      var cv = el.scope, w = cv.clientWidth || 220, h = cv.clientHeight || 96, dpr = window.devicePixelRatio || 1;
+      if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+      ctx.strokeStyle = 'rgba(185,245,166,.12)'; ctx.lineWidth = 1;
+      for (var x = 0; x <= w; x += w / 8) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+      for (var y = 0; y <= h; y += h / 4) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+      var pad = 12, top = 18, bot = h - 10, flicker = reduce ? 0 : Math.sin((now || 0) / 900) * .06;
+      if (s.cap != null) { ctx.setLineDash([4, 4]); ctx.strokeStyle = 'rgba(232,112,95,.85)'; ctx.beginPath(); ctx.moveTo(0, top); ctx.lineTo(w, top); ctx.stroke(); ctx.setLineDash([]); }
+      var ser = s.series, cap = s.cap || 1; ctx.lineWidth = 2; ctx.shadowColor = 'rgba(185,245,166,.8)'; ctx.shadowBlur = 6; ctx.strokeStyle = 'rgba(185,245,166,' + (0.9 + flicker) + ')';
+      ctx.beginPath();
+      if (!ser || !ser.length || s.state !== 'ready') { ctx.moveTo(0, bot); ctx.lineTo(w, bot - (reduce ? 0 : Math.sin((now || 0) / 700) * 1)); }
+      else ser.forEach(function (v, i) { var px = pad + (w - 2 * pad) * (i / Math.max(1, ser.length - 1)), py = bot - (bot - top) * clamp(v / cap, 0, 1.05); if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py); });
+      ctx.stroke(); ctx.shadowBlur = 0;
+    }
+
+    /* 每一帧：指针的弹簧、待机的微颤、偶尔眨一下的灯、示波屏的呼吸 */
+    addLoop(function (now, dt) {
+      var ratio = (s.spend != null && s.cap != null && s.state === 'ready') ? clamp(s.spend / s.cap, 0, 1.06) : 0, target = -80 + 160 * ratio;
+      var calm = now < calmUntil || reduce, idle = calm ? 0 : (Math.sin(now / 590) * .5 + Math.sin(now / 340 + 1) * .3 + Math.sin(now / 170) * .2) * .45;
+      var K = reduce ? 40 : 95, C = reduce ? 9 : 11; vel += (-K * (ang - target) - C * vel) * dt; ang += vel * dt;
+      el.needle.style.transform = 'rotate(' + (ang + idle) + 'deg)';
+      if (!calm && now > nextBlink) { el.pwr.classList.remove('blink'); void el.pwr.offsetWidth; el.pwr.classList.add('blink'); nextBlink = now + 6000 + Math.random() * 4000; }
+      drawScope(now);
+    });
+    root.addEventListener('pointerdown', function () { calmUntil = performance.now() + 2500; });
+    root.addEventListener('focusin', function () { calmUntil = performance.now() + 2500; });
+    root.addEventListener('keydown', function () { calmUntil = performance.now() + 2500; });
+
+    /* 旋钮：拖动 / 方向键，吸附到刻度 */
+    function setCapIdx(i, fromUser) { i = clamp(i, 0, CAPS.length - 1); if (s.cap === CAPS[i]) return; if (fromUser) emit('set-cap', { cap: CAPS[i] }); api.set({ cap: CAPS[i] }); }
+    el.knob.addEventListener('input', function () { setCapIdx(+el.knob.value, true); });
+    el.knobwrap.addEventListener('pointerdown', function (e) {
+      if (el.knob.disabled) return; calmUntil = performance.now() + 2500; el.knobwrap.classList.add('drag'); el.knobwrap.setPointerCapture(e.pointerId); el.knob.focus({ preventScroll: true });
+      var r = el.knobwrap.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      function move(ev) { var a = Math.atan2(ev.clientX - cx, -(ev.clientY - cy)) * 180 / Math.PI; a = clamp(a, -120, 120); el.kcap.style.transform = 'rotate(' + a + 'deg)'; var idx = Math.round((a + 120) / 240 * (CAPS.length - 1)); if (idx !== +el.knob.value) { el.knob.value = idx; setCapIdx(idx, true); } }
+      function up() { el.knobwrap.classList.remove('drag'); el.knobwrap.removeEventListener('pointermove', move); el.knobwrap.removeEventListener('pointerup', up); el.knobwrap.removeEventListener('pointercancel', up); render(); }
+      el.knobwrap.addEventListener('pointermove', move); el.knobwrap.addEventListener('pointerup', up); el.knobwrap.addEventListener('pointercancel', up); move(e);
+    });
+    el.sw.addEventListener('click', function () { var to = !s.switched; emit('switch-model', { to: to && s.cheaper ? s.cheaper.name : s.model }); api.set({ switched: to, rate: to ? Math.max(0.02, +(s.rate * 0.3).toFixed(2)) : +(s.rate / 0.3).toFixed(2) }); });
+    el.dbtn.addEventListener('click', function () { var o = !s.open; emit('show-details', { open: o }); api.set({ open: o }); });
+
+    /* 演示：按 6 倍速计费，让指针和读数真的走起来 */
+    if (opts.live) liveT = setInterval(function () {
+      if (s.state !== 'ready' || s.spend == null || s.cap == null || s.rate == null || s.spend >= s.cap) return;
+      var v = Math.min(s.cap, +(s.spend + s.rate / 60 * 6).toFixed(3)); s.spend = v; s.series = (s.series || []).concat([v]).slice(-40);
+      render();
+    }, 1000);
+
+    var api = {
+      set: function (p) { Object.assign(s, p || {}); render(); return api; },
+      get: function () { return JSON.parse(JSON.stringify(s)); }
+    };
+    api.set(init || {});
+    return api;
+  }
+
+  /* ---------- 示例数据（和房东谈续租：Agent 在查行情、读合同、起草回复） ---------- */
+  var SERIES = [0.1, 0.22, 0.4, 0.7, 0.95, 1.3, 1.62, 2.0, 2.31, 2.8, 3.2, 3.55, 3.82];
+  var READY = { state: 'ready', spend: 3.82, rate: 0.12, cap: 10, model: 'Opus 5.5', cheaper: { name: 'Haiku 5.5', saving: '70%' }, switched: false, series: SERIES, error: null,
+    items: [['检索周边租金行情', '1.20'], ['读取现有租赁合同', '0.84'], ['起草给房东的回复', '1.78']], open: false };
+  var WARN = Object.assign({}, READY, { spend: 8.4, rate: 0.24, series: [0.4, 1.2, 2.1, 3.3, 4.6, 5.8, 6.9, 7.7, 8.4] });
+  var CAPPED = Object.assign({}, READY, { spend: 10, rate: 0.24, series: [0.4, 1.2, 2.1, 3.3, 4.6, 5.8, 7.2, 8.6, 9.7, 10] });
+
+  var cards = [];
+  var main = mount(document.getElementById('main'), { state: 'loading' }, { global: true, live: true, demo: function () { return READY; } });
+  cards.push(main); window.card = { set: function (p) { return main.set(p); }, get: main.get };
+  setTimeout(function () { main.set(READY); }, 700);
+
+  var log = document.getElementById('log');
+  document.addEventListener('hx-action', function (e) { log.textContent = 'hx-action ' + JSON.stringify(e.detail); });
+
+  var sims = [
+    ['加载中', function () { main.set({ state: 'loading', spend: null, rate: null, cap: null, model: null, cheaper: null, series: null, items: null, switched: false, open: false }); }],
+    ['正常', function () { main.set(Object.assign({}, READY, { spend: 3.82 })); }],
+    ['接近上限', function () { main.set(WARN); }],
+    ['已到上限', function () { main.set(CAPPED); }],
+    ['流式到达', function () {
+      main.set({ state: 'ready', spend: null, rate: null, cap: null, model: null, cheaper: null, series: null, items: null, switched: false, open: false, error: null });
+      setTimeout(function () { main.set({ model: READY.model, cap: READY.cap }); }, 600);
+      setTimeout(function () { main.set({ spend: READY.spend, series: SERIES }); }, 1300);
+      setTimeout(function () { main.set({ rate: READY.rate }); }, 2100);
+      setTimeout(function () { main.set({ cheaper: READY.cheaper, items: READY.items }); }, 2800);
+    }],
+    ['出错', function () { main.set({ state: 'error', error: '没读到费用：计费服务无响应' }); }]
+  ];
+  var bar = document.getElementById('sim');
+  sims.forEach(function (x) { var b = document.createElement('button'); b.type = 'button'; b.className = 'pbtn'; b.textContent = x[0]; b.addEventListener('click', x[1]); bar.appendChild(b); });
+
+  var g = document.getElementById('gallery');
+  [
+    ['加载（骨架）', { state: 'loading' }],
+    ['正常', READY],
+    ['接近上限（红区，琥珀灯）', WARN],
+    ['已到上限（Agent 已暂停）', CAPPED],
+    ['已切到便宜的模型', Object.assign({}, READY, { switched: true, rate: 0.04 })],
+    ['展开明细', Object.assign({}, READY, { open: true })],
+    ['出错（可重试）', { state: 'error', error: '没读到费用：计费服务无响应' }]
+  ].forEach(function (x) {
+    var cell = document.createElement('div'); cell.className = 'cell';
+    cell.innerHTML = '<div class="lab">' + x[0] + '</div><div></div>'; g.appendChild(cell);
+    cards.push(mount(cell.lastChild, x[1], { demo: function () { return READY; } }));
+  });
+
+  var theme = document.getElementById('theme'), rootEl = document.documentElement;
+  theme.addEventListener('click', function () {
+    var on = theme.getAttribute('aria-pressed') !== 'true'; theme.setAttribute('aria-pressed', on);
+    rootEl.setAttribute('data-theme', on ? 'dark' : 'light'); theme.textContent = on ? '浅色页面' : '深色页面';
+  });
+})();
+</script>
+</body>
+</html>

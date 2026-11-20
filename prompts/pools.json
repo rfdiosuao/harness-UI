@@ -47,7 +47,12 @@
     {"id": "status-chip", "name": "状态胶囊", "spec": "运行中、等你、失败、完成，带计时 → 停止、重试、查看", "harness": ["通用核心"]},
     {"id": "composer", "name": "输入框", "spec": "多行输入、@ 引用文件、/ 命令、附件 → 发送、停止", "harness": ["通用核心"]},
     {"id": "checkpoint-rewind", "name": "检查点", "spec": "每次编辑前的存档列表 → 回退到此、预览、删除", "harness": ["通用核心"]},
-    {"id": "slash-palette", "name": "命令面板", "spec": "分组的命令、模糊搜索、快捷键 → 执行", "harness": ["通用核心"]}
+    {"id": "slash-palette", "name": "命令面板", "spec": "分组的命令、模糊搜索、快捷键 → 执行", "harness": ["通用核心"]},
+    {"id": "streaming-text", "name": "流式文本", "spec": "正在逐字到达的回答（含写到一半的 Markdown）、是否还在输出 → 停止输出、复制、重新生成", "harness": ["通用核心"]},
+    {"id": "interrupt-bar", "name": "中断条", "spec": "运行状态、已运行时长、当前在做什么 → 停止、暂停、接管", "harness": ["通用核心"]},
+    {"id": "cost-ticker", "name": "费用计数", "spec": "本次会话的花费、速率、预算上限 → 设上限、看明细、切换更便宜的模型", "harness": ["通用核心"]},
+    {"id": "error-banner", "name": "错误横幅", "spec": "错误原因、可恢复程度、已自动重试几次 → 重试、跳过、查看详情", "harness": ["通用核心"]},
+    {"id": "fallback-notice", "name": "降级提示", "spec": "原来的模型和现在改用的模型、原因 → 改回去、知道了、查看区别", "harness": ["通用核心"]}
   ],
   "worlds": [
     {"id": "split-flap", "name": "机场翻牌屏", "text": "机械翻牌显示屏：每个字符是一块上下对折的翻牌，换内容时逐块翻转，带金属轴和阴影；黑底、琥珀色字；字体用窄体无衬线。"},
