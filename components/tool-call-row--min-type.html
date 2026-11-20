@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>工具调用行 · 极简字排</title>
+<meta name="hx-component" content="tool-call-row">
+<meta name="hx-style" content="min-type">
+<meta name="hx-harness" content="通用核心">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600&display=swap">
+<style>
+:root {
+  --hx-paper: #FAFAF7; --hx-ink: #161616; --hx-sub: #55524B; --hx-hair: #E3E1D9;
+  --hx-run: #2F5DA8; --hx-fail: #C2371F;
+  --hx-font: 'Noto Sans SC', system-ui, sans-serif;
+  --hx-ease: cubic-bezier(.2, .8, .2, 1);
+  --hx-fast: 160ms; --hx-slow: 460ms;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --hx-paper: #121212; --hx-ink: #F1EFE8; --hx-sub: #B8B4A8; --hx-hair: #2C2B28; --hx-run: #8DB2F2; --hx-fail: #FF8A73; }
+}
+:root[data-theme="dark"] { --hx-paper: #121212; --hx-ink: #F1EFE8; --hx-sub: #B8B4A8; --hx-hair: #2C2B28; --hx-run: #8DB2F2; --hx-fail: #FF8A73; }
+@media (prefers-reduced-motion: reduce) { :root { --hx-fast: 360ms; --hx-slow: 1000ms; } }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--hx-paper); color: var(--hx-ink); font-family: var(--hx-font); font-weight: 400; font-size: 15px; line-height: 1.6; font-variant-numeric: tabular-nums; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+:focus-visible { outline: 2px solid var(--hx-ink); outline-offset: 4px; border-radius: 3px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---------- 页面 ---------- */
+.page { max-width: 760px; margin: 0 auto; padding: 40px 20px 72px; display: flex; flex-direction: column; gap: 44px; }
+.head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+.head h1 { margin: 0; font-size: 22px; font-weight: 600; }
+.head p { margin: 2px 0 0; font-size: 12px; color: var(--hx-sub); }
+.pbtn { min-height: 44px; padding: 0 14px; font-size: 12px; text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 1.5px; }
+.pbtn:hover { text-decoration-thickness: 3px; }
+.simbar { display: flex; flex-wrap: wrap; gap: 0 6px; }
+.sec { display: flex; flex-direction: column; gap: 14px; }
+.sec h2 { margin: 0; font-size: 12px; font-weight: 600; color: var(--hx-sub); }
+.log { margin: 0; font-size: 12px; line-height: 1.8; color: var(--hx-sub); white-space: pre-wrap; overflow-wrap: anywhere; min-height: 44px; }
+.gal { display: flex; flex-direction: column; gap: 40px; }
+
+/* ---------- 组件：几乎只有文字 ---------- */
+.tc { position: relative; width: 100%; }
+.tc .hdr { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; font-weight: 600; color: var(--hx-sub); margin-bottom: 8px; }
+.tc .list { list-style: none; margin: 0; padding: 0; }
+.tc li { position: relative; }
+.main { display: grid; grid-template-columns: 10px 3em minmax(0, 1fr) auto auto; align-items: baseline; gap: 0 14px; width: 100%; min-height: 44px; padding: 10px 0; transition: transform var(--hx-fast) var(--hx-ease); }
+.main:hover { transform: translateX(4px); }
+.dot { width: 8px; height: 8px; border-radius: 50%; align-self: center; background: var(--hx-ink); transition: background-color var(--hx-slow) var(--hx-ease), transform var(--hx-slow) var(--hx-ease), box-shadow var(--hx-slow) var(--hx-ease); }
+li[data-st="running"] .dot { background: var(--hx-run); animation: breathe 1.8s ease-in-out infinite; }
+li[data-st="failed"] .dot { background: var(--hx-fail); transform: scale(1.5); }
+li[data-st="stopped"] .dot, li[data-st="rejected"] .dot { background: transparent; box-shadow: inset 0 0 0 1.5px var(--hx-sub); }
+@keyframes breathe { 0%, 100% { transform: scale(.75); } 50% { transform: scale(1.35); } }
+.ty { font-weight: 600; }
+.tg { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: linear-gradient(currentColor, currentColor) 0 58% / 0 1.5px no-repeat; transition: background-size var(--hx-slow) var(--hx-ease), color var(--hx-slow); }
+li[data-st="rejected"] .tg { background-size: 100% 1.5px; color: var(--hx-sub); }
+.rs { white-space: nowrap; background: linear-gradient(currentColor, currentColor) 0 100% / 0 1.5px no-repeat; transition: background-size var(--hx-slow) var(--hx-ease), color var(--hx-slow); }
+li[data-st="failed"] .rs { background-size: 100% 1.5px; color: var(--hx-fail); font-weight: 600; }
+li[data-st="running"] .rs, li[data-st="stopped"] .rs, li[data-st="rejected"] .rs { color: var(--hx-sub); }
+.tm { min-width: 3.6em; text-align: right; font-size: 12px; color: var(--hx-sub); }
+
+.reveal { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--hx-slow) var(--hx-ease); }
+.reveal > div { overflow: hidden; min-height: 0; }
+li.on .acts, li.open .out { grid-template-rows: 1fr; }
+.arow { display: flex; flex-wrap: wrap; gap: 0 18px; padding-left: calc(10px + 3em + 28px); opacity: 0; transform: translateY(-6px); transition: opacity var(--hx-fast), transform var(--hx-slow) var(--hx-ease); }
+li.on .arow { opacity: 1; transform: none; }
+.arow button { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; font-size: 12px; text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 1.5px; }
+.arow button:hover { text-decoration-thickness: 3px; }
+.arow button[hidden] { display: none; }
+kbd { font: inherit; font-size: 12px; color: var(--hx-sub); text-decoration: none; display: inline-block; min-width: 1.4em; text-align: center; padding: 0 3px; box-shadow: inset 0 -1.5px 0 var(--hx-sub); }
+.lines { list-style: none; margin: 0; padding: 2px 0 14px calc(10px + 3em + 28px); font-size: 12px; line-height: 1.9; color: var(--hx-sub); }
+.lines li { opacity: 0; transform: translateY(6px); transition: opacity var(--hx-slow) var(--hx-ease), transform var(--hx-slow) var(--hx-ease); transition-delay: 0s; overflow-wrap: anywhere; }
+li.open .lines li { opacity: 1; transform: none; transition-delay: calc(var(--i) * 45ms + 120ms); }
+.lines li.bad { color: var(--hx-fail); }
+.lines:empty::before { content: "没有输出"; }
+
+.keys { margin: 14px 0 0; font-size: 12px; color: var(--hx-sub); padding-left: calc(10px + 14px); }
+.err { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; min-height: 44px; font-size: 15px; }
+.err[hidden] { display: none; }
+.err button { min-height: 44px; padding: 0 6px; text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 1.5px; font-weight: 600; }
+
+.skl { position: absolute; left: 0; right: 0; top: 24px; pointer-events: none; opacity: 0; transition: opacity var(--hx-slow) var(--hx-ease); }
+.tc[data-state="loading"] .skl { opacity: 1; }
+.skl .r { display: flex; align-items: center; gap: 14px; height: 64px; }
+.bar { position: relative; overflow: hidden; height: 12px; border-radius: 3px; background: var(--hx-hair); }
+.bar::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, var(--hx-paper), transparent); transform: translateX(-100%); animation: sweep 1.5s var(--hx-ease) infinite; }
+@keyframes sweep { to { transform: translateX(100%); } }
+.tc[data-state="loading"] .list, .tc[data-state="loading"] .keys { opacity: 0; }
+.tc .list, .tc .keys { transition: opacity var(--hx-slow) var(--hx-ease); }
+.tc[data-state="loading"] .list { min-height: 220px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="head">
+    <div>
+      <h1>工具调用行 · 极简字排</h1>
+      <p>Agent 每调用一次工具就是一行：读取、搜索、运行、编辑。所有变化都是连续的，没有瞬间跳变。只用键盘就能操作。</p>
+      <p>适合的 harness：通用核心（任何 harness 都要有）</p>
+    </div>
+    <button type="button" class="pbtn" id="theme" aria-pressed="false">深色</button>
+  </header>
+
+  <section class="sec" aria-label="主组件">
+    <h2>可交互 · Tab 进入列表，↑↓ 选择，⏎ 展开，R 重跑，S 停止</h2>
+    <div class="tc" id="main"></div>
+    <h2>模拟 Agent</h2>
+    <div class="simbar" id="sim"></div>
+    <h2>Agent 回传</h2>
+    <pre class="log" id="log" aria-live="polite">（展开、重跑、停止，这里显示 hx-action）</pre>
+  </section>
+
+  <section class="gal" aria-label="全部状态">
+    <h2>全部状态</h2>
+    <div class="sec" id="gallery"></div>
+  </section>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches, K = reduce ? 2.2 : 1;
+  var EASE = 'cubic-bezier(.2,.8,.2,1)';
+  var seq = 100;
+
+  var TEMPLATE =
+    '<div class="hdr"><span>工具调用</span><span data-f="count"></span></div>' +
+    '<div class="err" data-f="err" hidden><span data-f="errtext"></span><button type="button" data-f="retry">重试</button></div>' +
+    '<ul class="list" data-f="list"></ul>' +
+    '<div class="skl" aria-hidden="true"><div class="r"><i class="bar" style="width:10px;height:10px;border-radius:50%"></i><i class="bar" style="width:34px"></i><i class="bar" style="flex:1;max-width:300px"></i><i class="bar" style="width:46px"></i></div>' +
+      '<div class="r"><i class="bar" style="width:10px;height:10px;border-radius:50%"></i><i class="bar" style="width:34px"></i><i class="bar" style="flex:1;max-width:220px"></i><i class="bar" style="width:46px"></i></div>' +
+      '<div class="r"><i class="bar" style="width:10px;height:10px;border-radius:50%"></i><i class="bar" style="width:34px"></i><i class="bar" style="flex:1;max-width:340px"></i><i class="bar" style="width:46px"></i></div></div>' +
+    '<p class="keys" data-f="keys">↑↓ 选择　⏎ 展开　R 重跑　S 停止</p>' +
+    '<div class="sr" aria-live="polite" data-f="live"></div>';
+  var ROW =
+    '<button type="button" class="main" aria-expanded="false"><i class="dot" aria-hidden="true"></i><span class="ty"></span><span class="tg"></span><span class="rs"></span><span class="tm"></span></button>' +
+    '<div class="reveal acts"><div><div class="arow">' +
+      '<button type="button" data-a="toggle"><span>展开</span><kbd>⏎</kbd></button>' +
+      '<button type="button" data-a="rerun"><span>重跑</span><kbd>R</kbd></button>' +
+      '<button type="button" data-a="stop"><span>停止</span><kbd>S</kbd></button></div></div></div>' +
+    '<div class="reveal out"><div><ol class="lines"></ol></div></div>';
+
+  function fmt(ms) { return (ms / 1000).toFixed(1) + ' s'; }
+
+  /**
+   * props: { state: 'loading'|'ready'|'error', error,
+   *          calls: [{ id, type, target, status: 'running'|'done'|'failed'|'stopped'|'rejected', result, ms, startedAt, output:[], open }] }
+   * 动作（hx-action）：expand / collapse / rerun / stop / retry
+   */
+  function mount(root, init, opts) {
+    opts = opts || {};
+    root.classList.add('tc'); root.innerHTML = TEMPLATE;
+    var $ = function (f) { return root.querySelector('[data-f="' + f + '"]'); };
+    var el = { list: $('list'), count: $('count'), err: $('err'), errtext: $('errtext'), retry: $('retry'), keys: $('keys'), live: $('live') };
+    var s = { state: 'loading', error: null, calls: [] }, rows = {}, tick = 0, first = true, settle = {};
+
+    function emit(name, params) {
+      var ev = new CustomEvent('hx-action', { detail: { name: name, params: params || {} }, bubbles: !!opts.global });
+      (opts.global ? document : root).dispatchEvent(ev);
+    }
+    function say(t) { if (el.live.textContent !== t) el.live.textContent = t; }
+
+    function flip(mutate) {
+      var before = {};
+      [].forEach.call(el.list.children, function (li) { before[li.dataset.id] = li.getBoundingClientRect().top; });
+      mutate();
+      [].forEach.call(el.list.children, function (li, n) {
+        var id = li.dataset.id, b = before[id];
+        if (b == null) { if (!first) li.animate([{ opacity: 0, transform: 'translateY(-10px)' }, { opacity: 1, transform: 'none' }], { duration: 480 * K, easing: EASE, delay: 0 }); }
+        else { var d = b - li.getBoundingClientRect().top; if (Math.abs(d) > 1) li.animate([{ transform: 'translateY(' + d + 'px)' }, { transform: 'none' }], { duration: 520 * K, easing: EASE }); }
+      });
+    }
+
+    function makeRow(c) {
+      var li = document.createElement('li'); li.dataset.id = c.id; li.innerHTML = ROW; li.style.setProperty('--i', 0);
+      var main = li.querySelector('.main'); main.tabIndex = -1;
+      li.querySelector('.acts').setAttribute('inert', '');
+      main.addEventListener('click', function () { toggle(c.id); });
+      li.querySelector('[data-a="toggle"]').addEventListener('click', function () { toggle(c.id); });
+      li.querySelector('[data-a="rerun"]').addEventListener('click', function () { rerun(c.id); });
+      li.querySelector('[data-a="stop"]').addEventListener('click', function () { stop(c.id); });
+      return li;
+    }
+    function lines(li, c) {
+      var ol = li.querySelector('.lines'), out = c.output || [];
+      if (ol._sig === out.join('\n')) return; ol._sig = out.join('\n'); ol.textContent = '';
+      out.forEach(function (t, i) { var l = document.createElement('li'); l.style.setProperty('--i', i); l.textContent = t; if (/Error|Traceback|失败|无法|退出 [1-9]/.test(t)) l.className = 'bad'; ol.appendChild(l); });
+    }
+    function updateRow(li, c) {
+      li.dataset.st = c.status;
+      li.querySelector('.ty').textContent = c.type; li.querySelector('.tg').textContent = c.target; li.querySelector('.tg').title = c.target;
+      li.querySelector('.rs').textContent = c.status === 'running' ? '运行中' : (c.result || '');
+      li.querySelector('.tm').textContent = c.status === 'running' ? fmt(Date.now() - (c.startedAt || Date.now())) : (c.ms != null ? fmt(c.ms) : '');
+      lines(li, c);
+      var run = c.status === 'running';
+      li.querySelector('[data-a="rerun"]').hidden = run || c.status === 'rejected'; li.querySelector('[data-a="stop"]').hidden = !run;
+      li.querySelector('.main').setAttribute('aria-label', c.type + ' ' + c.target + '，' + (run ? '运行中' : (c.result || '')) + (li.classList.contains('open') ? '，已展开' : '，已收起'));
+    }
+    function setOpen(li, open) {
+      li.classList.toggle('open', open); li.querySelector('.main').setAttribute('aria-expanded', open);
+      li.querySelector('[data-a="toggle"] span').textContent = open ? '收起' : '展开';
+      refreshOn(li);
+    }
+    function refreshOn(li) { var on = li.classList.contains('open') || li.contains(document.activeElement); li.classList.toggle('on', on); var a = li.querySelector('.acts'); if (on) a.removeAttribute('inert'); else a.setAttribute('inert', ''); }
+
+    function render() {
+      root.dataset.state = s.state;
+      el.err.hidden = s.state !== 'error'; el.errtext.textContent = s.error || '没读出调用记录';
+      var ids = s.calls.map(function (c) { return c.id; });
+      flip(function () {
+        Object.keys(rows).forEach(function (id) { if (ids.indexOf(id) < 0) { rows[id].remove(); delete rows[id]; } });
+        s.calls.forEach(function (c, i) {
+          var li = rows[c.id]; if (!li) { li = rows[c.id] = makeRow(c); }
+          if (el.list.children[i] !== li) el.list.insertBefore(li, el.list.children[i] || null);
+          updateRow(li, c);
+          if (c.open != null) setOpen(li, !!c.open);
+        });
+      });
+      var active = el.list.querySelector('.main[tabindex="0"]'); if (!active && el.list.firstChild) el.list.firstChild.querySelector('.main').tabIndex = 0;
+      el.count.textContent = s.calls.length ? s.calls.length + ' 次' : '';
+      first = false;
+      clearInterval(tick);
+      if (s.calls.some(function (c) { return c.status === 'running'; })) tick = setInterval(function () {
+        s.calls.forEach(function (c) { if (c.status === 'running' && rows[c.id]) rows[c.id].querySelector('.tm').textContent = fmt(Date.now() - c.startedAt); });
+      }, 100);
+    }
+
+    function find(id) { for (var i = 0; i < s.calls.length; i++) if (s.calls[i].id === id) return i; return -1; }
+    function toggle(id) { var li = rows[id]; if (!li) return; var open = !li.classList.contains('open'); setOpen(li, open); emit(open ? 'expand' : 'collapse', { id: id }); }
+    function stop(id) {
+      var i = find(id); if (i < 0 || s.calls[i].status !== 'running') return;
+      clearTimeout(settle[id]); emit('stop', { id: id });
+      var c = s.calls[i]; c.status = 'stopped'; c.result = '已停止'; c.ms = Date.now() - c.startedAt; render(); say(c.type + ' 已停止');
+    }
+    function rerun(id) {
+      var i = find(id); if (i < 0) return; var c = s.calls[i]; if (c.status === 'running') return;
+      emit('rerun', { id: id });
+      var nid = 'c' + (++seq), n = { id: nid, type: c.type, target: opts.rerunTarget ? opts.rerunTarget(c) : c.target, status: 'running', result: '', startedAt: Date.now(), output: [] };
+      s.calls.splice(i + 1, 0, n); render(); say(n.type + ' 重跑中');
+      if (opts.autoSettle !== false) settle[nid] = setTimeout(function () {
+        var d = opts.rerunDone ? opts.rerunDone(c) : { result: c.result, output: c.output };
+        n.status = 'done'; n.result = d.result; n.ms = Date.now() - n.startedAt; n.output = d.output; render(); say(n.type + ' 已完成，' + n.result);
+      }, 2600);
+    }
+    el.retry.addEventListener('click', function () { emit('retry', {}); api.set({ state: 'loading' }); if (opts.autoSettle !== false && opts.demo) setTimeout(function () { api.set(opts.demo()); }, 900); });
+
+    /* 键盘：↑↓ / j k 选择，Home End，R 重跑，S 停止，Esc 收起 */
+    root.addEventListener('keydown', function (e) {
+      var li = e.target.closest && e.target.closest('li[data-id]'); if (!li) return;
+      var mains = [].map.call(el.list.querySelectorAll('.main'), function (m) { return m; }), cur = mains.indexOf(li.querySelector('.main'));
+      var go = function (n) { n = Math.max(0, Math.min(mains.length - 1, n)); mains.forEach(function (m) { m.tabIndex = -1; }); mains[n].tabIndex = 0; mains[n].focus(); e.preventDefault(); };
+      var k = e.key;
+      if (k === 'ArrowDown' || k === 'j') go(cur + 1); else if (k === 'ArrowUp' || k === 'k') go(cur - 1);
+      else if (k === 'Home') go(0); else if (k === 'End') go(mains.length - 1);
+      else if (k === 'r' || k === 'R') { rerun(li.dataset.id); e.preventDefault(); }
+      else if (k === 's' || k === 'S') { stop(li.dataset.id); e.preventDefault(); }
+      else if (k === 'Escape' && li.classList.contains('open')) { setOpen(li, false); emit('collapse', { id: li.dataset.id }); li.querySelector('.main').focus(); }
+    });
+    root.addEventListener('focusin', function (e) { var li = e.target.closest && e.target.closest('li[data-id]'); [].forEach.call(el.list.children, function (x) { refreshOn(x); }); if (li && e.target.classList.contains('main')) { [].forEach.call(el.list.querySelectorAll('.main'), function (m) { m.tabIndex = -1; }); e.target.tabIndex = 0; } });
+    root.addEventListener('focusout', function () { setTimeout(function () { [].forEach.call(el.list.children, refreshOn); }, 0); });
+
+    var api = {
+      set: function (p) {
+        p = p || {}; if ('state' in p) s.state = p.state; if ('error' in p) s.error = p.error;
+        if (p.calls) s.calls = p.calls.map(function (c) { return Object.assign({}, c, c.status === 'running' && !c.startedAt ? { startedAt: Date.now() } : {}); });
+        render(); return api;
+      },
+      get: function () { return JSON.parse(JSON.stringify(s)); }
+    };
+    api.set(init || {});
+    return api;
+  }
+
+  /* ---------- 示例数据（考研倒数第 37 天：Agent 帮忙切分英语真题） ---------- */
+  var C = {
+    read: { id: 'c1', type: '读取', target: '真题/2023-英语一.pdf', status: 'done', result: '14 页', ms: 400, output: ['打开 真题/2023-英语一.pdf', '共 14 页，文字层完整', '第 9–10 页含扫描图片'] },
+    search: { id: 'c2', type: '搜索', target: '“阅读 Text 3” · 真题/', status: 'done', result: '5 处', ms: 900, output: ['真题/2023-英语一.pdf　第 9 页', '真题/2022-英语一.pdf　第 8 页', '真题/2021-英语一.pdf　第 9 页', '真题/2020-英语一.pdf　第 8 页', '真题/2019-英语一.pdf　第 9 页'] },
+    fail: { id: 'c3', type: '运行', target: 'python3 tools/split_pdf.py 真题/2023-英语一.pdf', status: 'failed', result: '退出 1', ms: 3200, output: ['Traceback (most recent call last):', '  File "tools/split_pdf.py", line 41, in split', 'pdfplumber.exceptions.PDFSyntaxError: 第 9 页的图片层无法解析', '提示：加 --skip-images 可跳过图片层'] },
+    edit: { id: 'c4', type: '编辑', target: '错题本.md', status: 'done', result: '+12 −0', ms: 200, output: ['新增 12 行：2023 年 Text 3 的 4 道错题'] },
+    run: { id: 'c5', type: '运行', target: 'python3 tools/split_pdf.py 真题/2023-英语一.pdf --skip-images', status: 'running', result: '', output: [] },
+    rej: { id: 'c6', type: '运行', target: 'rm -rf 输出/', status: 'rejected', result: '你拒绝了', ms: null, output: ['你拒绝了这次删除。Agent 改为只写入新文件，不删除任何东西。'] }
+  };
+  var NORMAL = { state: 'ready', calls: [C.read, C.search, C.fail, C.edit] };
+  var rerunTarget = function (c) { return c.target.indexOf('split_pdf') >= 0 && c.target.indexOf('--skip-images') < 0 ? c.target + ' --skip-images' : c.target; };
+  var rerunDone = function (c) { return c.target.indexOf('split_pdf') >= 0 ? { result: '切出 5 篇', output: ['切出 5 篇阅读理解', '输出到 输出/2023-英语一/', '跳过第 9–10 页的图片层'] } : { result: c.result, output: c.output }; };
+  var O = { rerunTarget: rerunTarget, rerunDone: rerunDone };
+
+  var main = mount(document.getElementById('main'), { state: 'loading' }, Object.assign({ global: true, demo: function () { return NORMAL; } }, O));
+  window.card = { set: function (p) { return main.set(p); }, get: main.get };
+  setTimeout(function () { main.set(NORMAL); }, 700);
+
+  var log = document.getElementById('log');
+  document.addEventListener('hx-action', function (e) { log.textContent = 'hx-action ' + JSON.stringify(e.detail); });
+
+  var sims = [
+    ['加载中', function () { main.set({ state: 'loading' }); }],
+    ['正常', function () { main.set(NORMAL); }],
+    ['逐条到达', function () {
+      main.set({ state: 'ready', calls: [] });
+      [C.read, C.search, C.fail, C.edit].forEach(function (c, i) { setTimeout(function () { main.set({ calls: [C.read, C.search, C.fail, C.edit].slice(0, i + 1) }); }, 500 + i * 900); });
+    }],
+    ['运行中', function () { main.set({ state: 'ready', calls: [C.read, C.search, Object.assign({}, C.run, { startedAt: Date.now() })] }); }],
+    ['被拒绝', function () { main.set({ state: 'ready', calls: [C.read, C.rej] }); }],
+    ['出错', function () { main.set({ state: 'error', error: '没读出调用记录：连接中断' }); }]
+  ];
+  var bar = document.getElementById('sim');
+  sims.forEach(function (x) { var b = document.createElement('button'); b.type = 'button'; b.className = 'pbtn'; b.textContent = x[0]; b.addEventListener('click', x[1]); bar.appendChild(b); });
+
+  var g = document.getElementById('gallery');
+  [
+    ['加载（骨架）', { state: 'loading' }],
+    ['正常', { state: 'ready', calls: [C.read, C.search, C.edit] }],
+    ['失败（展开看输出，可重跑）', { state: 'ready', calls: [C.read, Object.assign({}, C.fail, { open: true })] }],
+    ['运行中（实时计时，可停止）', { state: 'ready', calls: [C.read, Object.assign({}, C.run, { startedAt: Date.now() - 1800 })] }],
+    ['被拒绝', { state: 'ready', calls: [C.read, C.rej] }],
+    ['出错（可重试）', { state: 'error', error: '没读出调用记录：连接中断' }]
+  ].forEach(function (x) {
+    var cell = document.createElement('div'); cell.className = 'sec';
+    cell.innerHTML = '<h2>' + x[0] + '</h2><div class="tc"></div>'; g.appendChild(cell);
+    mount(cell.querySelector('.tc'), x[1], Object.assign({ demo: function () { return NORMAL; } }, O));
+  });
+
+  var theme = document.getElementById('theme'), rootEl = document.documentElement;
+  theme.addEventListener('click', function () {
+    var on = theme.getAttribute('aria-pressed') !== 'true'; theme.setAttribute('aria-pressed', on);
+    rootEl.setAttribute('data-theme', on ? 'dark' : 'light'); theme.textContent = on ? '浅色' : '深色';
+  });
+})();
+</script>
+</body>
+</html>
