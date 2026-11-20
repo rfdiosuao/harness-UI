@@ -1,17 +1,20 @@
 import type Anthropic from '@anthropic-ai/sdk';
-import type { HarnessEvent } from '@harnesskit/core';
+import type { AskPart, HarnessEvent, RiskLevel, ToolCallPart, TranscriptState } from '@harnesskit/core';
 
 type Raw = Anthropic.RawMessageStreamEvent;
 
 /**
- * A replay step. `model` steps are Anthropic wire events (fed through the
- * real adapter); `harness` steps are what your tool runner would emit; a
- * `gate` pauses until the user answers the permission prompt.
+ * A replay step.
+ * - `model`: an Anthropic wire event, fed through the real adapter.
+ * - `harness`: what your tool runner would emit.
+ * - `wait`: pause until the transcript satisfies a condition (the user answered, approved…).
+ * - `then`: build the next steps from the transcript, so the story follows the user's choices.
  */
 export type Step =
   | { kind: 'model'; event: Raw; delay: number }
   | { kind: 'harness'; event: HarnessEvent; delay: number }
-  | { kind: 'gate'; toolCallId: string };
+  | { kind: 'wait'; until: (state: TranscriptState) => boolean }
+  | { kind: 'then'; next: (state: TranscriptState) => Step[] };
 
 type Block =
   | { type: 'thinking'; text: string }
@@ -32,7 +35,7 @@ function chunks(text: string, base: number): string[] {
   return out;
 }
 
-class Script {
+export class Script {
   readonly steps: Step[] = [];
 
   private model(event: object, delay = 28) {
@@ -43,8 +46,12 @@ class Script {
     this.steps.push({ kind: 'harness', event, delay });
   }
 
-  gate(toolCallId: string) {
-    this.steps.push({ kind: 'gate', toolCallId });
+  wait(until: (state: TranscriptState) => boolean) {
+    this.steps.push({ kind: 'wait', until });
+  }
+
+  then(next: (state: TranscriptState) => Step[]) {
+    this.steps.push({ kind: 'then', next });
   }
 
   user(messageId: string, text: string) {
@@ -71,8 +78,8 @@ class Script {
           break;
         case 'tool_use':
           this.model({ type: 'content_block_start', index, content_block: { type: 'tool_use', id: block.id, name: block.name, input: {} } }, 120);
-          for (const c of chunks(JSON.stringify(block.input), 5)) {
-            this.model({ type: 'content_block_delta', index, delta: { type: 'input_json_delta', partial_json: c } }, 40);
+          for (const c of chunks(JSON.stringify(block.input), 7)) {
+            this.model({ type: 'content_block_delta', index, delta: { type: 'input_json_delta', partial_json: c } }, 25);
           }
           break;
       }
@@ -83,128 +90,203 @@ class Script {
   }
 
   /** Execute a tool: stream output lines, then report the result. */
-  run(toolCallId: string, lines: string[], opts: { approved?: boolean; lineDelay?: number; result?: unknown } = {}) {
+  run(toolCallId: string, lines: string[], opts: { approved?: boolean; lineDelay?: number } = {}) {
     if (!opts.approved) this.harness({ type: 'tool.run', toolCallId }, 150);
     for (const line of lines) {
       this.harness({ type: 'tool.output.delta', toolCallId, delta: `${line}\n` }, opts.lineDelay ?? 90);
     }
-    this.harness({ type: 'tool.result', toolCallId, output: opts.result }, 300);
+    this.harness({ type: 'tool.result', toolCallId }, 300);
   }
 }
 
-const PACKAGE_JSON = `{
-  "name": "acme-web",
-  "private": true,
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build --emptyOutDir false",
-    "preview": "vite preview"
-  }
-}`;
+// ---------------------------------------------------------------------------
+// The "set up CI" story
+// ---------------------------------------------------------------------------
 
-export function buildScenario() {
-  const main = new Script();
-  main.user('u1', 'The build keeps shipping stale chunks. Can you clean out dist/ and rebuild?');
-  main.assistant(
+const PROVIDERS = [
+  { id: 'gha', label: 'GitHub Actions', description: 'The repo is on GitHub, and it is free for public repos.', recommended: true },
+  { id: 'gitlab', label: 'GitLab CI', description: 'If you mirror to GitLab.' },
+  { id: 'circle', label: 'CircleCI', description: 'Faster caches, separate account.' },
+];
+
+const CHECKS = [
+  { id: 'typecheck', label: 'Typecheck', description: 'tsc --noEmit', recommended: true, command: 'npm run typecheck' },
+  { id: 'test', label: 'Unit tests', description: 'vitest run', recommended: true, command: 'npm test' },
+  { id: 'build', label: 'Production build', description: 'vite build', command: 'npm run build' },
+  { id: 'lint', label: 'Lint', description: 'eslint .', command: 'npm run lint' },
+];
+
+function askAt(state: TranscriptState, askId: string): AskPart | undefined {
+  const loc = state.askIndex[askId];
+  return loc ? (state.messages[loc.message]!.parts[loc.part] as AskPart) : undefined;
+}
+
+function toolAt(state: TranscriptState, id: string): ToolCallPart | undefined {
+  const loc = state.toolIndex[id];
+  return loc ? (state.messages[loc.message]!.parts[loc.part] as ToolCallPart) : undefined;
+}
+
+export function buildScenario(): Step[] {
+  const s = new Script();
+  s.user('u1', 'Set up CI for this repo.');
+  s.assistant(
     'msg_01',
     [
       {
         type: 'thinking',
-        text: 'Stale chunks usually mean old files survive between builds. Check the build script and what is actually in dist/ before deleting anything.',
+        text: 'Before writing a workflow I need two things only the user knows: which CI provider, and which checks they want gating pull requests. Ask both at once.',
       },
-      { type: 'text', text: "Let me check the build script and what's currently in `dist/`." },
-      { type: 'tool_use', id: 'toolu_01', name: 'read_file', input: { file_path: 'package.json' } },
-      { type: 'tool_use', id: 'toolu_02', name: 'bash', input: { command: 'ls -lh dist/assets', description: 'List build output' } },
+      { type: 'text', text: 'Two quick questions before I write the workflow:' },
     ],
     'tool_use',
   );
-  main.run('toolu_01', PACKAGE_JSON.split('\n'), { lineDelay: 25 });
-  main.run('toolu_02', [
-    'total 1.6M',
-    '-rw-r--r--  1 dev  staff   4.1K Nov 14 09:12 index-4f2a91.css',
-    '-rw-r--r--  1 dev  staff   412K Nov 14 09:12 index-4f2a91.js',
-    '-rw-r--r--  1 dev  staff   3.9K Oct 28 17:40 index-9c1e07.css',
-    '-rw-r--r--  1 dev  staff   409K Oct 28 17:40 index-9c1e07.js',
-    '-rw-r--r--  1 dev  staff   388K Sep 30 11:02 index-b03d55.js',
-  ]);
-  main.assistant(
+  s.harness({
+    type: 'ask.request',
+    messageId: 'msg_01',
+    partId: 'msg_01:ask-provider',
+    askId: 'provider',
+    header: 'CI provider',
+    question: 'Which CI provider should I set up?',
+    options: PROVIDERS,
+    allowOther: true,
+  }, 120);
+  s.harness({
+    type: 'ask.request',
+    messageId: 'msg_01',
+    partId: 'msg_01:ask-checks',
+    askId: 'checks',
+    header: 'Checks',
+    question: 'What should run on every pull request?',
+    options: CHECKS.map(({ command: _, ...o }) => o),
+    multiSelect: true,
+  }, 0);
+  s.wait((st) => askAt(st, 'provider')?.status === 'answered' && askAt(st, 'checks')?.status === 'answered');
+  s.then(proposeChanges);
+  return s.steps;
+}
+
+interface Change {
+  id: string;
+  name: string;
+  input: object;
+  risk: RiskLevel;
+  reason: string;
+  done: string;
+  output: string[];
+}
+
+function proposeChanges(state: TranscriptState): Step[] {
+  const provider = askAt(state, 'provider')!.answer!;
+  const checks = CHECKS.filter((c) => askAt(state, 'checks')!.answer!.selected.includes(c.id));
+  const providerId = provider.selected[0];
+  const providerName = provider.other ?? PROVIDERS.find((p) => p.id === providerId)!.label;
+  const commands = checks.map((c) => c.command);
+
+  const run = commands.map((c) => `      - run: ${c}`).join('\n');
+  const config =
+    providerId === 'gha'
+      ? {
+          path: '.github/workflows/ci.yml',
+          content: `name: CI\non:\n  pull_request:\n  push:\n    branches: [main]\njobs:\n  ci:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: 22\n          cache: npm\n      - run: npm ci\n${run}\n`,
+        }
+      : providerId === 'gitlab'
+        ? { path: '.gitlab-ci.yml', content: `image: node:22\nci:\n  script:\n    - npm ci\n${commands.map((c) => `    - ${c}`).join('\n')}\n` }
+        : providerId === 'circle'
+          ? {
+              path: '.circleci/config.yml',
+              content: `version: 2.1\njobs:\n  ci:\n    docker:\n      - image: cimg/node:22.0\n    steps:\n      - checkout\n      - run: npm ci\n${commands.map((c) => `      - run: ${c}`).join('\n')}\nworkflows:\n  ci:\n    jobs: [ci]\n`,
+            }
+          : { path: 'scripts/ci.sh', content: `#!/usr/bin/env sh\nset -e\nnpm ci\n${commands.join('\n')}\n` };
+
+  const changes: Change[] = [
+    {
+      id: 'toolu_write',
+      name: 'write_file',
+      input: { file_path: config.path, content: config.content },
+      risk: 'medium',
+      reason: `Creates ${config.path}`,
+      done: `Created \`${config.path}\` running ${checks.map((c) => c.label.toLowerCase()).join(', ')}`,
+      output: [`Wrote ${config.content.split('\n').length - 1} lines to ${config.path}`],
+    },
+  ];
+  if (checks.some((c) => c.id === 'typecheck')) {
+    changes.push({
+      id: 'toolu_script',
+      name: 'bash',
+      input: { command: 'npm pkg set scripts.typecheck="tsc --noEmit"' },
+      risk: 'low',
+      reason: 'Adds a typecheck script to package.json',
+      done: 'Added `npm run typecheck` to package.json',
+      output: [],
+    });
+  }
+  if (providerId === 'gha') {
+    changes.push({
+      id: 'toolu_protect',
+      name: 'bash',
+      input: { command: 'gh api -X PUT repos/acme/web/branches/main/protection --input protection.json' },
+      risk: 'high',
+      reason: 'Changes branch protection on main: merges will require CI to pass.',
+      done: 'Protected `main`: pull requests need a green CI run to merge',
+      output: ['{', '  "required_status_checks": { "strict": true, "contexts": ["ci"] },', '  "enforce_admins": false', '}'],
+    });
+  }
+
+  const s = new Script();
+  const list = checks.map((c) => `\`${c.command}\``).join(', ');
+  s.assistant(
     'msg_02',
     [
       {
         type: 'text',
-        text: 'Found it: the build runs with `--emptyOutDir false`, so three generations of `index-*.js` are piling up. I\'ll delete `dist/` and do a clean build.',
+        text: `Setting up **${providerName}** to run ${list || 'no checks yet'} on every pull request. ${
+          changes.length === 1 ? 'One change, which needs' : `${changes.length} changes, each needs`
+        } your OK:`,
       },
-      {
-        type: 'tool_use',
-        id: 'toolu_03',
-        name: 'bash',
-        input: { command: 'rm -rf dist && npm run build', description: 'Delete dist/ and rebuild' },
-      },
+      ...changes.map((c) => ({ type: 'tool_use' as const, id: c.id, name: c.name, input: c.input })),
     ],
     'tool_use',
   );
-  main.harness({
-    type: 'tool.permission.request',
-    toolCallId: 'toolu_03',
-    risk: 'high',
-    reason: 'Recursively deletes dist/ (6 files, 1.6 MB)',
-  });
-  main.gate('toolu_03');
+  for (const c of changes) {
+    s.harness({ type: 'tool.permission.request', toolCallId: c.id, risk: c.risk, reason: c.reason }, 60);
+  }
+  s.wait((st) => changes.every((c) => toolAt(st, c.id)?.status !== 'awaiting-permission'));
+  s.then((st) => finish(st, changes));
+  return s.steps;
+}
 
-  const allow = new Script();
-  allow.run(
-    'toolu_03',
-    [
-      '> acme-web@0.0.0 build',
-      '> vite build --emptyOutDir false',
-      '',
-      'vite v8.3.8 building for production...',
-      '✓ 214 modules transformed.',
-      'dist/index.html                  0.46 kB │ gzip:   0.30 kB',
-      'dist/assets/index-7d3e2c.css     4.12 kB │ gzip:   1.38 kB',
-      'dist/assets/index-7d3e2c.js    412.80 kB │ gzip: 131.02 kB',
-      '✓ built in 1.84s',
-    ],
-    { approved: true, lineDelay: 220 },
-  );
-  allow.assistant(
-    'msg_03',
+function finish(state: TranscriptState, changes: Change[]): Step[] {
+  const s = new Script();
+  const allowed = changes.filter((c) => toolAt(state, c.id)?.permission?.decision === 'allow');
+  const denied = changes.filter((c) => toolAt(state, c.id)?.permission?.decision === 'deny');
+  for (const c of allowed) s.run(c.id, c.output, { approved: true, lineDelay: 160 });
+
+  const lines: string[] = [];
+  if (allowed.length === 0) {
+    lines.push('**Nothing changed.** You denied every step, so the repo is as it was.');
+  } else {
+    lines.push(allowed.length === changes.length ? '**CI is set up.**' : '**CI is partly set up.**', '');
+    for (const c of allowed) lines.push(`- ${c.done}`);
+    for (const c of denied) lines.push(`- Skipped (you denied it): ${c.reason.charAt(0).toLowerCase()}${c.reason.slice(1)}`);
+    lines.push('', 'Push a branch and open a pull request to see it run.');
+  }
+  s.assistant('msg_03', [{ type: 'text', text: lines.join('\n') }], 'end_turn');
+  return s.steps;
+}
+
+/** Reply to a message the user queued or sent after the run. */
+export function followUp(n: number, text: string): Step[] {
+  const s = new Script();
+  s.user(`u-f${n}`, text);
+  s.assistant(
+    `msg-f${n}`,
     [
       {
         type: 'text',
-        text: [
-          '**Clean build done.** The stale bundles are gone:',
-          '',
-          '| | JS chunks | Size |',
-          '|---|--:|--:|',
-          '| Before | 3 | 1.6 MB |',
-          '| After | 1 | 417 kB |',
-          '',
-          'To stop this from coming back, drop the flag from `package.json`:',
-          '',
-          '```diff',
-          '-   "build": "vite build --emptyOutDir false",',
-          '+   "build": "vite build",',
-          '```',
-          '',
-          'Want me to make that change?',
-        ].join('\n'),
+        text: `Got it: *${text.replace(/[*_`[\]]/g, '')}*. This playground is scripted, so I can't act on it, but in a real harness a queued message starts the next turn as soon as the agent is free.`,
       },
     ],
     'end_turn',
   );
-
-  const deny = new Script();
-  deny.assistant(
-    'msg_03',
-    [
-      {
-        type: 'text',
-        text: "Understood, I left `dist/` alone. The root cause is `--emptyOutDir false` in the build script; removing that flag makes every build start clean without deleting anything by hand.",
-      },
-    ],
-    'end_turn',
-  );
-
-  return { main: main.steps, allow: allow.steps, deny: deny.steps };
+  return s.steps;
 }

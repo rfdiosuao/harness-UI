@@ -41,6 +41,23 @@ export type PermissionDecision = 'allow' | 'deny';
 /** `always` asks the harness to remember the decision for similar calls. */
 export type PermissionScope = 'once' | 'always';
 
+export interface AskOption {
+  id: string;
+  label: string;
+  description?: string;
+  /** Shown first and marked as the agent's suggestion. */
+  recommended?: boolean;
+}
+
+export interface AskAnswer {
+  /** Ids of the chosen options. */
+  selected: string[];
+  /** Free-text answer, when the question allows one. */
+  other?: string;
+}
+
+export type AskStatus = 'pending' | 'answered' | 'cancelled';
+
 interface Base {
   /** Epoch milliseconds. Optional; used for durations only. */
   at?: number;
@@ -62,11 +79,38 @@ export type HarnessEvent =
       toolCallId: string;
       decision: PermissionDecision;
       scope?: PermissionScope;
+      /** With `scope: 'always'`: the rule the harness should remember, e.g. `bash(npm run *)`. */
+      rule?: string;
     })
   | (Base & { type: 'tool.run'; toolCallId: string })
   | (Base & { type: 'tool.output.delta'; toolCallId: string; delta: string })
   | (Base & { type: 'tool.result'; toolCallId: string; output?: unknown; isError?: boolean })
-  | (Base & { type: 'tool.interrupt'; toolCallId: string; reason?: string });
+  | (Base & { type: 'tool.interrupt'; toolCallId: string; reason?: string })
+  | (Base & {
+      type: 'ask.request';
+      messageId: string;
+      partId: string;
+      askId: string;
+      question: string;
+      /** Short label, e.g. "CI provider". */
+      header?: string;
+      options: AskOption[];
+      multiSelect?: boolean;
+      /** Offer a free-text answer next to the options. */
+      allowOther?: boolean;
+      /** When the question came from a tool call (e.g. an `ask_user` tool), its id. */
+      toolCallId?: string;
+    })
+  | (Base & { type: 'ask.answer'; askId: string; answer: AskAnswer })
+  | (Base & { type: 'ask.cancel'; askId: string; reason?: string })
+  /**
+   * The user stopped the agent. Ends streaming messages, interrupts every
+   * unfinished tool call, and cancels pending questions.
+   */
+  | (Base & { type: 'turn.interrupt'; reason?: string })
+  /** A message the user typed while the agent was busy, waiting to be sent. */
+  | (Base & { type: 'queue.add'; queueId: string; text: string })
+  | (Base & { type: 'queue.remove'; queueId: string });
 
 export type HarnessEventType = HarnessEvent['type'];
 
@@ -96,6 +140,7 @@ export interface ToolPermission {
   reason?: string;
   decision?: PermissionDecision;
   scope?: PermissionScope;
+  rule?: string;
 }
 
 export interface ToolCallPart {
@@ -123,7 +168,30 @@ export interface ToolCallPart {
   endedAt?: number;
 }
 
-export type Part = TextPart | ThinkingPart | ToolCallPart;
+export interface AskPart {
+  kind: 'ask';
+  id: string;
+  askId: string;
+  question: string;
+  header?: string;
+  options: AskOption[];
+  multiSelect: boolean;
+  allowOther: boolean;
+  status: AskStatus;
+  answer?: AskAnswer;
+  cancelReason?: string;
+  toolCallId?: string;
+  askedAt?: number;
+  answeredAt?: number;
+}
+
+export type Part = TextPart | ThinkingPart | ToolCallPart | AskPart;
+
+export interface QueuedMessage {
+  id: string;
+  text: string;
+  at?: number;
+}
 
 export interface Message {
   id: string;
@@ -137,6 +205,10 @@ export interface TranscriptState {
   messages: Message[];
   /** toolCallId → position, for O(1) tool event routing. */
   toolIndex: Record<string, { message: number; part: number }>;
+  /** askId → position. */
+  askIndex: Record<string, { message: number; part: number }>;
+  /** Messages the user queued while the agent was busy, oldest first. */
+  queue: QueuedMessage[];
   /** Events the reducer ignored (unknown ids, illegal transitions). Useful in dev. */
   warnings: string[];
 }

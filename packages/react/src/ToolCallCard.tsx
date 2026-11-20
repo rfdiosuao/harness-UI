@@ -18,6 +18,7 @@ import {
   Square,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
+import { Button, RiskBadge } from './ui';
 import { cx, formatDuration } from './utils';
 
 export interface ToolCallCardLabels {
@@ -143,12 +144,6 @@ function Section({ label, tone, children }: { label: string; tone?: 'danger'; ch
   );
 }
 
-const RISK_TONE: Record<RiskLevel, string> = {
-  low: 'border-hk-border text-hk-muted',
-  medium: 'border-hk-warning/40 text-hk-warning',
-  high: 'border-hk-danger/40 text-hk-danger',
-};
-
 /**
  * One tool call, from streaming input through approval to result.
  *
@@ -222,25 +217,23 @@ export function ToolCallCard({
 
       {part.status === 'awaiting-permission' && (
         <div className="flex flex-wrap items-center gap-2 border-t border-hk-warning/30 bg-hk-warning-subtle px-3 py-2">
-          {risk && (
-            <span className={cx('rounded-full border px-2 py-px text-[11px] font-medium', RISK_TONE[risk])}>
-              {labels.risk[risk]}
-            </span>
-          )}
+          {risk && <RiskBadge risk={risk}>{labels.risk[risk]}</RiskBadge>}
           {part.permission?.reason && (
             <span className="min-w-0 flex-1 text-xs text-hk-fg">{part.permission.reason}</span>
           )}
           {onPermission && (
             <div className="ml-auto flex shrink-0 gap-1.5">
-              <PermissionButton variant="ghost" onClick={() => onPermission('deny', 'once')}>
+              <Button variant="ghost" onClick={() => onPermission('deny', 'once')}>
                 {labels.deny}
-              </PermissionButton>
-              <PermissionButton variant="secondary" onClick={() => onPermission('allow', 'always')}>
-                {labels.allowAlways}
-              </PermissionButton>
-              <PermissionButton variant="primary" onClick={() => onPermission('allow', 'once')}>
+              </Button>
+              {risk !== 'high' && (
+                <Button variant="secondary" onClick={() => onPermission('allow', 'always')}>
+                  {labels.allowAlways}
+                </Button>
+              )}
+              <Button variant="primary" onClick={() => onPermission('allow', 'once')}>
                 {labels.allow}
-              </PermissionButton>
+              </Button>
             </div>
           )}
         </div>
@@ -271,30 +264,5 @@ export function ToolCallCard({
         )}
       </Collapsible.Content>
     </Collapsible.Root>
-  );
-}
-
-function PermissionButton({
-  variant,
-  onClick,
-  children,
-}: {
-  variant: 'primary' | 'secondary' | 'ghost';
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cx(
-        'rounded-md px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hk-accent',
-        variant === 'primary' && 'bg-hk-accent text-hk-accent-fg hover:opacity-90',
-        variant === 'secondary' && 'border border-hk-border bg-hk-surface hover:bg-hk-subtle',
-        variant === 'ghost' && 'text-hk-muted hover:bg-hk-subtle hover:text-hk-fg',
-      )}
-    >
-      {children}
-    </button>
   );
 }

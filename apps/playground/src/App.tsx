@@ -1,4 +1,7 @@
 import {
+  pendingPermissions,
+  runStatus,
+  type AskAnswer,
   type Message,
   type PermissionDecision,
   type PermissionScope,
@@ -6,72 +9,131 @@ import {
   type ThinkingPart,
 } from '@harnesskit/core';
 import { createAnthropicAdapter } from '@harnesskit/core/anthropic';
-import { formatDuration, StreamingMarkdown, ToolCallCard, useTranscript } from '@harnesskit/react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  AskUserCard,
+  Button,
+  formatDuration,
+  InterruptBar,
+  PermissionPrompt,
+  StreamingMarkdown,
+  ToolCallCard,
+  useTranscript,
+} from '@harnesskit/react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { galleryParts } from './gallery';
 import { MarkdownDemo } from './MarkdownDemo';
-import { buildScenario, type Step } from './scenario';
+import { buildScenario, followUp, type Step } from './scenario';
 
-type Phase = 'playing' | 'gated' | 'done';
+type Phase = 'playing' | 'waiting' | 'done';
 const SPEEDS = [1, 2, 4] as const;
 
+/**
+ * Plays a scenario through the real adapter and reducer. `wait` steps pause
+ * until the transcript says the user acted; `then` steps build what happens
+ * next from the transcript, so the story follows the user's choices.
+ */
 function useReplay() {
   const { state, dispatch, reset } = useTranscript();
-  const scenario = useMemo(buildScenario, []);
   const [phase, setPhase] = useState<Phase>('playing');
-  const [gate, setGate] = useState<string | null>(null);
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>(1);
 
   const queue = useRef<Step[]>([]);
   const timer = useRef<number | undefined>(undefined);
   const adapter = useRef(createAnthropicAdapter());
+  const stateRef = useRef(state);
+  const phaseRef = useRef(phase);
   const speedRef = useRef(speed);
+  const followUps = useRef(0);
+  stateRef.current = state;
+  phaseRef.current = phase;
   speedRef.current = speed;
 
+  const setPhaseNow = (p: Phase) => {
+    phaseRef.current = p;
+    setPhase(p);
+  };
+
   const tick = useCallback(() => {
-    const step = queue.current.shift();
-    if (!step) {
-      setPhase('done');
+    window.clearTimeout(timer.current);
+    for (;;) {
+      const step = queue.current[0];
+      if (!step) return setPhaseNow('done');
+      if (step.kind === 'wait') {
+        if (!step.until(stateRef.current)) return setPhaseNow('waiting');
+        queue.current.shift();
+        continue;
+      }
+      if (step.kind === 'then') {
+        queue.current.shift();
+        queue.current.unshift(...step.next(stateRef.current));
+        continue;
+      }
+      queue.current.shift();
+      if (step.kind === 'model') dispatch(adapter.current(step.event));
+      else dispatch({ ...step.event, at: Date.now() });
+      setPhaseNow('playing');
+      timer.current = window.setTimeout(tick, step.delay / speedRef.current);
       return;
     }
-    if (step.kind === 'gate') {
-      setGate(step.toolCallId);
-      setPhase('gated');
-      return;
-    }
-    if (step.kind === 'model') dispatch(adapter.current(step.event));
-    else dispatch({ ...step.event, at: Date.now() });
-    timer.current = window.setTimeout(tick, step.delay / speedRef.current);
   }, [dispatch]);
+
+  const play = useCallback(
+    (steps: Step[]) => {
+      queue.current = [...steps];
+      setPhaseNow('playing');
+      timer.current = window.setTimeout(tick, 200);
+    },
+    [tick],
+  );
 
   const restart = useCallback(() => {
     window.clearTimeout(timer.current);
     reset();
     adapter.current = createAnthropicAdapter();
-    queue.current = [...scenario.main];
-    setGate(null);
-    setPhase('playing');
-    timer.current = window.setTimeout(tick, 300);
-  }, [reset, scenario, tick]);
+    followUps.current = 0;
+    play(buildScenario());
+  }, [play, reset]);
 
-  const decide = useCallback(
-    (toolCallId: string, decision: PermissionDecision, scope: PermissionScope) => {
-      if (toolCallId !== gate) return;
-      dispatch({ type: 'tool.permission.resolve', toolCallId, decision, scope, at: Date.now() });
-      queue.current = [...(decision === 'allow' ? scenario.allow : scenario.deny)];
-      setGate(null);
-      setPhase('playing');
-      timer.current = window.setTimeout(tick, 200);
-    },
-    [dispatch, gate, scenario, tick],
-  );
+  // A `wait` step re-checks whenever the transcript changes.
+  useEffect(() => {
+    if (phaseRef.current === 'waiting') tick();
+  }, [state, tick]);
+
+  // When the run ends, send the oldest queued message.
+  useEffect(() => {
+    const next = state.queue[0];
+    if (phase !== 'done' || !next) return;
+    dispatch({ type: 'queue.remove', queueId: next.id });
+    play(followUp(++followUps.current, next.text));
+  }, [phase, state.queue, dispatch, play]);
 
   useEffect(() => {
     restart();
     return () => window.clearTimeout(timer.current);
   }, [restart]);
 
-  return { state, phase, gate, decide, restart, speed, setSpeed };
+  const interrupt = useCallback(() => {
+    window.clearTimeout(timer.current);
+    queue.current = [];
+    dispatch({ type: 'turn.interrupt', at: Date.now() });
+    setPhaseNow('done');
+  }, [dispatch]);
+
+  const send = useCallback(
+    (text: string) => {
+      if (phaseRef.current === 'done') play(followUp(++followUps.current, text));
+      else dispatch({ type: 'queue.add', queueId: `q${Date.now()}`, text, at: Date.now() });
+    },
+    [dispatch, play],
+  );
+
+  return { state, dispatch, phase, restart, interrupt, send, speed, setSpeed };
+}
+
+function useRunStartedAt(active: boolean) {
+  const [startedAt, setStartedAt] = useState<number | undefined>();
+  useEffect(() => setStartedAt(active ? Date.now() : undefined), [active]);
+  return startedAt;
 }
 
 function Thinking({ part }: { part: ThinkingPart }) {
@@ -88,19 +150,7 @@ function Thinking({ part }: { part: ThinkingPart }) {
   );
 }
 
-function Text({ part }: { part: TextPart }) {
-  return <StreamingMarkdown text={part.text} streaming={part.streaming} />;
-}
-
-function MessageView({
-  message,
-  gate,
-  onDecide,
-}: {
-  message: Message;
-  gate: string | null;
-  onDecide: (toolCallId: string, d: PermissionDecision, s: PermissionScope) => void;
-}) {
+function MessageView({ message, onAnswer }: { message: Message; onAnswer: (askId: string, answer: AskAnswer) => void }) {
   if (message.role === 'user') {
     const text = message.parts.find((p): p is TextPart => p.kind === 'text')?.text ?? '';
     return (
@@ -116,26 +166,73 @@ function MessageView({
           case 'thinking':
             return <Thinking key={part.id} part={part} />;
           case 'text':
-            return <Text key={part.id} part={part} />;
+            return <StreamingMarkdown key={part.id} text={part.text} streaming={part.streaming} />;
           case 'tool':
-            return (
-              <ToolCallCard
-                key={part.id}
-                part={part}
-                onPermission={
-                  part.toolCallId === gate ? (d, s) => onDecide(part.toolCallId, d, s) : undefined
-                }
-              />
-            );
+            // Approvals happen in the docked PermissionPrompt, so cards are read-only.
+            return <ToolCallCard key={part.id} part={part} />;
+          case 'ask':
+            return <AskUserCard key={part.id} part={part} onAnswer={onAnswer} />;
         }
       })}
     </div>
   );
 }
 
+function Composer({ onSend, busy }: { onSend: (text: string) => void; busy: boolean }) {
+  const [text, setText] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (text.trim() === '') {
+      setError('Type a message first.');
+      return;
+    }
+    onSend(text.trim());
+    setText('');
+  };
+  return (
+    <form onSubmit={submit} className="space-y-1">
+      <div className="flex gap-2">
+        <input
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value);
+            setError(null);
+          }}
+          aria-label="Message"
+          aria-invalid={!!error || undefined}
+          placeholder={busy ? 'Also update the README' : 'Add a lint step too'}
+          className="h-9 min-w-0 flex-1 rounded-md border border-hk-border bg-hk-surface px-3 text-sm outline-none placeholder:text-hk-muted focus:border-hk-accent"
+        />
+        <Button type="submit" variant="secondary" className="h-9">
+          {busy ? 'Queue' : 'Send'}
+        </Button>
+      </div>
+      {error && (
+        <p role="alert" className="text-xs text-hk-danger">
+          {error}
+        </p>
+      )}
+    </form>
+  );
+}
+
 export function App() {
-  const { state, phase, gate, decide, restart, speed, setSpeed } = useReplay();
+  const { state, dispatch, phase, restart, interrupt, send, speed, setSpeed } = useReplay();
+  const status = runStatus(state);
+  const permissions = useMemo(() => pendingPermissions(state), [state]);
+  const startedAt = useRunStartedAt(status !== 'idle');
   const toolCount = Object.keys(state.toolIndex).length;
+
+  const onResolve = useCallback(
+    (toolCallId: string, decision: PermissionDecision, scope: PermissionScope, rule?: string) =>
+      dispatch({ type: 'tool.permission.resolve', toolCallId, decision, scope, rule, at: Date.now() }),
+    [dispatch],
+  );
+  const onAnswer = useCallback(
+    (askId: string, answer: AskAnswer) => dispatch({ type: 'ask.answer', askId, answer, at: Date.now() }),
+    [dispatch],
+  );
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 sm:py-14">
@@ -143,8 +240,9 @@ export function App() {
         <p className="font-mono text-xs text-hk-muted">@harnesskit/react · v0.0.0</p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight">harnesskit playground</h1>
         <p className="mt-2 max-w-prose text-sm leading-relaxed text-hk-muted">
-          A scripted agent run streamed through the real Anthropic adapter and transcript reducer. It pauses
-          when a tool needs approval; what you click decides how it continues.
+          A scripted agent run streamed through the real Anthropic adapter and transcript reducer. The agent asks
+          you questions, waits for your approvals, and adapts to what you choose. Press Esc at any point to stop it,
+          or queue a message while it works.
         </p>
       </header>
 
@@ -154,7 +252,7 @@ export function App() {
             Live replay
           </h2>
           <span className="text-xs text-hk-muted" aria-live="polite">
-            {phase === 'gated' ? 'Waiting for your approval' : phase === 'done' ? 'Finished' : 'Streaming…'}
+            {phase === 'waiting' ? 'Waiting for you' : phase === 'done' ? 'Finished' : 'Streaming…'}
           </span>
           <div role="group" aria-label="Playback speed" className="flex rounded-md border border-hk-border p-0.5">
             {SPEEDS.map((s) => (
@@ -169,19 +267,28 @@ export function App() {
               </button>
             ))}
           </div>
-          <button
-            type="button"
-            onClick={restart}
-            className="rounded-md border border-hk-border px-2.5 py-1 text-xs font-medium hover:bg-hk-subtle"
-          >
+          <Button variant="secondary" onClick={restart}>
             Restart
-          </button>
+          </Button>
         </div>
 
-        <div className="min-h-[28rem] space-y-5 rounded-xl border border-hk-border bg-hk-surface/60 p-4 sm:p-5">
-          {state.messages.map((m) => (
-            <MessageView key={m.id} message={m} gate={gate} onDecide={decide} />
-          ))}
+        <div className="rounded-xl border border-hk-border bg-hk-surface/60">
+          <div className="min-h-[24rem] space-y-5 p-4 sm:p-5">
+            {state.messages.map((m) => (
+              <MessageView key={m.id} message={m} onAnswer={onAnswer} />
+            ))}
+          </div>
+          <div className="sticky bottom-0 space-y-2 rounded-b-xl border-t border-hk-border bg-hk-bg/95 p-3 backdrop-blur sm:p-4">
+            <PermissionPrompt requests={permissions} onResolve={onResolve} />
+            <InterruptBar
+              status={status}
+              onInterrupt={interrupt}
+              queue={state.queue}
+              onRemoveQueued={(queueId) => dispatch({ type: 'queue.remove', queueId })}
+              startedAt={startedAt}
+            />
+            <Composer onSend={send} busy={phase !== 'done'} />
+          </div>
         </div>
 
         <p className="mt-2 font-mono text-[11px] text-hk-muted">
@@ -199,9 +306,9 @@ export function App() {
           The ToolCallCard lifecycle. Cards that need attention open themselves; click any header to toggle.
         </p>
         <div className="space-y-2">
-          {galleryParts.map(({ status, part }) => (
-            <div key={status} className="grid gap-1.5 sm:grid-cols-[9.5rem_1fr] sm:gap-3">
-              <code className="pt-2 font-mono text-xs text-hk-muted">{status}</code>
+          {galleryParts.map(({ status: s, part }) => (
+            <div key={s} className="grid gap-1.5 sm:grid-cols-[9.5rem_1fr] sm:gap-3">
+              <code className="pt-2 font-mono text-xs text-hk-muted">{s}</code>
               <ToolCallCard part={part} onPermission={() => {}} />
             </div>
           ))}

@@ -16,3 +16,23 @@ export {
   type CodeBlockProps,
   type UrlKind,
 } from './StreamingMarkdown';
+export {
+  PermissionPrompt,
+  defaultPermissionPromptLabels,
+  type PermissionPromptProps,
+  type PermissionPromptLabels,
+} from './PermissionPrompt';
+export {
+  AskUserCard,
+  formatAskAnswer,
+  defaultAskUserCardLabels,
+  type AskUserCardProps,
+  type AskUserCardLabels,
+} from './AskUserCard';
+export {
+  InterruptBar,
+  defaultInterruptBarLabels,
+  type InterruptBarProps,
+  type InterruptBarLabels,
+} from './InterruptBar';
+export { Button, Kbd, RiskBadge, type ButtonVariant } from './ui';

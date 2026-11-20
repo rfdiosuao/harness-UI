@@ -1,6 +1,8 @@
 import { parsePartialJson } from './partial-json';
 import {
   TERMINAL_TOOL_STATUSES,
+  type AskAnswer,
+  type AskPart,
   type HarnessEvent,
   type Message,
   type Part,
@@ -13,6 +15,8 @@ import {
 export const initialTranscript: TranscriptState = Object.freeze({
   messages: [],
   toolIndex: {},
+  askIndex: {},
+  queue: [],
   warnings: [],
 }) as TranscriptState;
 
@@ -78,6 +82,62 @@ function updateTool(
   return replaceMessage(state, loc.message, replacePart(message, loc.part, next));
 }
 
+function updateAsk(
+  state: TranscriptState,
+  askId: string,
+  update: (part: AskPart) => AskPart | string,
+): TranscriptState {
+  const loc = state.askIndex[askId];
+  if (!loc) return warn(state, `Unknown askId ${askId}`);
+  const message = state.messages[loc.message]!;
+  const part = message.parts[loc.part] as AskPart;
+  const next = update(part);
+  if (typeof next === 'string') return warn(state, next);
+  return replaceMessage(state, loc.message, replacePart(message, loc.part, next));
+}
+
+/** Checks an answer against its question; returns the cleaned answer or an error. */
+export function validateAskAnswer(part: AskPart, answer: AskAnswer): AskAnswer | string {
+  const known = new Set(part.options.map((o) => o.id));
+  const selected = [...new Set(answer.selected)];
+  const unknown = selected.filter((id) => !known.has(id));
+  if (unknown.length > 0) return `Ask ${part.askId}: unknown option ${unknown.join(', ')}`;
+  const other = answer.other?.trim() || undefined;
+  if (other && !part.allowOther) return `Ask ${part.askId} does not accept a free-text answer`;
+  const count = selected.length + (other ? 1 : 0);
+  if (count === 0) return `Ask ${part.askId}: empty answer`;
+  if (!part.multiSelect && count > 1) return `Ask ${part.askId} is single-select but got ${count} answers`;
+  return other ? { selected, other } : { selected };
+}
+
+function interruptAll(state: TranscriptState, reason: string | undefined, at: number | undefined): TranscriptState {
+  const why = reason ?? 'Interrupted by user';
+  let changed = false;
+  const messages = state.messages.map((message) => {
+    let partsChanged = false;
+    const parts = message.parts.map((part): Part => {
+      if (part.kind === 'tool' && !isTerminal(part.status)) {
+        partsChanged = true;
+        return { ...part, status: 'interrupted', errorMessage: why, endedAt: at ?? part.endedAt };
+      }
+      if (part.kind === 'ask' && part.status === 'pending') {
+        partsChanged = true;
+        return { ...part, status: 'cancelled', cancelReason: why };
+      }
+      if (message.streaming) {
+        const ended = endPart(part, at);
+        if (ended !== part) partsChanged = true;
+        return ended;
+      }
+      return part;
+    });
+    if (!partsChanged && !message.streaming) return message;
+    changed = true;
+    return message.streaming ? { ...message, parts, streaming: false, stopReason: 'interrupted' } : { ...message, parts };
+  });
+  return changed ? { ...state, messages } : state;
+}
+
 function transition(
   part: ToolCallPart,
   to: ToolStatus,
@@ -136,7 +196,7 @@ function appendStreamText(
 }
 
 function endPart(part: Part, at: number | undefined): Part {
-  if (part.kind === 'tool' || !part.streaming) return part;
+  if (part.kind === 'tool' || part.kind === 'ask' || !part.streaming) return part;
   if (part.kind === 'thinking') return { ...part, streaming: false, endedAt: at ?? part.endedAt };
   return { ...part, streaming: false };
 }
@@ -272,7 +332,12 @@ export function reduceTranscript(state: TranscriptState, event: HarnessEvent): T
     case 'tool.permission.resolve':
       return updateTool(state, event.toolCallId, (part) =>
         transition(part, event.decision === 'allow' ? 'running' : 'denied', at, {
-          permission: { ...part.permission, decision: event.decision, scope: event.scope ?? 'once' },
+          permission: {
+            ...part.permission,
+            decision: event.decision,
+            scope: event.scope ?? 'once',
+            rule: event.scope === 'always' ? event.rule : undefined,
+          },
         }),
       );
 
@@ -297,6 +362,59 @@ export function reduceTranscript(state: TranscriptState, event: HarnessEvent): T
       return updateTool(state, event.toolCallId, (part) =>
         transition(part, 'interrupted', at, { errorMessage: event.reason ?? part.errorMessage }),
       );
+
+    case 'ask.request': {
+      if (state.askIndex[event.askId]) return warn(state, `Duplicate askId ${event.askId}`);
+      if (event.options.length === 0 && !event.allowOther) {
+        return warn(state, `Ask ${event.askId} has no options and no free-text answer`);
+      }
+      const m = findMessage(state, event.messageId);
+      if (m < 0) return warn(state, `Unknown messageId ${event.messageId}`);
+      const message = state.messages[m]!;
+      const part: AskPart = {
+        kind: 'ask',
+        id: event.partId,
+        askId: event.askId,
+        question: event.question,
+        header: event.header,
+        options: event.options,
+        multiSelect: !!event.multiSelect,
+        allowOther: !!event.allowOther,
+        status: 'pending',
+        toolCallId: event.toolCallId,
+        askedAt: at,
+      };
+      const next = replaceMessage(state, m, { ...message, parts: [...message.parts, part] });
+      return { ...next, askIndex: { ...next.askIndex, [event.askId]: { message: m, part: message.parts.length } } };
+    }
+
+    case 'ask.answer':
+      return updateAsk(state, event.askId, (part) => {
+        if (part.status !== 'pending') return `Ask ${part.askId} is already ${part.status}`;
+        const answer = validateAskAnswer(part, event.answer);
+        if (typeof answer === 'string') return answer;
+        return { ...part, status: 'answered', answer, answeredAt: at };
+      });
+
+    case 'ask.cancel':
+      return updateAsk(state, event.askId, (part) => {
+        if (part.status !== 'pending') return `Ask ${part.askId} is already ${part.status}`;
+        return { ...part, status: 'cancelled', cancelReason: event.reason };
+      });
+
+    case 'turn.interrupt':
+      return interruptAll(state, event.reason, at);
+
+    case 'queue.add': {
+      if (state.queue.some((q) => q.id === event.queueId)) return warn(state, `Duplicate queueId ${event.queueId}`);
+      if (event.text.trim() === '') return warn(state, `Queued message ${event.queueId} is empty`);
+      return { ...state, queue: [...state.queue, { id: event.queueId, text: event.text, at }] };
+    }
+
+    case 'queue.remove': {
+      if (!state.queue.some((q) => q.id === event.queueId)) return warn(state, `Unknown queueId ${event.queueId}`);
+      return { ...state, queue: state.queue.filter((q) => q.id !== event.queueId) };
+    }
 
     default: {
       const unknown: { type?: unknown } = event;

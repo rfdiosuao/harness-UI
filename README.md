@@ -64,6 +64,37 @@ dispatch({ type: 'tool.permission.request', toolCallId, risk: 'high', reason: 'D
 />
 ```
 
+### Human in the loop
+
+Three ways for a person to step in, built on the same events and selectors:
+
+```tsx
+import { pendingPermissions, runStatus } from '@harnesskit/core';
+
+<PermissionPrompt
+  requests={pendingPermissions(state)}
+  onResolve={(toolCallId, decision, scope, rule) =>
+    dispatch({ type: 'tool.permission.resolve', toolCallId, decision, scope, rule })}
+/>
+
+<AskUserCard part={askPart} onAnswer={(askId, answer) => dispatch({ type: 'ask.answer', askId, answer })} />
+
+<InterruptBar
+  status={runStatus(state)}            // 'idle' | 'running' | 'waiting'
+  onInterrupt={() => dispatch({ type: 'turn.interrupt' })}
+  queue={state.queue}
+  onRemoveQueued={(queueId) => dispatch({ type: 'queue.remove', queueId })}
+/>
+```
+
+- **`PermissionPrompt`** works through pending approvals one at a time. `y` / `a` / `n` while focused. High-risk calls turn shortcuts and "Always allow" off and need a click. "Allow all" only appears when nothing in the queue is high risk. "Always allow" previews the rule it will save (`suggestAlwaysRule` never generalizes a command containing shell operators).
+- **`AskUserCard`** renders a question inline: native radios or checkboxes, `1`–`9` to pick, `Enter` to submit (but not while an IME is composing), an optional free-text "Other", inline validation, and a one-line summary once answered.
+- **`InterruptBar`** shows whether the agent is working or waiting for you, stops it on `Esc` (ignored on key repeat, during IME composition, and when another handler already took the key), and lists queued messages.
+
+None of them steal focus from someone typing elsewhere.
+
+### Markdown
+
 Assistant text goes through `StreamingMarkdown`:
 
 ```tsx
@@ -90,6 +121,10 @@ A complete, typechecked agent loop (streaming, approval, execution, tool results
 | `tool.output.delta` | harness | Appends streamed output, for example terminal lines. |
 | `tool.result` | harness / adapter | → `success` or `error`. Server tools resolve from the stream. |
 | `tool.interrupt` | harness | → `interrupted`. |
+| `ask.request` | harness | The agent asks the user a question: options, single or multi-select, optional free text. |
+| `ask.answer` / `ask.cancel` | UI / harness | Answers are validated against the question; invalid ones are ignored with a warning. |
+| `turn.interrupt` | UI | The user stopped the agent: ends streaming messages, interrupts unfinished tools, cancels open questions. |
+| `queue.add` / `queue.remove` | UI / harness | Messages typed while the agent was busy, sent when it's ready. |
 
 Every event accepts an optional `at` timestamp (epoch ms), used only for durations.
 
@@ -100,14 +135,15 @@ Every event accepts an optional `at` timestamp (epoch ms), used only for duratio
 - [x] `ToolCallCard`: full lifecycle, inline approval, streaming input and output
 - [x] `StreamingMarkdown`: GFM rendering that repairs the unfinished tail, so half-written bold, code, links and fences never flash raw markers; only the block still streaming re-renders; raw HTML is shown as text and URLs are allow-listed
 - [ ] `StreamingMarkdown` follow-ups: syntax highlighting (the `CodeBlock` slot is ready for Shiki), math, footnotes, incremental lexing for very long messages
-- [ ] `ThinkingBlock`: collapsible reasoning with duration (a minimal version lives in the playground)
-- [ ] `PermissionPrompt`: standalone approval surface for modal or queue-style UIs
-- [ ] `PlanList`: task list with progress
+- [x] Human-in-the-loop suite: `PermissionPrompt`, `AskUserCard`, `InterruptBar`
 
 **Next**
 
-- [ ] `DiffView`, `TerminalOutput`, `FileChip`, `AskUserCard`, `SubagentCard`, `ContextMeter`, `InterruptBar`
-- [ ] Grouping consecutive tool calls; a virtualized `Transcript`
+- [ ] Long-transcript suite: `Transcript`, `ToolCallGroup`, `ThinkingBlock`
+- [ ] Coding-agent suite: `DiffView`, `TerminalOutput`, `FileChip`
+- [ ] Multi-agent suite: `SubagentCard`, `PlanList`
+- [ ] Status and cost suite: `ContextMeter`, `CostTicker`, `ErrorBanner`, `FallbackNotice`
+- [ ] Input and sources suite: `Composer`, `CitationChip`
 - [ ] Adapters for the OpenAI Responses API and the Vercel AI SDK UI message stream
 - [ ] An incremental partial-JSON parser (the current one re-parses the whole buffer on each delta)
 - [ ] shadcn-style registry so components can be copied into your project
