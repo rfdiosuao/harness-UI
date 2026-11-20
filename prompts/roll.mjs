@@ -6,7 +6,8 @@
 //   node prompts/roll.mjs -n 6         出 6 条（同一次里卡片和视觉世界不重复）
 //   node prompts/roll.mjs -n 6 -s 42   固定种子，结果可复现
 //   node prompts/roll.mjs --card flight-card --world split-flap   钉住其中几项，其余随机
-//   node prompts/roll.mjs --list       列出所有可钉住的 id
+//   node prompts/roll.mjs --list       列出所有可钉住的 id（卡片后面带它适合的 harness）
+//   node prompts/roll.mjs --harness 法律审查   只从适合这类 harness 的卡片里抽
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -24,7 +25,7 @@ const opt = (names, fallback) => {
 if (argv.includes('--list')) {
   for (const key of ['cards', 'worlds', 'motions', 'constraints']) {
     console.log(`\n${key}:`);
-    for (const x of pools[key]) console.log(`  ${x.id.padEnd(22)} ${x.name}`);
+    for (const x of pools[key]) console.log(`  ${x.id.padEnd(22)} ${x.name}${x.harness ? '  → ' + x.harness.join('、') : ''}`);
   }
   process.exit(0);
 }
@@ -41,6 +42,13 @@ function mulberry32(a) {
   };
 }
 const rand = mulberry32(seed);
+
+// --harness 关键字：只从适合这类 harness 的卡片里抽（匹配任意一个标注，包含即可）
+const wanted = opt(['--harness'], null);
+if (wanted) {
+  pools.cards = pools.cards.filter((c) => c.harness.some((h) => h.includes(wanted)));
+  if (!pools.cards.length) { console.error(`没有卡片标注了“${wanted}”（用 --list 查看）`); process.exit(1); }
+}
 
 // 洗牌后依次取，保证同一次里不重复；用完了再洗一遍
 const decks = {};
@@ -65,7 +73,7 @@ function pinned(key, flag) {
 
 const COMMON = `【通用要求】
 1. 只输出一个完整的 HTML 文件（<!doctype html> 开头），CSS 和 JS 全部内联；除 Google Fonts 外不引用任何外部资源，不用框架。
-2. <head> 里写 <meta name="hx-component" content="卡片 id"> 和 <meta name="hx-style" content="视觉世界 id">。
+2. <head> 里写 <meta name="hx-component" content="卡片 id">、<meta name="hx-style" content="视觉世界 id"> 和 <meta name="hx-harness" content="适合的 harness，用顿号分隔">；页面标题下面再用一行小字写出“适合的 harness：……”。
 3. 接口：实现 window.card.set(props)（可反复调用，只给一部分数据时显示骨架，不闪烁）；用户操作时 document.dispatchEvent(new CustomEvent('hx-action', { detail: { name, params } }))；页面底部放一个“Agent 回传”小条，显示最近一次动作的 JSON。
 4. 页面上方放一个“模拟 Agent”的小面板：几个按钮，分别把示例 props 的各个状态（加载、正常、特殊、出错、已操作）喂给 window.card.set。卡片的每种状态都要能切换到。
 5. 颜色、圆角、间距、字体都写成 :root 上的 CSS 变量（--hx- 前缀）；做深色和浅色两套，默认跟随系统，也支持 <html data-theme="light|dark">。视觉世界本来的那一套做到最好，另一套保证能用。中文字体配 Noto Sans SC。
@@ -81,10 +89,13 @@ for (let n = 1; n <= count; n++) {
   const motion = pinned('motions', '--motion') || draw('motions');
   const constraint = pinned('constraints', '--constraint') || draw('constraints');
   const scene = pools.scenes[Math.floor(rand() * pools.scenes.length)];
+  const fit = card.harness.join('、');
   out.push(`## ${n} · ${card.name} × ${world.name} × ${motion.name} × ${constraint.name}
 
+**适合的 harness：${fit}**
+
 \`\`\`text
-做一张 AI Agent 画给用户的「${card.name}」（id: ${card.id}）。
+做一张 AI Agent 画给用户的「${card.name}」（id: ${card.id}）。适合用在这些 harness 里：${fit}。
 
 场景：${scene}。Agent 正在帮用户处理这个处境里的一件具体的事，这张卡片是它在回答里直接画出来的。如果这个处境和这种卡片不太搭，就在同一个人的处境里找一件合理的、会用到这种卡片的小事。
 数据与动作（你来具体设计字段，并编出贴合场景的真实示例）：${card.spec}。

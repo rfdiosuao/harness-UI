@@ -14,6 +14,8 @@
 
 完整清单：`node prompts/roll.mjs --list`；要加新的，直接改 [pools.json](pools.json)。
 
+**每张卡片都标注了适合的 harness**（比如合同条款高亮卡 → 法律审查，转账确认卡 → 金融支付）。抽出来的提示词里会写明，并要求生成的页面把它写进 `<head>` 的 `hx-harness` 和标题下的一行小字。只想为某一类 harness 抽卡：`node prompts/roll.mjs --harness 法律审查`。已经做好的组件见 [../components/INDEX.md](../components/INDEX.md)。
+
 ## 怎么随机
 
 ```bash

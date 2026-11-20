@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>合同条款高亮卡 · 极简单线</title>
+<meta name="hx-component" content="clause-highlight">
+<meta name="hx-style" content="min-monoline">
+<meta name="hx-harness" content="法律审查、合同与采购审核">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500&display=swap">
+<style>
+/* 整张卡只有两种颜色：底色和墨色。状态靠线的形状、粗细和位置表达，不用透明度做灰色。 */
+:root {
+  --hx-bg: #F7F6F2;
+  --hx-ink: #151515;
+  --hx-line: 1.5px;
+  --hx-radius: 6px;
+  --hx-font: 'Noto Sans SC', system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --hx-bg: #101010; --hx-ink: #F2F1EC; }
+}
+:root[data-theme="dark"] { --hx-bg: #101010; --hx-ink: #F2F1EC; }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--hx-bg); color: var(--hx-ink); font-family: var(--hx-font); font-weight: 400; font-size: 15px; line-height: 1.7; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--hx-ink); outline-offset: 3px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---------- 页面 ---------- */
+.page { max-width: 960px; margin: 0 auto; padding: 36px 20px 64px; display: flex; flex-direction: column; gap: 36px; }
+.head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+.head h1 { margin: 0; font-size: 22px; font-weight: 300; }
+.head p { margin: 2px 0 0; font-size: 12px; }
+.pbtn { min-height: 44px; padding: 0 16px; border: var(--hx-line) solid var(--hx-ink); border-radius: var(--hx-radius); background: var(--hx-bg); font-size: 12px; }
+.pbtn:hover, .pbtn[aria-pressed="true"] { background: var(--hx-ink); color: var(--hx-bg); }
+.tools, .simbtns { display: flex; flex-wrap: wrap; gap: 8px; }
+.main { display: flex; flex-wrap: wrap; gap: 28px 44px; align-items: flex-start; }
+.col { flex: 0 1 360px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.sim { flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.lab { font-size: 12px; }
+.sim h2, .gal h2 { margin: 0; font-size: 12px; font-weight: 500; }
+.log { margin: 0; padding: 14px 16px; border: var(--hx-line) dashed var(--hx-ink); border-radius: var(--hx-radius); font-size: 12px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; min-height: 96px; font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace; }
+.gal { display: flex; flex-direction: column; gap: 16px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr)); gap: 28px; align-items: start; }
+
+/* ---------- 卡片 ---------- */
+.cl { width: 100%; max-width: 420px; border: var(--hx-line) solid var(--hx-ink); border-radius: var(--hx-radius); background: var(--hx-bg); color: var(--hx-ink); overflow: hidden; }
+.cl .body { padding: 20px 22px 4px; }
+.cl .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 22px; font-size: 12px; }
+.cl .meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cl .risk { flex: none; display: inline-flex; align-items: center; gap: 8px; font-size: 12px; }
+.cl .risk[hidden] { display: none; }
+.cl .risk[data-lv="high"] { font-weight: 500; }
+.cl .risk svg { display: block; overflow: visible; }
+.cl .risk .rail { stroke: var(--hx-ink); stroke-width: var(--hx-line); fill: none; stroke-linecap: round; }
+.cl .risk .pin { transition: transform .7s cubic-bezier(.2, .9, .25, 1.18); }
+.cl .risk .ring { fill: var(--hx-bg); stroke: var(--hx-ink); stroke-width: var(--hx-line); }
+.cl .risk .ring2 { fill: none; stroke: var(--hx-ink); stroke-width: var(--hx-line); opacity: 0; transition: opacity .3s .25s; }
+.cl .risk[data-lv="high"] .ring2 { opacity: 1; }
+.cl .title { margin: 14px 0 0; font-size: 22px; font-weight: 300; line-height: 1.35; letter-spacing: .01em; }
+.cl .text { margin: 10px 0 0; font-size: 15px; line-height: 2; text-wrap: pretty; }
+
+.fl { padding-bottom: 6px; -webkit-box-decoration-break: clone; box-decoration-break: clone; background-repeat: no-repeat;
+  background-image: linear-gradient(var(--hx-ink), var(--hx-ink)), linear-gradient(var(--hx-ink), var(--hx-ink)), linear-gradient(var(--hx-ink), var(--hx-ink));
+  background-position: 0 100%, 0 calc(100% - 4.5px), 0 calc(50% - 3px);
+  background-size: 0 var(--hx-line), 0 var(--hx-line), 0 var(--hx-line);
+  transition: background-size .8s cubic-bezier(.2, .8, .2, 1) var(--dl, 0s);
+}
+.fl.on { background-size: 100% var(--hx-line), 0 var(--hx-line), 0 var(--hx-line); }
+.fl.on.high { background-size: 100% var(--hx-line), 100% var(--hx-line), 0 var(--hx-line); }
+.fl.on.struck { background-size: 100% var(--hx-line), 100% var(--hx-line), 100% var(--hx-line); }
+.fl.on.struck:not(.high) { background-size: 100% var(--hx-line), 0 var(--hx-line), 100% var(--hx-line); }
+
+.sk { display: block; height: 2px; margin: 12px 0; background-image: repeating-linear-gradient(90deg, var(--hx-ink) 0 7px, transparent 7px 13px); background-size: 26px 100%; animation: march 1.1s linear infinite; }
+.sk.t { width: 46%; margin: 14px 0 6px; } .sk.m { width: 38%; margin: 8px 0; } .sk.w { width: 100%; } .sk.w2 { width: 86%; } .sk.w3 { width: 58%; }
+@keyframes march { to { background-position-x: 26px; } }
+
+.status { margin: 14px 0 0; min-height: 44px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 15px; }
+.status[hidden] { display: none; }
+.status svg { flex: none; overflow: visible; }
+.status .draw { fill: none; stroke: var(--hx-ink); stroke-width: var(--hx-line); stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 30; stroke-dashoffset: 30; animation: draw .55s .1s cubic-bezier(.3, .8, .3, 1) forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+.dots { display: inline-flex; gap: 6px; }
+.dots i { width: 8px; height: 8px; border: var(--hx-line) solid var(--hx-ink); border-radius: 50%; animation: dot 1.1s ease-in-out infinite; }
+.dots i:nth-child(2) { animation-delay: .15s; } .dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes dot { 0%, 100% { transform: scale(.6); } 50% { transform: scale(1.15); } }
+.link { padding: 0 6px; min-height: 44px; border: 0; background: transparent; font-size: 15px; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: var(--hx-line); }
+
+.acts { display: flex; flex-wrap: wrap; gap: 10px; padding: 16px 0 20px; }
+.acts[hidden] { display: none; }
+.btn { min-height: 44px; padding: 0 18px; border: var(--hx-line) solid var(--hx-ink); border-radius: var(--hx-radius); background: var(--hx-bg); font-size: 15px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: background-color .15s, color .15s, transform .12s; }
+.btn:hover:not(:disabled), .btn:active:not(:disabled) { background: var(--hx-ink); color: var(--hx-bg); }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:disabled { border-style: dashed; cursor: default; }
+.btn.main2 { margin: 5px; box-shadow: 0 0 0 3px var(--hx-bg), 0 0 0 calc(3px + var(--hx-line)) var(--hx-ink); }
+.btn svg { flex: none; }
+
+.handle { width: 100%; min-height: 48px; padding: 0 22px; border: 0; border-top: var(--hx-line) solid var(--hx-ink); border-radius: 0; background: var(--hx-bg); display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 15px; text-align: left; touch-action: none; user-select: none; cursor: grab; }
+.handle:active { cursor: grabbing; }
+.handle:disabled { cursor: default; }
+.handle .grip { flex: none; display: inline-flex; flex-direction: column; gap: 4px; }
+.handle .grip i { display: block; width: 18px; height: 0; border-top: var(--hx-line) solid var(--hx-ink); }
+.handle .lbl { flex: 1; min-width: 0; }
+.handle .lbl small { margin-left: 8px; font-size: 12px; }
+.handle .chev { flex: none; display: block; }
+
+.drawer { height: 0; overflow: hidden; border-top: 0; }
+.drawer .inner { padding: 4px 22px 22px; border-top: var(--hx-line) dashed var(--hx-ink); margin-top: -1px; }
+.drawer .l { will-change: opacity, transform; }
+.drawer .eyebrow { margin: 14px 0 0; font-size: 12px; }
+.drawer .sug { margin: 6px 0 0; font-size: 15px; line-height: 2; }
+.drawer .why { margin: 10px 0 0; font-size: 12px; line-height: 1.8; }
+.drawer .go { padding: 14px 0 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sk, .dots i { animation-duration: 3s; }
+  .fl { transition-duration: 1.6s; }
+  .cl .risk .pin { transition-duration: 1.4s; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="head">
+    <div>
+      <h1>合同条款高亮卡 · 极简单线</h1>
+      <p>Agent 读完一份合同，把有风险的条款画给用户。底色和墨色，两种颜色。建议改法像抽屉，往下拉。</p>
+      <p>适合的 harness：法律审查、合同与采购审核（也能用在租房、租赁这类要逐条看条款的场景）</p>
+    </div>
+    <div class="tools"><button type="button" class="pbtn" id="theme" aria-pressed="false">反色（深色）</button></div>
+  </header>
+
+  <section class="main" aria-label="主卡片">
+    <div class="col">
+      <div class="lab">可交互 · 拖动或点击「建议改法」</div>
+      <div class="cl" id="main-card"></div>
+    </div>
+    <div class="sim">
+      <h2>模拟 Agent</h2>
+      <div class="simbtns" id="sim"></div>
+      <h2>Agent 回传</h2>
+      <pre class="log" id="log" aria-live="polite">（点卡片上的按钮，这里显示 hx-action）</pre>
+    </div>
+  </section>
+
+  <section class="gal" aria-label="全部状态">
+    <h2>全部状态</h2>
+    <div class="grid" id="gallery"></div>
+  </section>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var clamp = function (x, a, b) { return Math.min(b, Math.max(a, x)); };
+  var uid = 0;
+
+  var TEMPLATE =
+    '<div class="body">' +
+      '<div class="top"><span class="meta" data-f="meta"></span>' +
+        '<span class="risk" data-f="risk" data-lv="medium" hidden>' +
+          '<svg width="72" height="16" viewBox="0 0 72 16" aria-hidden="true"><path class="rail" d="M2 8H70"/><g class="pin" data-f="pin"><circle class="ring2" cx="0" cy="8" r="7.5"/><circle class="ring" cx="0" cy="8" r="4.5"/></g></svg>' +
+          '<span data-f="risklabel"></span></span></div>' +
+      '<h3 class="title" data-f="title"></h3>' +
+      '<p class="text" data-f="text"></p>' +
+      '<div class="status" data-f="status" hidden></div>' +
+      '<div class="acts" data-f="acts">' +
+        '<button type="button" class="btn" data-f="keep">保留原文</button>' +
+        '<button type="button" class="btn" data-f="ask">追问</button>' +
+      '</div>' +
+    '</div>' +
+    '<button type="button" class="handle" data-f="handle" aria-expanded="false">' +
+      '<span class="grip" aria-hidden="true"><i></i><i></i></span>' +
+      '<span class="lbl" data-f="hlabel">建议改法</span>' +
+      '<svg class="chev" data-f="chev" width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l5 5 5-5"/></svg>' +
+    '</button>' +
+    '<div class="drawer" data-f="drawer" inert><div class="inner" data-f="inner">' +
+      '<div class="l eyebrow">Agent 建议改成</div>' +
+      '<p class="l sug" data-f="sug"></p>' +
+      '<p class="l why" data-f="why"></p>' +
+      '<div class="l go"><button type="button" class="btn main2" data-f="accept">接受建议' +
+        '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 8h11M9 3.5L13.5 8 9 12.5"/></svg></button></div>' +
+    '</div></div>' +
+    '<div class="sr" aria-live="polite" data-f="live"></div>';
+
+  var PIN = { low: 10, medium: 36, high: 62 };
+  var RISK_LABEL = { low: '风险 低', medium: '风险 中', high: '风险 高' };
+
+  /**
+   * props: { state: 'loading'|'ready'|'asking'|'accepted'|'kept'|'error',
+   *          doc, clauseNo, clauseTotal, title, text, flags: [phrase…], risk: 'low'|'medium'|'high',
+   *          suggestion: { text, reason }, error }
+   * 动作（hx-action）：accept-suggestion / keep-original / ask-followup / retry
+   */
+  function mount(root, init, opts) {
+    opts = opts || {};
+    root.innerHTML = TEMPLATE;
+    var $ = function (f) { return root.querySelector('[data-f="' + f + '"]'); };
+    var el = {};
+    ['meta', 'risk', 'pin', 'risklabel', 'title', 'text', 'status', 'acts', 'keep', 'ask', 'handle', 'hlabel', 'chev', 'drawer', 'inner', 'sug', 'why', 'accept', 'live'].forEach(function (k) { el[k] = $(k); });
+    var layers = root.querySelectorAll('.drawer .l');
+    var id = 'dr' + (++uid); el.drawer.id = id; el.handle.setAttribute('aria-controls', id);
+
+    var s = { state: 'loading', doc: null, clauseNo: null, clauseTotal: null, title: null, text: null, flags: [], risk: 'medium', suggestion: null, error: null };
+    var p = 0, v = 0, target = 0, raf = 0, H = 0, dragging = false, justDragged = false, lastSpoken = '', timer = 0;
+
+    function emit(name, params) {
+      var ev = new CustomEvent('hx-action', { detail: { name: name, params: params || {} }, bubbles: !!opts.global });
+      (opts.global ? document : root).dispatchEvent(ev);
+    }
+
+    /* ---------- 抽屉：弹簧 + 逐层露出 ---------- */
+    function measure() { H = el.inner.scrollHeight; }
+    function apply() {
+      el.drawer.style.height = (clamp(p, 0, 1.06) * H) + 'px';
+      for (var k = 0; k < layers.length; k++) {
+        var local = clamp((p - k * 0.15) / 0.42, 0, 1);
+        layers[k].style.opacity = local;
+        layers[k].style.transform = reduce ? 'none' : 'translateY(' + ((1 - local) * 14) + 'px)';
+      }
+      el.chev.style.transform = 'rotate(' + (clamp(p, 0, 1) * 180) + 'deg)';
+      var open = target > 0.5;
+      el.handle.setAttribute('aria-expanded', open);
+      if (p < 0.02 && !open) el.drawer.setAttribute('inert', ''); else el.drawer.removeAttribute('inert');
+    }
+    function springTo(t, v0) {
+      target = t; if (v0 != null) v = v0;
+      cancelAnimationFrame(raf);
+      var K = reduce ? 70 : 190, C = reduce ? 17 : 21, last = performance.now();
+      (function step(now) {
+        var dt = Math.min(0.032, (now - last) / 1000); last = now;
+        var a = -K * (p - target) - C * v; v += a * dt; p += v * dt;
+        apply();
+        if (Math.abs(p - target) < 0.0008 && Math.abs(v) < 0.004) { p = target; v = 0; apply(); return; }
+        raf = requestAnimationFrame(step);
+      })(last);
+    }
+    function setOpen(open) { measure(); springTo(open ? 1 : 0); }
+
+    el.handle.addEventListener('pointerdown', function (e) {
+      if (el.handle.disabled) return;
+      measure(); cancelAnimationFrame(raf);
+      var y0 = e.clientY, p0 = p, lastY = y0, lastT = performance.now(), vel = 0; dragging = false;
+      el.handle.setPointerCapture(e.pointerId);
+      function move(ev) {
+        var dy = ev.clientY - y0;
+        if (!dragging && Math.abs(dy) > 5) dragging = true;
+        if (!dragging) return;
+        var x = p0 + dy / Math.max(H, 1);
+        p = x > 1 ? 1 + (x - 1) * 0.22 : x < 0 ? x * 0.22 : x;   // 越界有阻力
+        var now = performance.now(); vel = ((ev.clientY - lastY) / Math.max(H, 1)) / Math.max(0.001, (now - lastT) / 1000); lastY = ev.clientY; lastT = now;
+        apply();
+      }
+      function up() {
+        el.handle.removeEventListener('pointermove', move); el.handle.removeEventListener('pointerup', up); el.handle.removeEventListener('pointercancel', up);
+        if (dragging) { justDragged = true; setTimeout(function () { justDragged = false; }, 0); springTo(p + vel * 0.12 > 0.5 ? 1 : 0, vel); }
+      }
+      el.handle.addEventListener('pointermove', move); el.handle.addEventListener('pointerup', up); el.handle.addEventListener('pointercancel', up);
+    });
+    el.handle.addEventListener('click', function () { if (justDragged) return; setOpen(target < 0.5); });
+    el.handle.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); setOpen(true); }
+      if (e.key === 'ArrowUp') { e.preventDefault(); setOpen(false); }
+    });
+    if (window.ResizeObserver) new ResizeObserver(function () { measure(); apply(); }).observe(el.inner);
+
+    /* ---------- 渲染 ---------- */
+    function renderText() {
+      var t = el.text; t.textContent = '';
+      if (s.state === 'error') {
+        t.innerHTML = '<svg width="100%" height="16" viewBox="0 0 300 16" preserveAspectRatio="none" aria-hidden="true" style="display:block;overflow:visible"><path d="M0 8H118M134 8H196M212 8H300" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>';
+        return;
+      }
+      var loading = s.state === 'loading' || s.text == null;
+      if (loading) { t.innerHTML = '<span class="sk w"></span><span class="sk w2"></span><span class="sk w3"></span>'; return; }
+      var hits = [];
+      (s.flags || []).forEach(function (ph) { var i = s.text.indexOf(ph); if (i >= 0) hits.push([i, ph]); });
+      hits.sort(function (a, b) { return a[0] - b[0]; });
+      var pos = 0, spans = [];
+      hits.forEach(function (h, n) {
+        if (h[0] < pos) return;
+        t.appendChild(document.createTextNode(s.text.slice(pos, h[0])));
+        var sp = document.createElement('span'); sp.className = 'fl' + (s.risk === 'high' ? ' high' : ''); sp.textContent = h[1]; sp.style.setProperty('--dl', (0.25 + n * 0.35) + 's');
+        t.appendChild(sp); spans.push(sp); pos = h[0] + h[1].length;
+      });
+      t.appendChild(document.createTextNode(s.text.slice(pos)));
+      requestAnimationFrame(function () { requestAnimationFrame(function () {
+        spans.forEach(function (sp) { sp.classList.add('on'); if (s.state === 'accepted') sp.classList.add('struck'); });
+      }); });
+    }
+
+    function checkSvg() { return '<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path class="draw" d="M3 10.5l4.5 4.5L17 5"/></svg>'; }
+
+    function render() {
+      var st = s.state, loading = st === 'loading';
+      root.dataset.view = st;
+      el.meta.textContent = '';
+      if (loading || (s.clauseNo == null && s.doc == null)) el.meta.innerHTML = '<span class="sk m" style="margin:6px 0"></span>';
+      else el.meta.textContent = (s.clauseNo != null ? '条款 ' + s.clauseNo + (s.clauseTotal ? ' / ' + s.clauseTotal : '') : '') + (s.doc ? ' · ' + s.doc : '');
+      var showRisk = !loading && st !== 'error' && s.text != null;
+      el.risk.hidden = !showRisk; el.risk.dataset.lv = s.risk; el.risklabel.textContent = RISK_LABEL[s.risk] || '';
+      el.pin.style.transform = 'translateX(' + (PIN[s.risk] || 36) + 'px)';
+      if (st === 'error') el.title.textContent = '条款没读出来'; else if (loading || s.title == null) el.title.innerHTML = '<span class="sk t"></span>'; else el.title.textContent = s.title;
+      renderText();
+
+      // 建议（抽屉）
+      var hasSug = s.suggestion && s.suggestion.text;
+      el.sug.textContent = hasSug ? s.suggestion.text : '';
+      el.why.textContent = hasSug && s.suggestion.reason ? '为什么：' + s.suggestion.reason : '';
+      var canOpen = !loading && st !== 'error' && hasSug;
+      el.handle.disabled = !canOpen;
+      el.hlabel.innerHTML = canOpen ? '建议改法<small>1 条</small>' : (loading || st !== 'error' ? '建议生成中…' : '建议改法');
+      el.accept.disabled = !(canOpen && st === 'ready');
+      if (!canOpen && target > 0) springTo(0);
+      measure(); apply();
+
+      // 动作 / 状态行
+      var sb = el.status, acts = el.acts;
+      var ready = st === 'ready' || loading;
+      acts.hidden = !ready; el.keep.disabled = el.ask.disabled = loading || s.text == null;
+      sb.hidden = ready;
+      if (st === 'accepted') sb.innerHTML = checkSvg() + '<span>已采纳建议，批注已写进合同</span>';
+      else if (st === 'kept') sb.innerHTML = checkSvg() + '<span>已保留原文，风险已知</span>';
+      else if (st === 'asking') sb.innerHTML = '<span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Agent 正在回答你的追问</span>';
+      else if (st === 'error') { sb.innerHTML = '<span>' + (s.error || '文件解析失败') + '</span>'; var b = document.createElement('button'); b.type = 'button'; b.className = 'link'; b.textContent = '重试'; b.addEventListener('click', onRetry); sb.appendChild(b); }
+      var say = { accepted: '已采纳建议', kept: '已保留原文', asking: '正在回答追问', error: '读取失败：' + (s.error || ''), loading: '加载中' }[st] || '';
+      if (say !== lastSpoken) { el.live.textContent = say; lastSpoken = say; }
+    }
+
+    function onRetry() { emit('retry', {}); api.set({ state: 'loading', error: null }); if (opts.autoSettle !== false) { clearTimeout(timer); timer = setTimeout(function () { api.set(opts.demo || { state: 'ready' }); }, 900); } }
+    el.keep.addEventListener('click', function () { emit('keep-original', { clause: s.clauseNo, risk: s.risk }); api.set({ state: 'kept' }); setOpen(false); });
+    el.ask.addEventListener('click', function () {
+      emit('ask-followup', { clause: s.clauseNo }); api.set({ state: 'asking' });
+      if (opts.autoSettle !== false) { clearTimeout(timer); timer = setTimeout(function () { api.set({ state: 'ready' }); }, 1900); }
+    });
+    el.accept.addEventListener('click', function () {
+      emit('accept-suggestion', { clause: s.clauseNo, text: s.suggestion && s.suggestion.text });
+      api.set({ state: 'accepted' }); setTimeout(function () { setOpen(false); }, 260);
+    });
+
+    var api = {
+      set: function (partial) { Object.assign(s, partial || {}); render(); return api; },
+      get: function () { return Object.assign({}, s); },
+      open: setOpen
+    };
+    api.set(init || {});
+    if (init && init.drawerOpen) { measure(); p = target = 1; apply(); }
+    return api;
+  }
+
+  /* ---------- 示例数据（去大阪出差，租随身 Wi‑Fi） ---------- */
+  var BASE = { doc: '随身 Wi‑Fi 租赁', clauseNo: 7, clauseTotal: 12, title: '取消与退款', error: null,
+    text: '客户须在取件日前 48 小时以上通知取消，否则收取全额租金。设备损坏或遗失，按 ¥2,800 赔偿，押金不予退还。',
+    suggestion: { text: '取件日前 24 小时以上取消，免费；设备损坏或遗失，赔偿以实际维修费为限，最高 ¥1,200，押金按实退还。',
+                  reason: '你的航班可能改期，48 小时的免费取消窗口太短；押金不退再加全额赔偿，等于一件设备收了两次钱。' } };
+  var MEDIUM = Object.assign({}, BASE, { state: 'ready', risk: 'medium', flags: ['否则收取全额租金'] });
+  var HIGH = Object.assign({}, BASE, { state: 'ready', risk: 'high', flags: ['否则收取全额租金', '押金不予退还'] });
+
+  var main = mount(document.getElementById('main-card'), { state: 'loading' }, { global: true, demo: HIGH });
+  window.card = { set: function (x) { return main.set(x); }, get: main.get };
+  setTimeout(function () { main.set(HIGH); }, 450);
+
+  var log = document.getElementById('log');
+  document.addEventListener('hx-action', function (e) { log.textContent = 'hx-action ' + JSON.stringify(e.detail, null, 2); });
+
+  var sims = [
+    ['加载中', function () { main.set({ state: 'loading' }); }],
+    ['中风险', function () { main.set(MEDIUM); }],
+    ['高风险', function () { main.set(HIGH); }],
+    ['流式到达', function () {
+      main.set({ state: 'ready', doc: null, clauseNo: null, title: null, text: null, flags: [], suggestion: null, risk: 'high' });
+      setTimeout(function () { main.set({ doc: BASE.doc, clauseNo: 7, clauseTotal: 12 }); }, 450);
+      setTimeout(function () { main.set({ title: BASE.title }); }, 900);
+      setTimeout(function () { main.set({ text: BASE.text, flags: HIGH.flags }); }, 1400);
+      setTimeout(function () { main.set({ suggestion: BASE.suggestion }); }, 2400);
+    }],
+    ['展开建议', function () { main.open(true); }],
+    ['出错', function () { main.set({ state: 'error', error: '合同文件解析失败（第 7 条）' }); }],
+    ['已采纳', function () { main.set(Object.assign({}, HIGH, { state: 'accepted' })); }]
+  ];
+  var box = document.getElementById('sim');
+  sims.forEach(function (x) { var b = document.createElement('button'); b.type = 'button'; b.className = 'pbtn'; b.textContent = x[0]; b.addEventListener('click', x[1]); box.appendChild(b); });
+
+  var g = document.getElementById('gallery');
+  [
+    ['加载（骨架）', { state: 'loading' }],
+    ['中风险', MEDIUM],
+    ['高风险', HIGH],
+    ['展开建议', Object.assign({}, HIGH, { drawerOpen: true })],
+    ['出错（可重试）', { state: 'error', error: '合同文件解析失败（第 7 条）' }],
+    ['已采纳', Object.assign({}, HIGH, { state: 'accepted' })],
+    ['已保留原文', Object.assign({}, HIGH, { state: 'kept' })],
+    ['追问中', Object.assign({}, HIGH, { state: 'asking' })]
+  ].forEach(function (x) {
+    var cell = document.createElement('div'); cell.style.cssText = 'display:flex;flex-direction:column;gap:10px;min-width:0';
+    cell.innerHTML = '<div class="lab">' + x[0] + '</div><div class="cl"></div>'; g.appendChild(cell);
+    mount(cell.querySelector('.cl'), x[1], { autoSettle: x[0].indexOf('追问') < 0, demo: HIGH });
+  });
+
+  var theme = document.getElementById('theme'), rootEl = document.documentElement;
+  theme.addEventListener('click', function () {
+    var on = theme.getAttribute('aria-pressed') !== 'true'; theme.setAttribute('aria-pressed', on);
+    rootEl.setAttribute('data-theme', on ? 'dark' : 'light'); theme.textContent = on ? '回到浅色' : '反色（深色）';
+  });
+})();
+</script>
+</body>
+</html>
