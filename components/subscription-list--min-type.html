@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>订阅管理卡 · 极简字排</title>
+<meta name="hx-component" content="subscription-list">
+<meta name="hx-style" content="min-type">
+<meta name="hx-harness" content="个人理财助手">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600&display=swap">
+<style>
+:root {
+  --hx-paper: #FBFAF6;
+  --hx-ink: #1A1A1A;
+  --hx-sub: #4A4741;
+  --hx-skel: #E6E3DA;
+  --hx-wash-warn: #F1D9A0;
+  --hx-wash-ok: #CFE3D2;
+  --hx-wash-err: #F2C9C4;
+  --hx-wash-note: #D2DDEE;
+  --hx-dot-idle: #1A1A1A;
+  --hx-dot-warn: #B25E00;
+  --hx-dot-ok: #2F7D4F;
+  --hx-dot-err: #B3261E;
+  --hx-dot-note: #3A5A8C;
+  --hx-radius: 14px;
+  --hx-font: 'Noto Sans SC', system-ui, sans-serif;
+  --hx-page: #EFEDE6;
+  --hx-page-line: #CFCBBF;
+  --z: 1;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --hx-paper: #121212; --hx-ink: #F1EFE8; --hx-sub: #C9C5BB; --hx-skel: #2A2A28;
+    --hx-wash-warn: #4B3A12; --hx-wash-ok: #1E3A2A; --hx-wash-err: #4A1F1C; --hx-wash-note: #1F3050;
+    --hx-dot-idle: #F1EFE8; --hx-dot-warn: #F0A53A; --hx-dot-ok: #6CC08B; --hx-dot-err: #F2877F; --hx-dot-note: #8FB2EC;
+    --hx-page: #0B0B0B; --hx-page-line: #2E2E2B;
+  }
+}
+:root[data-theme="dark"] {
+  --hx-paper: #121212; --hx-ink: #F1EFE8; --hx-sub: #C9C5BB; --hx-skel: #2A2A28;
+  --hx-wash-warn: #4B3A12; --hx-wash-ok: #1E3A2A; --hx-wash-err: #4A1F1C; --hx-wash-note: #1F3050;
+  --hx-dot-idle: #F1EFE8; --hx-dot-warn: #F0A53A; --hx-dot-ok: #6CC08B; --hx-dot-err: #F2877F; --hx-dot-note: #8FB2EC;
+  --hx-page: #0B0B0B; --hx-page-line: #2E2E2B;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--hx-page); color: var(--hx-ink); font-family: var(--hx-font); font-weight: 400; font-size: 15px; line-height: 1.6; }
+button { font: inherit; color: inherit; cursor: pointer; background: none; border: 0; padding: 0; }
+:focus-visible { outline: 2px solid var(--hx-ink); outline-offset: 2px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---------- 页面 ---------- */
+.page { max-width: 980px; margin: 0 auto; padding: 36px 20px 64px; display: flex; flex-direction: column; gap: 32px; }
+.head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+.head h1 { margin: 0; font-size: 20px; font-weight: 600; }
+.head p { margin: 2px 0 0; font-size: 12px; color: var(--hx-sub); }
+.pbtn { min-height: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--hx-page-line); font-size: 12px; }
+.pbtn:hover, .pbtn[aria-pressed="true"] { background: var(--hx-ink); color: var(--hx-paper); border-color: var(--hx-ink); }
+.tools, .simbtns { display: flex; flex-wrap: wrap; gap: 8px; }
+.main { display: flex; flex-wrap: wrap; gap: 28px 44px; align-items: flex-start; }
+.stage-col { display: flex; flex-direction: column; gap: 10px; }
+.lab { font-size: 12px; color: var(--hx-sub); }
+.stage { width: calc(160px * var(--z)); height: calc(160px * var(--z)); }
+.stage > .wg { transform: scale(var(--z)); transform-origin: 0 0; }
+.sim { flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.sim h2, .gal h2 { margin: 0; font-size: 12px; font-weight: 600; }
+.log { margin: 0; padding: 12px 14px; border: 1px solid var(--hx-page-line); border-radius: 10px; font: 12px/1.7 ui-monospace, Menlo, monospace; white-space: pre-wrap; overflow-wrap: anywhere; min-height: 92px; }
+.gal { display: flex; flex-direction: column; gap: 14px; }
+.grid { display: flex; flex-wrap: wrap; gap: 24px; }
+.cell { display: flex; flex-direction: column; gap: 8px; }
+
+/* ---------- 卡片：160 × 160，几乎只有文字 ---------- */
+.wg { position: relative; width: 160px; height: 160px; border-radius: var(--hx-radius); overflow: hidden; background: var(--hx-paper); color: var(--hx-ink); font-family: var(--hx-font); box-shadow: 0 0 0 1px var(--hx-page-line); isolation: isolate; }
+.ink { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.lyr { position: absolute; inset: 0; z-index: 1; }
+.hd { position: absolute; left: 14px; top: 13px; right: 60px; height: 20px; display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 1; color: var(--hx-sub); }
+.dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--hx-dot-idle); transition: background-color .9s .1s, transform .5s cubic-bezier(.2, .9, .25, 1.6); }
+.wg[data-tone="warn"] .dot { background: var(--hx-dot-warn); transform: scale(1.35); }
+.wg[data-tone="ok"] .dot { background: var(--hx-dot-ok); }
+.wg[data-tone="err"] .dot { background: var(--hx-dot-err); transform: scale(1.35); }
+.wg[data-tone="note"] .dot { background: var(--hx-dot-note); }
+.more { position: absolute; right: 0; top: 0; width: 56px; height: 44px; padding-right: 14px; text-align: right; font-size: 12px; color: var(--hx-sub); }
+.more:hover { color: var(--hx-ink); text-decoration: underline; text-underline-offset: 4px; }
+.name { position: absolute; left: 14px; right: 14px; top: 36px; font-size: 15px; font-weight: 600; line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sub { position: absolute; left: 14px; right: 14px; top: 57px; font-size: 12px; line-height: 17px; color: var(--hx-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.amt { position: absolute; left: 14px; right: 14px; top: 76px; height: 34px; font-size: 30px; font-weight: 400; line-height: 34px; letter-spacing: -.01em; white-space: nowrap; }
+.amt small { margin-left: 3px; font-size: 12px; color: var(--hx-sub); letter-spacing: 0; }
+.amt .n { text-decoration: underline; text-decoration-color: transparent; text-decoration-thickness: 2px; text-underline-offset: 5px; transition: text-decoration-color .6s .3s; }
+.wg[data-tone="warn"] .amt .n { text-decoration-color: var(--hx-dot-warn); }
+.wg[data-view="cancelled"] .amt .n { text-decoration: line-through; text-decoration-color: var(--hx-ink); text-decoration-thickness: 1.5px; text-underline-offset: 0; }
+.act { position: absolute; left: 14px; right: 14px; bottom: 2px; height: 44px; text-align: left; font-size: 15px; font-weight: 600; }
+.act span { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 5px; transition: text-underline-offset .2s; }
+.act:hover:not(:disabled) span { text-underline-offset: 8px; }
+.act:active:not(:disabled) { transform: translateY(1px); }
+.act:disabled { cursor: default; color: var(--hx-sub); }
+.act:disabled span { text-decoration: none; }
+
+.sk { display: block; height: 10px; border-radius: 3px; background: linear-gradient(90deg, var(--hx-skel) 0 40%, var(--hx-paper) 50%, var(--hx-skel) 60% 100%); background-size: 300% 100%; animation: shimmer 1.6s ease-in-out infinite; }
+@keyframes shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
+.name .sk { width: 82px; height: 12px; margin-top: 4px; }
+.sub .sk { width: 104px; margin-top: 4px; }
+.amt .sk { width: 70px; height: 24px; margin-top: 5px; }
+
+.menu { position: absolute; inset: 0; z-index: 3; background: var(--hx-paper); padding: 8px 14px 0; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity .25s; }
+.wg.menu-open .menu { opacity: 1; pointer-events: auto; }
+.menu button { height: 48px; text-align: left; font-size: 15px; display: flex; flex-direction: column; justify-content: center; line-height: 1.25; }
+.menu button small { font-size: 12px; color: var(--hx-sub); font-weight: 400; }
+.menu button b { font-weight: 600; }
+.menu button:hover b { text-decoration: underline; text-underline-offset: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sk { animation-duration: 4s; }
+  .dot, .act span, .amt .n, .menu { transition-duration: 1.2s; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="head">
+    <div>
+      <h1>订阅管理卡 · 极简字排</h1>
+      <p>Agent 在回答里画出的 160×160 小组件。几乎只有文字，状态变化时颜色像墨水一样晕开。</p>
+      <p>适合的 harness：个人理财助手（订阅、试用、扣款提醒这类要用户最后点头的场景）</p>
+    </div>
+    <div class="tools">
+      <button type="button" class="pbtn" id="zoom" aria-pressed="false">放大到 2×</button>
+      <button type="button" class="pbtn" id="theme" aria-pressed="false">深色</button>
+    </div>
+  </header>
+
+  <section class="main" aria-label="主卡片">
+    <div class="stage-col">
+      <div class="lab">可交互 · 点「取消订阅」，墨从你点的地方晕开</div>
+      <div class="stage"><div class="wg" id="main-card"></div></div>
+    </div>
+    <div class="sim">
+      <h2>模拟 Agent</h2>
+      <div class="simbtns" id="sim"></div>
+      <h2>Agent 回传</h2>
+      <pre class="log" id="log" aria-live="polite">（点卡片上的按钮，这里显示 hx-action）</pre>
+    </div>
+  </section>
+
+  <section class="gal" aria-label="全部状态">
+    <h2>全部状态</h2>
+    <div class="grid" id="gallery"></div>
+  </section>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var clamp = function (x, a, b) { return Math.min(b, Math.max(a, x)); };
+  var N = 160;
+
+  /* ---------- 墨水：带不规则边缘的晕开（canvas，按像素算） ---------- */
+  var G = 40, grid = [];
+  (function () { var s = 20260921; function r() { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; } for (var i = 0; i < G * G; i++) grid.push(r()); })();
+  function vn(x, y) {
+    var xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+    var u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+    function g(a, b) { return grid[((b % G + G) % G) * G + ((a % G + G) % G)]; }
+    return (g(xi, yi) * (1 - u) + g(xi + 1, yi) * u) * (1 - v) + (g(xi, yi + 1) * (1 - u) + g(xi + 1, yi + 1) * u) * v;
+  }
+  function noise(x, y) { return vn(x / 15, y / 15) * 0.65 + vn(x / 6.5 + 9, y / 6.5 + 4) * 0.35; }
+  function hex(c) { c = (c || '').trim(); if (!/^#[0-9a-f]{6}$/i.test(c)) return null; return [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16), 255]; }
+  var CLEAR = [0, 0, 0, 0];
+
+  function Ink(canvas, host) {
+    canvas.width = N; canvas.height = N;
+    var ctx = canvas.getContext('2d'), img = ctx.createImageData(N, N), d = img.data;
+    var base = CLEAR, to = CLEAR, ox = 24, oy = 22, t0 = 0, dur = 1000, raf = 0, running = false;
+    function wash(name) { return name ? hex(getComputedStyle(host).getPropertyValue('--hx-wash-' + name)) : CLEAR; }
+    function solid(c) { for (var i = 0; i < d.length; i += 4) { d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; d[i + 3] = c[3]; } ctx.putImageData(img, 0, 0); }
+    function frame(now) {
+      var k = clamp((now - t0) / dur, 0, 1), e = 1 - Math.pow(1 - k, 2.4);
+      var far = Math.max(Math.hypot(ox, oy), Math.hypot(N - ox, oy), Math.hypot(ox, N - oy), Math.hypot(N - ox, N - oy)) + 36;
+      var R = e * far, i = 0;
+      for (var y = 0; y < N; y++) for (var x = 0; x < N; x++, i += 4) {
+        var edge = Math.hypot(x - ox, y - oy) - (R + (noise(x, y) - 0.5) * 54);
+        var c, a;
+        if (edge < -4) { c = to; a = 1; }
+        else if (edge > 3) { c = base; a = 1; }
+        else { var t = (edge + 4) / 7; var m = 1 - t * t * (3 - 2 * t); var rim = 0.93 + 0.07 * Math.abs(edge) / 4;
+          var tc = [to[0] * rim, to[1] * rim, to[2] * rim, to[3]];
+          d[i] = base[0] + (tc[0] - base[0]) * m; d[i + 1] = base[1] + (tc[1] - base[1]) * m; d[i + 2] = base[2] + (tc[2] - base[2]) * m; d[i + 3] = base[3] + (tc[3] - base[3]) * m; continue; }
+        d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; d[i + 3] = c[3];
+      }
+      ctx.putImageData(img, 0, 0);
+      if (k < 1) raf = requestAnimationFrame(frame); else { base = to; running = false; solid(base); }
+    }
+    return {
+      set: function (name) { cancelAnimationFrame(raf); running = false; base = to = wash(name); solid(base); },
+      bleed: function (name, x, y) {
+        var next = wash(name);
+        if (next.join() === to.join()) return;
+        cancelAnimationFrame(raf); if (running) base = to;       // 上一滴还没晕完，就以它为底
+        to = next; ox = clamp(x, 0, N); oy = clamp(y, 0, N); dur = reduce ? 2400 : 1000; t0 = performance.now(); running = true; raf = requestAnimationFrame(frame);
+      },
+      repaint: function (name) { cancelAnimationFrame(raf); running = false; base = to = wash(name); solid(base); }
+    };
+  }
+
+  var TEMPLATE =
+    '<canvas class="ink" aria-hidden="true" data-f="ink"></canvas>' +
+    '<div class="lyr" data-f="lyr">' +
+      '<div class="hd"><i class="dot" aria-hidden="true"></i><span data-f="lab"></span></div>' +
+      '<button type="button" class="more" data-f="more" aria-haspopup="true" aria-expanded="false">更多</button>' +
+      '<div class="name" data-f="name"></div><div class="sub" data-f="sub"></div><div class="amt" data-f="amt"></div>' +
+      '<button type="button" class="act" data-f="act"><span></span></button>' +
+    '</div>' +
+    '<div class="menu" data-f="menu" inert>' +
+      '<button type="button" data-f="remind"><b>提醒我</b><small>扣款前 1 天通知</small></button>' +
+      '<button type="button" data-f="down"><b>降级</b><small>让 Agent 找更便宜的档</small></button>' +
+      '<button type="button" data-f="back"><b>返回</b></button>' +
+    '</div>' +
+    '<div class="sr" aria-live="polite" data-f="live"></div>';
+
+  /**
+   * props: { state: 'loading'|'ready'|'cancelled'|'error', count, name, price, period, due, daysLeft,
+   *          kind: 'trial'|'plan', note, error }
+   * 动作（hx-action）：cancel / remind / downgrade / restore / retry
+   */
+  function mount(root, init, opts) {
+    opts = opts || {};
+    root.innerHTML = TEMPLATE;
+    var $ = function (f) { return root.querySelector('[data-f="' + f + '"]'); };
+    var el = {}; ['ink', 'lyr', 'lab', 'more', 'name', 'sub', 'amt', 'act', 'menu', 'remind', 'down', 'back', 'live'].forEach(function (k) { el[k] = $(k); });
+    var ink = Ink(el.ink, root);
+    var s = { state: 'loading', count: null, name: null, price: null, period: '月', due: null, daysLeft: null, kind: 'plan', note: null, error: null };
+    var lastTone = 'none', lastView = null, lastSpoken = '', origin = [24, 22], first = true;
+
+    function emit(name, params) {
+      var ev = new CustomEvent('hx-action', { detail: { name: name, params: params || {} }, bubbles: !!opts.global });
+      (opts.global ? document : root).dispatchEvent(ev);
+    }
+    root.addEventListener('pointerdown', function (e) { var r = root.getBoundingClientRect(), k = N / r.width; origin = [(e.clientX - r.left) * k, (e.clientY - r.top) * k]; });
+
+    function tone() {
+      if (s.state === 'loading') return 'none';
+      if (s.state === 'cancelled') return 'ok';
+      if (s.state === 'error') return 'err';
+      if (s.note) return 'note';
+      if (s.kind === 'trial' && s.daysLeft != null && s.daysLeft <= 3) return 'warn';
+      return 'none';
+    }
+
+    function render() {
+      var st = s.state, loading = st === 'loading', t = tone();
+      root.dataset.view = st; root.dataset.tone = t === 'none' ? 'idle' : t;
+      var labels = { loading: '订阅', cancelled: '已取消', error: '没成功', note: s.note && s.note.lab, warn: '即将扣款', none: s.count != null ? '订阅 · ' + s.count + ' 项' : '订阅' };
+      el.lab.textContent = st === 'cancelled' ? labels.cancelled : st === 'error' ? labels.error : (t === 'note' ? labels.note : t === 'warn' ? labels.warn : labels.none);
+      el.more.hidden = loading || st !== 'ready';
+      if (loading || s.name == null) { el.name.innerHTML = '<span class="sk"></span>'; el.sub.innerHTML = '<span class="sk"></span>'; el.amt.innerHTML = '<span class="sk"></span>'; }
+      else {
+        el.name.textContent = s.name; el.name.title = s.name;
+        var sub = st === 'cancelled' ? '不会再扣款' : st === 'error' ? (s.error || '服务商没有响应') : (t === 'note' && s.note.text) ? s.note.text : (s.due ? (s.daysLeft != null && s.daysLeft <= 3 ? s.daysLeft + ' 天后扣款' : s.due + '扣款') : '');
+        el.sub.textContent = sub;
+        el.amt.innerHTML = '<span class="n">¥' + s.price + '</span><small>/' + s.period + '</small>';
+      }
+      var label = loading ? '…' : st === 'cancelled' ? '撤销' : st === 'error' ? '重试' : '取消订阅';
+      el.act.firstChild.textContent = label; el.act.disabled = loading || s.name == null;
+      var say = { cancelled: '已取消，不会再扣款', error: '取消失败', loading: '加载中' }[st] || (t === 'warn' ? '即将扣款' : '');
+      if (say !== lastSpoken) { el.live.textContent = say; lastSpoken = say; }
+
+      // 颜色：第一次直接铺满；之后从“墨滴”处晕开
+      var name = t === 'none' ? null : t;
+      if (first) { ink.set(name); first = false; }
+      else if (t !== lastTone) {
+        ink.bleed(name, origin[0], origin[1]);
+        if (!reduce) el.lyr.animate([{ opacity: .15 }, { opacity: 1 }], { duration: 520, easing: 'ease-out' });
+      }
+      lastTone = t; lastView = st;
+    }
+
+    function menu(open) {
+      root.classList.toggle('menu-open', open); el.more.setAttribute('aria-expanded', open);
+      if (open) { el.menu.removeAttribute('inert'); setTimeout(function () { el.remind.focus(); }, 40); } else el.menu.setAttribute('inert', '');
+    }
+    el.more.addEventListener('click', function () { menu(true); });
+    el.back.addEventListener('click', function () { menu(false); el.more.focus(); });
+    el.remind.addEventListener('click', function () { menu(false); emit('remind', { name: s.name, when: '1-day-before' }); origin = [140, 24]; api.set({ note: { lab: '已设提醒', text: '扣款前 1 天通知你' } }); el.act.focus(); });
+    el.down.addEventListener('click', function () { menu(false); emit('downgrade', { name: s.name }); origin = [140, 24]; api.set({ note: { lab: '交给 Agent', text: '正在找更便宜的档' } }); el.act.focus(); });
+    root.addEventListener('keydown', function (e) { if (e.key === 'Escape' && root.classList.contains('menu-open')) { menu(false); el.more.focus(); } });
+    el.act.addEventListener('click', function () {
+      if (s.state === 'ready') { emit('cancel', { name: s.name, price: s.price, period: s.period }); api.set({ state: 'cancelled', note: null }); }
+      else if (s.state === 'cancelled') { emit('restore', { name: s.name }); api.set({ state: 'ready' }); }
+      else if (s.state === 'error') { emit('retry', { name: s.name }); api.set({ state: 'cancelled', error: null }); }
+    });
+
+    var api = {
+      set: function (p) { if (p && p.state && p.state !== 'ready' && !('note' in p)) { /* 离开 ready 时保留 note，回到 ready 再显示 */ } Object.assign(s, p || {}); render(); return api; },
+      get: function () { return Object.assign({}, s); },
+      repaint: function () { ink.repaint(tone() === 'none' ? null : tone()); }
+    };
+    api.set(init || {});
+    return api;
+  }
+
+  /* ---------- 示例数据（带父母出国：翻译 App 试用 3 天后扣款） ---------- */
+  var PLAN = { state: 'ready', count: 3, name: '视频会员', price: 25, period: '月', due: '12 月 3 日', daysLeft: 12, kind: 'plan', note: null, error: null };
+  var TRIAL = { state: 'ready', count: 3, name: '翻译 App 试用', price: 68, period: '年', due: '11 月 24 日', daysLeft: 3, kind: 'trial', note: null, error: null };
+
+  var cards = [];
+  var main = mount(document.getElementById('main-card'), { state: 'loading' }, { global: true });
+  cards.push(main);
+  window.card = { set: function (p) { return main.set(p); }, get: main.get };
+  setTimeout(function () { main.set(TRIAL); }, 500);
+
+  var log = document.getElementById('log');
+  document.addEventListener('hx-action', function (e) { log.textContent = 'hx-action ' + JSON.stringify(e.detail, null, 2); });
+
+  var sims = [
+    ['加载中', function () { main.set({ state: 'loading' }); }],
+    ['正常', function () { main.set(PLAN); }],
+    ['即将扣款', function () { main.set(TRIAL); }],
+    ['流式到达', function () {
+      main.set({ state: 'loading', name: null });
+      setTimeout(function () { main.set({ state: 'ready', count: 3, name: '翻译 App 试用', kind: 'trial', price: null, due: null, daysLeft: null }); }, 600);
+      setTimeout(function () { main.set({ price: 68, period: '年' }); }, 1200);
+      setTimeout(function () { main.set({ due: '11 月 24 日', daysLeft: 3 }); }, 1800);
+    }],
+    ['出错', function () { main.set({ state: 'error', error: '服务商没有响应' }); }],
+    ['已取消', function () { main.set(Object.assign({}, TRIAL, { state: 'cancelled' })); }]
+  ];
+  var box = document.getElementById('sim');
+  sims.forEach(function (x) { var b = document.createElement('button'); b.type = 'button'; b.className = 'pbtn'; b.textContent = x[0]; b.addEventListener('click', x[1]); box.appendChild(b); });
+
+  var g = document.getElementById('gallery');
+  [
+    ['加载（骨架）', { state: 'loading' }],
+    ['正常', PLAN],
+    ['即将扣款（预警）', TRIAL],
+    ['出错（可重试）', Object.assign({}, TRIAL, { state: 'error', error: '服务商没有响应' })],
+    ['已取消', Object.assign({}, TRIAL, { state: 'cancelled' })],
+    ['已设提醒', Object.assign({}, TRIAL, { note: { lab: '已设提醒', text: '扣款前 1 天通知你' } })]
+  ].forEach(function (x) {
+    var cell = document.createElement('div'); cell.className = 'cell';
+    cell.innerHTML = '<div class="lab">' + x[0] + '</div><div class="stage"><div class="wg"></div></div>'; g.appendChild(cell);
+    cards.push(mount(cell.querySelector('.wg'), x[1]));
+  });
+
+  /* ---------- 页面开关 ---------- */
+  var zoom = document.getElementById('zoom'), theme = document.getElementById('theme'), rootEl = document.documentElement;
+  zoom.addEventListener('click', function () {
+    var on = zoom.getAttribute('aria-pressed') !== 'true'; zoom.setAttribute('aria-pressed', on);
+    zoom.textContent = on ? '回到 1×' : '放大到 2×'; document.querySelector('.stage-col').style.setProperty('--z', on ? 2 : 1);
+  });
+  function repaintAll() { setTimeout(function () { cards.forEach(function (c) { c.repaint(); }); }, 30); }
+  theme.addEventListener('click', function () {
+    var on = theme.getAttribute('aria-pressed') !== 'true'; theme.setAttribute('aria-pressed', on);
+    rootEl.setAttribute('data-theme', on ? 'dark' : 'light'); theme.textContent = on ? '浅色' : '深色'; repaintAll();
+  });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', repaintAll);
+})();
+</script>
+</body>
+</html>
