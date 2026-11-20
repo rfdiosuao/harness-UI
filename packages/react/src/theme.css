@@ -1,0 +1,80 @@
+/*
+ * harnesskit design tokens.
+ *
+ * Import after `@import "tailwindcss";`. Override any --hk-* variable to
+ * re-theme; components only ever reference these tokens.
+ */
+
+:root {
+  --hk-bg: #fafaf9;
+  --hk-surface: #ffffff;
+  --hk-subtle: #f4f4f2;
+  --hk-border: #e4e4e0;
+  --hk-fg: #1c1c1a;
+  --hk-muted: #6b6b66;
+  --hk-accent: #3b5bdb;
+  --hk-accent-fg: #ffffff;
+  --hk-success: #2f9e44;
+  --hk-danger: #e03131;
+  --hk-danger-subtle: #fff5f5;
+  --hk-warning: #e8590c;
+  --hk-warning-subtle: #fff4e6;
+  --hk-radius: 0.625rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --hk-bg: #141413;
+    --hk-surface: #1c1c1b;
+    --hk-subtle: #262624;
+    --hk-border: #34342f;
+    --hk-fg: #ececea;
+    --hk-muted: #9a9a93;
+    --hk-accent: #748ffc;
+    --hk-accent-fg: #10121a;
+    --hk-success: #69db7c;
+    --hk-danger: #ff8787;
+    --hk-danger-subtle: #2c1b1b;
+    --hk-warning: #ffa94d;
+    --hk-warning-subtle: #2b2016;
+  }
+}
+
+:root[data-theme='dark'] {
+  --hk-bg: #141413;
+  --hk-surface: #1c1c1b;
+  --hk-subtle: #262624;
+  --hk-border: #34342f;
+  --hk-fg: #ececea;
+  --hk-muted: #9a9a93;
+  --hk-accent: #748ffc;
+  --hk-accent-fg: #10121a;
+  --hk-success: #69db7c;
+  --hk-danger: #ff8787;
+  --hk-danger-subtle: #2c1b1b;
+  --hk-warning: #ffa94d;
+  --hk-warning-subtle: #2b2016;
+}
+
+@theme inline {
+  --color-hk-bg: var(--hk-bg);
+  --color-hk-surface: var(--hk-surface);
+  --color-hk-subtle: var(--hk-subtle);
+  --color-hk-border: var(--hk-border);
+  --color-hk-fg: var(--hk-fg);
+  --color-hk-muted: var(--hk-muted);
+  --color-hk-accent: var(--hk-accent);
+  --color-hk-accent-fg: var(--hk-accent-fg);
+  --color-hk-success: var(--hk-success);
+  --color-hk-danger: var(--hk-danger);
+  --color-hk-danger-subtle: var(--hk-danger-subtle);
+  --color-hk-warning: var(--hk-warning);
+  --color-hk-warning-subtle: var(--hk-warning-subtle);
+  --radius-hk: var(--hk-radius);
+}
+
+@keyframes hk-caret {
+  50% {
+    opacity: 0;
+  }
+}

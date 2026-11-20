@@ -1,0 +1,21 @@
+{
+  "name": "harnesskit-monorepo",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @harnesskit/playground",
+    "build": "npm run build -w @harnesskit/playground",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@anthropic-ai/sdk": "^1.12.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.1"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "@harnesskit/react",
+  "version": "0.0.0",
+  "description": "React components for agent harness UIs: tool calls, permissions, plans and more.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./theme.css": "./src/theme.css"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "dependencies": {
+    "@radix-ui/react-collapsible": "^1.2.1",
+    "lucide-react": "^1.77.0",
+    "marked": "^18.2.1"
+  }
+}

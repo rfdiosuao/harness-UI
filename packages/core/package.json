@@ -1,0 +1,18 @@
+{
+  "name": "@harnesskit/core",
+  "version": "0.0.0",
+  "description": "Framework-agnostic event protocol, transcript reducer and stream adapters for agent harness UIs.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./anthropic": "./src/adapters/anthropic.ts"
+  },
+  "peerDependencies": {
+    "@anthropic-ai/sdk": "*"
+  },
+  "peerDependenciesMeta": {
+    "@anthropic-ai/sdk": { "optional": true }
+  }
+}
