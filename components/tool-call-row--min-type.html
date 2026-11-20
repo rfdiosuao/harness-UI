@@ -11,20 +11,20 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600&display=swap">
 <style>
 :root {
-  --hx-paper: #FAFAF7; --hx-ink: #161616; --hx-sub: #55524B; --hx-hair: #E3E1D9;
+  --hx-paper: #FAFAF7; --hx-page: #ECEBE4; --hx-sheet: #FFFFFF; --hx-ink: #161616; --hx-sub: #55524B; --hx-hair: #E3E1D9;
   --hx-run: #2F5DA8; --hx-fail: #C2371F;
   --hx-font: 'Noto Sans SC', system-ui, sans-serif;
   --hx-ease: cubic-bezier(.2, .8, .2, 1);
   --hx-fast: 160ms; --hx-slow: 460ms;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) { --hx-paper: #121212; --hx-ink: #F1EFE8; --hx-sub: #B8B4A8; --hx-hair: #2C2B28; --hx-run: #8DB2F2; --hx-fail: #FF8A73; }
+  :root:not([data-theme="light"]) { --hx-paper: #121212; --hx-page: #090909; --hx-sheet: #1A1A19; --hx-ink: #F1EFE8; --hx-sub: #B8B4A8; --hx-hair: #2C2B28; --hx-run: #8DB2F2; --hx-fail: #FF8A73; }
 }
-:root[data-theme="dark"] { --hx-paper: #121212; --hx-ink: #F1EFE8; --hx-sub: #B8B4A8; --hx-hair: #2C2B28; --hx-run: #8DB2F2; --hx-fail: #FF8A73; }
+:root[data-theme="dark"] { --hx-paper: #121212; --hx-page: #090909; --hx-sheet: #1A1A19; --hx-ink: #F1EFE8; --hx-sub: #B8B4A8; --hx-hair: #2C2B28; --hx-run: #8DB2F2; --hx-fail: #FF8A73; }
 @media (prefers-reduced-motion: reduce) { :root { --hx-fast: 360ms; --hx-slow: 1000ms; } }
 
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--hx-paper); color: var(--hx-ink); font-family: var(--hx-font); font-weight: 400; font-size: 15px; line-height: 1.6; font-variant-numeric: tabular-nums; }
+body { margin: 0; background: var(--hx-page); color: var(--hx-ink); font-family: var(--hx-font); font-weight: 400; font-size: 15px; line-height: 1.6; font-variant-numeric: tabular-nums; }
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
 :focus-visible { outline: 2px solid var(--hx-ink); outline-offset: 4px; border-radius: 3px; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -43,7 +43,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .gal { display: flex; flex-direction: column; gap: 40px; }
 
 /* ---------- 组件：几乎只有文字 ---------- */
-.tc { position: relative; width: 100%; }
+.tc { position: relative; width: 100%; padding: 22px 28px 16px; background: var(--hx-sheet); border-radius: 18px; box-shadow: 0 1px 2px rgba(0,0,0,.05), 0 0 0 1px color-mix(in srgb, var(--hx-ink) 7%, transparent), 0 18px 36px -18px rgba(0,0,0,.30); }
 .tc .hdr { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; font-weight: 600; color: var(--hx-sub); margin-bottom: 8px; }
 .tc .list { list-style: none; margin: 0; padding: 0; }
 .tc li { position: relative; }
@@ -82,11 +82,11 @@ li.open .lines li { opacity: 1; transform: none; transition-delay: calc(var(--i)
 .err[hidden] { display: none; }
 .err button { min-height: 44px; padding: 0 6px; text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 1.5px; font-weight: 600; }
 
-.skl { position: absolute; left: 0; right: 0; top: 24px; pointer-events: none; opacity: 0; transition: opacity var(--hx-slow) var(--hx-ease); }
+.skl { position: absolute; left: 28px; right: 28px; top: 56px; pointer-events: none; opacity: 0; transition: opacity var(--hx-slow) var(--hx-ease); }
 .tc[data-state="loading"] .skl { opacity: 1; }
 .skl .r { display: flex; align-items: center; gap: 14px; height: 64px; }
 .bar { position: relative; overflow: hidden; height: 12px; border-radius: 3px; background: var(--hx-hair); }
-.bar::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, var(--hx-paper), transparent); transform: translateX(-100%); animation: sweep 1.5s var(--hx-ease) infinite; }
+.bar::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, var(--hx-sheet), transparent); transform: translateX(-100%); animation: sweep 1.5s var(--hx-ease) infinite; }
 @keyframes sweep { to { transform: translateX(100%); } }
 .tc[data-state="loading"] .list, .tc[data-state="loading"] .keys { opacity: 0; }
 .tc .list, .tc .keys { transition: opacity var(--hx-slow) var(--hx-ease); }
