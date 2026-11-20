@@ -1,7 +1,14 @@
 import {
+  activeError,
+  contextTokens,
+  errorEventFrom,
+  estimateCost,
   pendingPermissions,
   runStatus,
   type AskAnswer,
+  type HarnessError,
+  type HarnessEvent,
+  type PriceTable,
   type Message,
   type PermissionDecision,
   type PermissionScope,
@@ -12,6 +19,10 @@ import { createAnthropicAdapter } from '@harnesskit/core/anthropic';
 import {
   AskUserCard,
   Button,
+  ContextMeter,
+  CostTicker,
+  ErrorBanner,
+  FallbackNotice,
   formatDuration,
   InterruptBar,
   PermissionPrompt,
@@ -22,7 +33,24 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { galleryParts } from './gallery';
 import { MarkdownDemo } from './MarkdownDemo';
-import { buildScenario, followUp, type Step } from './scenario';
+import { buildScenario, followUp, MODEL, type Step } from './scenario';
+
+/**
+ * Example list prices, USD per million tokens. Opus 4.8's cache-read price is
+ * left out on purpose: after a simulated fallback the ticker shows how it
+ * reports tokens it can't price ("≥").
+ */
+const PRICES: PriceTable = {
+  'claude-opus-5-5': { input: 4, output: 20, cacheRead: 0.2 },
+  'claude-opus-4-8': { input: 5, output: 25 },
+};
+const MODEL_NAMES: Record<string, string> = { 'claude-opus-5-5': 'Opus 5.5', 'claude-opus-4-8': 'Opus 4.8' };
+const modelName = (id: string) => MODEL_NAMES[id] ?? id;
+const WINDOWS = [
+  { label: '1M', value: 1_000_000 },
+  { label: '64k', value: 64_000 },
+  { label: '32k', value: 32_000 },
+] as const;
 
 type Phase = 'playing' | 'waiting' | 'done';
 const SPEEDS = [1, 2, 4] as const;
@@ -59,7 +87,11 @@ function useReplay() {
       const step = queue.current[0];
       if (!step) return setPhaseNow('done');
       if (step.kind === 'wait') {
-        if (!step.until(stateRef.current)) return setPhaseNow('waiting');
+        if (!step.until(stateRef.current)) {
+          // Re-checked on every transcript change, and polled for time-based waits.
+          timer.current = window.setTimeout(tick, 250);
+          return setPhaseNow('waiting');
+        }
         queue.current.shift();
         continue;
       }
@@ -130,6 +162,26 @@ function useReplay() {
   return { state, dispatch, phase, restart, interrupt, send, speed, setSpeed };
 }
 
+/** What a harness does with a retryable error: retry when the time comes, or when asked. */
+function useRetries(error: HarnessError | undefined, dispatch: (e: HarnessEvent) => void) {
+  const retry = useCallback(
+    (errorId: string) => {
+      dispatch({ type: 'error.retry', errorId, at: Date.now() });
+      // Pretend the retried request succeeds.
+      window.setTimeout(() => dispatch({ type: 'error.resolve', errorId, outcome: 'recovered', at: Date.now() }), 900);
+    },
+    [dispatch],
+  );
+  const id = error?.id;
+  const retryAt = error?.status === 'active' ? error.retryAt : undefined;
+  useEffect(() => {
+    if (!id || retryAt === undefined) return;
+    const t = window.setTimeout(() => retry(id), Math.max(0, retryAt - Date.now()));
+    return () => window.clearTimeout(t);
+  }, [id, retryAt, retry]);
+  return retry;
+}
+
 function useRunStartedAt(active: boolean) {
   const [startedAt, setStartedAt] = useState<number | undefined>();
   useEffect(() => setStartedAt(active ? Date.now() : undefined), [active]);
@@ -172,6 +224,8 @@ function MessageView({ message, onAnswer }: { message: Message; onAnswer: (askId
             return <ToolCallCard key={part.id} part={part} />;
           case 'ask':
             return <AskUserCard key={part.id} part={part} onAnswer={onAnswer} />;
+          case 'fallback':
+            return <FallbackNotice key={part.id} part={part} formatModel={modelName} />;
         }
       })}
     </div>
@@ -223,6 +277,45 @@ export function App() {
   const permissions = useMemo(() => pendingPermissions(state), [state]);
   const startedAt = useRunStartedAt(status !== 'idle');
   const toolCount = Object.keys(state.toolIndex).length;
+  const [contextWindow, setContextWindow] = useState<number>(WINDOWS[0].value);
+  const estimate = useMemo(() => estimateCost(state, PRICES), [state]);
+  const error = activeError(state);
+  const retry = useRetries(error, dispatch);
+  const simCount = useRef(0);
+
+  const simulate = (kind: 'rate_limit' | 'network' | 'refusal' | 'fallback') => {
+    const errorId = `sim-${++simCount.current}`;
+    if (kind === 'rate_limit') {
+      // The real helper, fed an error shaped like the SDK's RateLimitError.
+      const err = Object.assign(new Error('Rate limit exceeded: 40,000 input tokens per minute.'), {
+        status: 429,
+        headers: new Headers({ 'retry-after': '8' }),
+      });
+      dispatch(errorEventFrom(err, { errorId, attempt: 1, maxAttempts: 5 }));
+    } else if (kind === 'network') {
+      dispatch(errorEventFrom(new TypeError('fetch failed'), { errorId, attempt: 1, maxAttempts: 5 }));
+    } else if (kind === 'refusal') {
+      dispatch({
+        type: 'error',
+        errorId,
+        kind: 'refusal',
+        category: 'cyber',
+        message: 'The model declined to continue with this request.',
+        retryable: false,
+        at: Date.now(),
+      });
+    } else {
+      const last = [...state.messages].reverse().find((m) => m.role === 'assistant');
+      if (!last) return;
+      const to = 'claude-opus-4-8';
+      const prev = state.usage[last.id]?.tokens;
+      dispatch([
+        { type: 'model.fallback', messageId: last.id, partId: `${last.id}:${errorId}`, from: last.model ?? MODEL, to, at: Date.now() },
+        // The attempt that produced the message is billed at the fallback model's rates.
+        { type: 'usage', messageId: last.id, model: to, usage: { output: (prev?.output ?? 0) + 120 } },
+      ]);
+    }
+  };
 
   const onResolve = useCallback(
     (toolCallId: string, decision: PermissionDecision, scope: PermissionScope, rule?: string) =>
@@ -273,12 +366,34 @@ export function App() {
         </div>
 
         <div className="rounded-xl border border-hk-border bg-hk-surface/60">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-hk-border px-4 py-2">
+            <ContextMeter used={contextTokens(state)} limit={contextWindow} />
+            <div role="group" aria-label="Context window" className="flex rounded-md border border-hk-border p-0.5">
+              {WINDOWS.map((w) => (
+                <button
+                  key={w.value}
+                  type="button"
+                  aria-pressed={contextWindow === w.value}
+                  onClick={() => setContextWindow(w.value)}
+                  className="rounded px-1.5 py-px text-[11px] tabular-nums text-hk-muted aria-pressed:bg-hk-subtle aria-pressed:text-hk-fg"
+                >
+                  {w.label}
+                </button>
+              ))}
+            </div>
+            <CostTicker estimate={estimate} budget={0.5} formatModel={modelName} className="ml-auto" />
+          </div>
           <div className="min-h-[24rem] space-y-5 p-4 sm:p-5">
             {state.messages.map((m) => (
               <MessageView key={m.id} message={m} onAnswer={onAnswer} />
             ))}
           </div>
           <div className="sticky bottom-0 space-y-2 rounded-b-xl border-t border-hk-border bg-hk-bg/95 p-3 backdrop-blur sm:p-4">
+            <ErrorBanner
+              error={error}
+              onRetry={retry}
+              onDismiss={(errorId) => dispatch({ type: 'error.resolve', errorId, outcome: 'dismissed', at: Date.now() })}
+            />
             <PermissionPrompt requests={permissions} onResolve={onResolve} />
             <InterruptBar
               status={status}
@@ -291,6 +406,21 @@ export function App() {
           </div>
         </div>
 
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <span className="mr-1 text-xs text-hk-muted">Simulate</span>
+          <Button variant="secondary" onClick={() => simulate('rate_limit')}>
+            Rate limit
+          </Button>
+          <Button variant="secondary" onClick={() => simulate('network')}>
+            Network drop
+          </Button>
+          <Button variant="secondary" onClick={() => simulate('refusal')}>
+            Refusal
+          </Button>
+          <Button variant="secondary" onClick={() => simulate('fallback')}>
+            Model fallback
+          </Button>
+        </div>
         <p className="mt-2 font-mono text-[11px] text-hk-muted">
           {state.messages.length} messages · {toolCount} tool calls · {state.warnings.length} reducer warnings
         </p>

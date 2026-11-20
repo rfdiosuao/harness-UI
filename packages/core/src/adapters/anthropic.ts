@@ -1,5 +1,5 @@
 import type Anthropic from '@anthropic-ai/sdk';
-import type { HarnessEvent } from '../protocol';
+import type { HarnessEvent, TokenUsage } from '../protocol';
 
 /** Works with both `client.messages.stream()` and `client.beta.messages.stream()`. */
 export type AnthropicStreamEvent = Anthropic.RawMessageStreamEvent | Anthropic.Beta.BetaRawMessageStreamEvent;
@@ -31,6 +31,7 @@ type BlockInfo =
 export function createAnthropicAdapter(options: AnthropicAdapterOptions = {}) {
   const now = options.now ?? Date.now;
   let messageId = '';
+  let model: string | undefined;
   let stopReason: string | null = null;
   const blocks = new Map<number, BlockInfo>();
 
@@ -40,9 +41,13 @@ export function createAnthropicAdapter(options: AnthropicAdapterOptions = {}) {
     switch (event.type) {
       case 'message_start': {
         messageId = event.message.id;
+        model = event.message.model;
         stopReason = null;
         blocks.clear();
-        return [{ type: 'message.start', messageId, role: 'assistant', at }];
+        const out: HarnessEvent[] = [{ type: 'message.start', messageId, role: 'assistant', model, at }];
+        const usage = readUsage(event.message.usage);
+        if (usage) out.push({ type: 'usage', messageId, model, usage, at });
+        return out;
       }
 
       case 'content_block_start': {
@@ -69,6 +74,14 @@ export function createAnthropicAdapter(options: AnthropicAdapterOptions = {}) {
           }
           default: {
             blocks.set(event.index, { kind: 'ignored' });
+            // Server-side fallback: `{type: 'fallback', from: {model}, to: {model}}`
+            // marks where another model took over. Streamed content stays valid.
+            const fallback = block as { type: string; from?: { model?: unknown }; to?: { model?: unknown } };
+            if (fallback.type === 'fallback' && typeof fallback.to?.model === 'string') {
+              const from = typeof fallback.from?.model === 'string' ? fallback.from.model : (model ?? 'unknown');
+              model = fallback.to.model;
+              return [{ type: 'model.fallback', messageId, partId, from, to: model, at }];
+            }
             // web_search_tool_result, web_fetch_tool_result, code execution
             // results, …: every server tool result block carries tool_use_id.
             const result = block as { type: string; tool_use_id?: unknown; content?: unknown };
@@ -122,9 +135,31 @@ export function createAnthropicAdapter(options: AnthropicAdapterOptions = {}) {
         return [{ type: 'part.end', messageId, partId: info.partId, at }];
       }
 
-      case 'message_delta':
+      case 'message_delta': {
         stopReason = event.delta.stop_reason ?? stopReason;
-        return [];
+        const out: HarnessEvent[] = [];
+        const usage = readUsage(event.usage);
+        if (usage) out.push({ type: 'usage', messageId, model, usage, at });
+        if (event.delta.stop_reason === 'refusal') {
+          // HTTP 200 with a refusal: not thrown, so surface it as an error here.
+          const details = (event.delta as { stop_details?: { category?: unknown; explanation?: unknown } | null })
+            .stop_details;
+          out.push({
+            type: 'error',
+            errorId: `${messageId}:refusal`,
+            kind: 'refusal',
+            message:
+              typeof details?.explanation === 'string' && details.explanation
+                ? details.explanation
+                : 'The model declined to continue with this request.',
+            category: typeof details?.category === 'string' ? details.category : undefined,
+            retryable: false,
+            messageId,
+            at,
+          });
+        }
+        return out;
+      }
 
       case 'message_stop':
         return [{ type: 'message.end', messageId, stopReason, at }];
@@ -133,6 +168,23 @@ export function createAnthropicAdapter(options: AnthropicAdapterOptions = {}) {
         return [];
     }
   };
+}
+
+/** Maps Anthropic usage (message_start or message_delta) to TokenUsage, skipping absent fields. */
+function readUsage(raw: unknown): Partial<TokenUsage> | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const u = raw as Record<string, unknown>;
+  const out: Partial<TokenUsage> = {};
+  const map = [
+    ['input_tokens', 'input'],
+    ['output_tokens', 'output'],
+    ['cache_read_input_tokens', 'cacheRead'],
+    ['cache_creation_input_tokens', 'cacheWrite'],
+  ] as const;
+  for (const [from, to] of map) {
+    if (typeof u[from] === 'number') out[to] = u[from];
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
 }
 
 /** Server tool errors arrive as HTTP 200 with an error object as `content`. */

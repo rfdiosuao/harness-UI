@@ -3,6 +3,9 @@ import {
   TERMINAL_TOOL_STATUSES,
   type AskAnswer,
   type AskPart,
+  type FallbackPart,
+  type HarnessError,
+  type TokenUsage,
   type HarnessEvent,
   type Message,
   type Part,
@@ -17,8 +20,13 @@ export const initialTranscript: TranscriptState = Object.freeze({
   toolIndex: {},
   askIndex: {},
   queue: [],
+  usage: {},
+  errors: [],
   warnings: [],
 }) as TranscriptState;
+
+const ZERO_USAGE: TokenUsage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
+const USAGE_KEYS = ['input', 'output', 'cacheRead', 'cacheWrite'] as const;
 
 /** Legal tool status transitions. Anything else is ignored with a warning. */
 const TRANSITIONS: Record<ToolStatus, readonly ToolStatus[]> = {
@@ -196,7 +204,8 @@ function appendStreamText(
 }
 
 function endPart(part: Part, at: number | undefined): Part {
-  if (part.kind === 'tool' || part.kind === 'ask' || !part.streaming) return part;
+  if (part.kind !== 'text' && part.kind !== 'thinking') return part;
+  if (!part.streaming) return part;
   if (part.kind === 'thinking') return { ...part, streaming: false, endedAt: at ?? part.endedAt };
   return { ...part, streaming: false };
 }
@@ -217,7 +226,7 @@ export function reduceTranscript(state: TranscriptState, event: HarnessEvent): T
       if (findMessage(state, event.messageId) >= 0) {
         return warn(state, `Duplicate messageId ${event.messageId}`);
       }
-      const message: Message = { id: event.messageId, role: event.role, parts: [], streaming: true };
+      const message: Message = { id: event.messageId, role: event.role, parts: [], streaming: true, model: event.model };
       return { ...state, messages: [...state.messages, message] };
     }
 
@@ -414,6 +423,63 @@ export function reduceTranscript(state: TranscriptState, event: HarnessEvent): T
     case 'queue.remove': {
       if (!state.queue.some((q) => q.id === event.queueId)) return warn(state, `Unknown queueId ${event.queueId}`);
       return { ...state, queue: state.queue.filter((q) => q.id !== event.queueId) };
+    }
+
+    case 'usage': {
+      const prev = state.usage[event.messageId];
+      const tokens: TokenUsage = { ...(prev?.tokens ?? ZERO_USAGE) };
+      for (const key of USAGE_KEYS) {
+        const value = event.usage[key];
+        if (typeof value === 'number' && Number.isFinite(value) && value >= 0) tokens[key] = value;
+      }
+      const m = findMessage(state, event.messageId);
+      const model = event.model ?? prev?.model ?? (m >= 0 ? state.messages[m]!.model : undefined);
+      return { ...state, usage: { ...state.usage, [event.messageId]: { model, tokens } } };
+    }
+
+    case 'model.fallback': {
+      const m = findMessage(state, event.messageId);
+      if (m < 0) return warn(state, `Unknown messageId ${event.messageId}`);
+      const message = state.messages[m]!;
+      const part: FallbackPart = { kind: 'fallback', id: event.partId, from: event.from, to: event.to, at };
+      return replaceMessage(state, m, { ...message, model: event.to, parts: [...message.parts, part] });
+    }
+
+    case 'error': {
+      const { type: _, errorId, retryable, ...rest } = event;
+      const index = state.errors.findIndex((e) => e.id === errorId);
+      const prev = state.errors[index];
+      const next: HarnessError = {
+        ...prev,
+        ...rest,
+        id: errorId,
+        status: 'active',
+        retryable: retryable ?? prev?.retryable ?? false,
+        // A new report without a retry time cancels the old schedule.
+        retryAt: event.retryAt,
+        at: prev?.at ?? at,
+      };
+      const errors = state.errors.slice();
+      if (index >= 0) errors[index] = next;
+      else errors.push(next);
+      return { ...state, errors };
+    }
+
+    case 'error.retry':
+    case 'error.resolve': {
+      const index = state.errors.findIndex((e) => e.id === event.errorId);
+      if (index < 0) return warn(state, `Unknown errorId ${event.errorId}`);
+      const prev = state.errors[index]!;
+      if (prev.status === 'resolved' || prev.status === 'dismissed') {
+        return warn(state, `Error ${event.errorId} is already ${prev.status}`);
+      }
+      const next: HarnessError =
+        event.type === 'error.retry'
+          ? { ...prev, status: 'retrying', retryAt: undefined, attempt: event.attempt ?? (prev.attempt ?? 1) + 1 }
+          : { ...prev, status: event.outcome === 'dismissed' ? 'dismissed' : 'resolved', retryAt: undefined };
+      const errors = state.errors.slice();
+      errors[index] = next;
+      return { ...state, errors };
     }
 
     default: {

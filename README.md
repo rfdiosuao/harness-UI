@@ -93,6 +93,29 @@ import { pendingPermissions, runStatus } from '@harnesskit/core';
 
 None of them steal focus from someone typing elsewhere.
 
+### Status and cost
+
+```tsx
+import { activeError, contextTokens, errorEventFrom, estimateCost } from '@harnesskit/core';
+
+<ContextMeter used={contextTokens(state)} limit={contextWindow} />
+<CostTicker estimate={estimateCost(state, prices)} budget={5} />
+<ErrorBanner error={activeError(state)} onRetry={retryNow} onDismiss={dismiss} />
+// inside a message, for `part.kind === 'fallback'`:
+<FallbackNotice part={part} formatModel={displayName} />
+
+// when a request throws:
+catch (err) { dispatch(errorEventFrom(err, { errorId, attempt, maxAttempts: 5 })); }
+```
+
+- **`ContextMeter`**: a ring that turns to warning at 80% and danger at 95%, with a proper `role="meter"`. You pass the context window (for example from the provider's models API), so nothing is hardcoded per model.
+- **`CostTicker`**: running spend with a per-model breakdown, an optional budget, and updates throttled so the number doesn't flicker. harnesskit ships **no price table**: you pass your own. Tokens without a known price are never guessed at; the total is then shown as a lower bound (`≥$0.42`).
+- **`ErrorBanner`**: what went wrong and what happens next: a live retry countdown, the attempt number, "Retry now" and "Dismiss". Transient problems (rate limits, overload, network) use the warning tone; refusals, auth and bad requests use danger.
+- **`FallbackNotice`**: marks where another model took over in a message, e.g. after a server-side fallback.
+- **`errorEventFrom`** maps thrown SDK errors to `error` events without importing any SDK: HTTP status → kind, `retry-after` (seconds or a date, from `Headers` or a plain object) → retry time, with exponential backoff otherwise, and no retry once the last attempt fails.
+
+Limitation: with server-side fallbacks, providers can bill each attempt separately (Anthropic reports this in `usage.iterations`). `estimateCost` currently uses the top-level usage each message reports.
+
 ### Markdown
 
 Assistant text goes through `StreamingMarkdown`:
@@ -125,6 +148,10 @@ A complete, typechecked agent loop (streaming, approval, execution, tool results
 | `ask.answer` / `ask.cancel` | UI / harness | Answers are validated against the question; invalid ones are ignored with a warning. |
 | `turn.interrupt` | UI | The user stopped the agent: ends streaming messages, interrupts unfinished tools, cancels open questions. |
 | `queue.add` / `queue.remove` | UI / harness | Messages typed while the agent was busy, sent when it's ready. |
+| `usage` | adapter | Token usage for a message; reported fields replace earlier values. |
+| `model.fallback` | adapter | Another model took over mid-message; adds a switch-point part. |
+| `error` | harness / adapter | Reports an error or updates it by id (next attempt, new retry time). Refusals arrive this way. |
+| `error.retry` / `error.resolve` | harness | A retry is in flight; the error recovered or was dismissed. |
 
 Every event accepts an optional `at` timestamp (epoch ms), used only for durations.
 
@@ -136,13 +163,14 @@ Every event accepts an optional `at` timestamp (epoch ms), used only for duratio
 - [x] `StreamingMarkdown`: GFM rendering that repairs the unfinished tail, so half-written bold, code, links and fences never flash raw markers; only the block still streaming re-renders; raw HTML is shown as text and URLs are allow-listed
 - [ ] `StreamingMarkdown` follow-ups: syntax highlighting (the `CodeBlock` slot is ready for Shiki), math, footnotes, incremental lexing for very long messages
 - [x] Human-in-the-loop suite: `PermissionPrompt`, `AskUserCard`, `InterruptBar`
+- [x] Status and cost suite: `ContextMeter`, `CostTicker`, `ErrorBanner`, `FallbackNotice`
 
 **Next**
 
 - [ ] Long-transcript suite: `Transcript`, `ToolCallGroup`, `ThinkingBlock`
 - [ ] Coding-agent suite: `DiffView`, `TerminalOutput`, `FileChip`
 - [ ] Multi-agent suite: `SubagentCard`, `PlanList`
-- [ ] Status and cost suite: `ContextMeter`, `CostTicker`, `ErrorBanner`, `FallbackNotice`
+- [ ] Per-attempt billing for fallbacks (`usage.iterations`)
 - [ ] Input and sources suite: `Composer`, `CitationChip`
 - [ ] Adapters for the OpenAI Responses API and the Vercel AI SDK UI message stream
 - [ ] An incremental partial-JSON parser (the current one re-parses the whole buffer on each delta)

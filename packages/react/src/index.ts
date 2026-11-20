@@ -6,7 +6,21 @@ export {
   type ToolCallCardProps,
 } from './ToolCallCard';
 export { useTranscript } from './useTranscript';
-export { formatDuration } from './utils';
+export { formatDuration, formatTokens, formatUsd } from './utils';
+export {
+  ContextMeter,
+  defaultContextMeterLabels,
+  type ContextMeterProps,
+  type ContextMeterLabels,
+} from './ContextMeter';
+export { CostTicker, defaultCostTickerLabels, type CostTickerProps, type CostTickerLabels } from './CostTicker';
+export { ErrorBanner, defaultErrorBannerLabels, type ErrorBannerProps, type ErrorBannerLabels } from './ErrorBanner';
+export {
+  FallbackNotice,
+  defaultFallbackNoticeLabels,
+  type FallbackNoticeProps,
+  type FallbackNoticeLabels,
+} from './FallbackNotice';
 export {
   StreamingMarkdown,
   StreamingCaret,

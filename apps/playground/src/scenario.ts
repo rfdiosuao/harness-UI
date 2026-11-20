@@ -23,6 +23,13 @@ type Block =
 
 const raw = (e: object) => e as Raw;
 
+export const MODEL = 'claude-opus-5-5';
+
+interface UsageSim {
+  input: number;
+  cacheRead: number;
+}
+
 /** Uneven chunks, like real token streams. */
 function chunks(text: string, base: number): string[] {
   const sizes = [base, base + 3, base - 2, base + 1, base + 5, base - 1];
@@ -60,8 +67,21 @@ export class Script {
     this.harness({ type: 'message.end', messageId }, 500);
   }
 
-  assistant(id: string, blocks: Block[], stopReason: 'tool_use' | 'end_turn') {
-    this.model({ type: 'message_start', message: { id, type: 'message', role: 'assistant', content: [] } }, 350);
+  assistant(id: string, blocks: Block[], stopReason: 'tool_use' | 'end_turn', usage: UsageSim = { input: 1500, cacheRead: 20_000 }) {
+    this.model(
+      {
+        type: 'message_start',
+        message: {
+          id,
+          type: 'message',
+          role: 'assistant',
+          model: MODEL,
+          content: [],
+          usage: { input_tokens: usage.input, cache_read_input_tokens: usage.cacheRead, cache_creation_input_tokens: 0, output_tokens: 1 },
+        },
+      },
+      350,
+    );
     blocks.forEach((block, index) => {
       switch (block.type) {
         case 'thinking':
@@ -85,7 +105,10 @@ export class Script {
       }
       this.model({ type: 'content_block_stop', index }, 200);
     });
-    this.model({ type: 'message_delta', delta: { stop_reason: stopReason, stop_sequence: null }, usage: { output_tokens: 0 } }, 0);
+    // Roughly 3.5 characters per token, plus thinking overhead.
+    const written = blocks.reduce((n, b) => n + (b.type === 'tool_use' ? JSON.stringify(b.input).length : b.text.length), 0);
+    const output = Math.round(written / 3.5) + 40;
+    this.model({ type: 'message_delta', delta: { stop_reason: stopReason, stop_sequence: null }, usage: { output_tokens: output } }, 0);
     this.model({ type: 'message_stop' }, 400);
   }
 
@@ -139,6 +162,7 @@ export function buildScenario(): Step[] {
       { type: 'text', text: 'Two quick questions before I write the workflow:' },
     ],
     'tool_use',
+    { input: 3200, cacheRead: 15_800 },
   );
   s.harness({
     type: 'ask.request',
@@ -246,6 +270,7 @@ function proposeChanges(state: TranscriptState): Step[] {
       ...changes.map((c) => ({ type: 'tool_use' as const, id: c.id, name: c.name, input: c.input })),
     ],
     'tool_use',
+    { input: 2900, cacheRead: 19_600 },
   );
   for (const c of changes) {
     s.harness({ type: 'tool.permission.request', toolCallId: c.id, risk: c.risk, reason: c.reason }, 60);
@@ -270,7 +295,7 @@ function finish(state: TranscriptState, changes: Change[]): Step[] {
     for (const c of denied) lines.push(`- Skipped (you denied it): ${c.reason.charAt(0).toLowerCase()}${c.reason.slice(1)}`);
     lines.push('', 'Push a branch and open a pull request to see it run.');
   }
-  s.assistant('msg_03', [{ type: 'text', text: lines.join('\n') }], 'end_turn');
+  s.assistant('msg_03', [{ type: 'text', text: lines.join('\n') }], 'end_turn', { input: 4100, cacheRead: 23_100 });
   return s.steps;
 }
 
@@ -287,6 +312,7 @@ export function followUp(n: number, text: string): Step[] {
       },
     ],
     'end_turn',
+    { input: 1200 + 300 * n, cacheRead: 26_500 + 1800 * n },
   );
   return s.steps;
 }

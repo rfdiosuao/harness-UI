@@ -58,13 +58,37 @@ export interface AskAnswer {
 
 export type AskStatus = 'pending' | 'answered' | 'cancelled';
 
+export interface TokenUsage {
+  input: number;
+  output: number;
+  cacheRead: number;
+  cacheWrite: number;
+}
+
+export type ErrorKind =
+  | 'rate_limit'
+  | 'overloaded'
+  | 'server'
+  | 'network'
+  | 'auth'
+  | 'invalid_request'
+  | 'refusal'
+  | 'unknown';
+
+/**
+ * - `active`: showing; if `retryAt` is set, a retry is scheduled for then.
+ * - `retrying`: a retry is in flight.
+ * - `resolved`: a retry succeeded. `dismissed`: the user closed it.
+ */
+export type HarnessErrorStatus = 'active' | 'retrying' | 'resolved' | 'dismissed';
+
 interface Base {
   /** Epoch milliseconds. Optional; used for durations only. */
   at?: number;
 }
 
 export type HarnessEvent =
-  | (Base & { type: 'message.start'; messageId: string; role: Role })
+  | (Base & { type: 'message.start'; messageId: string; role: Role; model?: string })
   | (Base & { type: 'message.end'; messageId: string; stopReason?: string | null })
   | (Base & { type: 'part.start'; messageId: string; partId: string; kind: PartKind })
   | (Base & { type: 'part.end'; messageId: string; partId: string })
@@ -110,7 +134,29 @@ export type HarnessEvent =
   | (Base & { type: 'turn.interrupt'; reason?: string })
   /** A message the user typed while the agent was busy, waiting to be sent. */
   | (Base & { type: 'queue.add'; queueId: string; text: string })
-  | (Base & { type: 'queue.remove'; queueId: string });
+  | (Base & { type: 'queue.remove'; queueId: string })
+  /** Token usage for one message. Fields replace earlier values (APIs report running totals). */
+  | (Base & { type: 'usage'; messageId: string; model?: string; usage: Partial<TokenUsage> })
+  /** The provider switched models mid-turn (e.g. a server-side fallback after a refusal). */
+  | (Base & { type: 'model.fallback'; messageId: string; partId: string; from: string; to: string })
+  /** Reports an error, or updates one with the same id (next attempt, new retry time). */
+  | (Base & {
+      type: 'error';
+      errorId: string;
+      kind: ErrorKind;
+      message: string;
+      retryable?: boolean;
+      /** Epoch ms when an automatic retry will run. */
+      retryAt?: number;
+      attempt?: number;
+      maxAttempts?: number;
+      httpStatus?: number;
+      /** Provider detail, e.g. a refusal category. */
+      category?: string;
+      messageId?: string;
+    })
+  | (Base & { type: 'error.retry'; errorId: string; attempt?: number })
+  | (Base & { type: 'error.resolve'; errorId: string; outcome?: 'recovered' | 'dismissed' });
 
 export type HarnessEventType = HarnessEvent['type'];
 
@@ -185,7 +231,35 @@ export interface AskPart {
   answeredAt?: number;
 }
 
-export type Part = TextPart | ThinkingPart | ToolCallPart | AskPart;
+export interface FallbackPart {
+  kind: 'fallback';
+  id: string;
+  from: string;
+  to: string;
+  at?: number;
+}
+
+export type Part = TextPart | ThinkingPart | ToolCallPart | AskPart | FallbackPart;
+
+export interface HarnessError {
+  id: string;
+  kind: ErrorKind;
+  message: string;
+  status: HarnessErrorStatus;
+  retryable: boolean;
+  retryAt?: number;
+  attempt?: number;
+  maxAttempts?: number;
+  httpStatus?: number;
+  category?: string;
+  messageId?: string;
+  at?: number;
+}
+
+export interface MessageUsage {
+  model?: string;
+  tokens: TokenUsage;
+}
 
 export interface QueuedMessage {
   id: string;
@@ -199,6 +273,8 @@ export interface Message {
   parts: Part[];
   streaming: boolean;
   stopReason?: string | null;
+  /** The model that produced this message (updated on fallback). */
+  model?: string;
 }
 
 export interface TranscriptState {
@@ -209,6 +285,10 @@ export interface TranscriptState {
   askIndex: Record<string, { message: number; part: number }>;
   /** Messages the user queued while the agent was busy, oldest first. */
   queue: QueuedMessage[];
+  /** messageId → token usage. */
+  usage: Record<string, MessageUsage>;
+  /** Every error reported, oldest first. */
+  errors: HarnessError[];
   /** Events the reducer ignored (unknown ids, illegal transitions). Useful in dev. */
   warnings: string[];
 }
