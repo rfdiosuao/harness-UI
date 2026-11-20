@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>记录仪：Agent 工作台</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;family=Noto+Sans+SC:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0;background:#E6E8EA}
+*,*::before,*::after{box-sizing:border-box}
+button,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:#026FD7}
+a:hover{color:#0156A8}
+:focus-visible{outline:2px solid #026FD7;outline-offset:2px}
+textarea::placeholder{color:#5F6469}
+</style>
+</helmet>
+<div style="min-height:100vh; display:flex; flex-direction:column; background:#E6E8EA; color:#1A1D22; font-family:'Space Grotesk', 'Noto Sans SC', system-ui, sans-serif; font-size:13px; line-height:1.6">
+
+  <header style="display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; min-height:56px; padding:8px 20px">
+    <div style="display:flex; align-items:center; gap:10px; min-width:0">
+      <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#1A1D22" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="6.25"></circle><circle cx="8" cy="8" r="2.5" fill="#1A1D22"></circle></svg>
+      <h1 style="margin:0; font-size:14px; font-weight:600; white-space:nowrap">加载合集逐帧校验</h1>
+      <span style="font-family:'JetBrains Mono', ui-monospace, monospace; font-size:12px; color:#5F6469">ui-kit</span>
+    </div>
+    <div style="display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:0 auto">
+      <button type="button" style="display:flex; align-items:center; gap:6px; height:36px; padding:0 12px 0 10px; border:1px solid #C3C7CC; border-radius:8px; background:#F6F7F8; font-weight:500"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="M5.5 3.5v9M10.5 3.5v9"></path></svg>暂停</button>
+      <button type="button" style="display:flex; align-items:center; gap:6px; height:36px; padding:0 12px 0 10px; border:1px solid #C3C7CC; border-radius:8px; background:#F6F7F8; font-weight:500"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><rect x="4.25" y="4.25" width="7.5" height="7.5" rx="1.5"></rect></svg>停止</button>
+      <div style="display:flex; align-items:baseline; gap:8px; padding:0 8px">
+        <span style="font-size:12px; color:#5F6469">已运行</span>
+        <span style="font-family:'JetBrains Mono', ui-monospace, monospace; font-size:20px; font-weight:500; letter-spacing:-.02em">20:10</span>
+      </div>
+      <span style="display:flex; align-items:center; gap:8px; height:28px; padding:0 12px; border-radius:14px; background:repeating-linear-gradient(135deg, {{attn}} 0 6px, {{attnLight}} 6px 12px); font-size:12px; font-weight:600; color:#1A1D22">停在闸口<span style="font-family:'JetBrains Mono', ui-monospace, monospace; font-weight:500">1:12</span></span>
+    </div>
+    <div style="display:flex; flex-wrap:wrap; align-items:center; gap:6px">
+      <button type="button" aria-pressed="true" style="display:flex; align-items:center; gap:8px; height:36px; padding:0 12px 0 8px; border:1px solid #C3C7CC; border-radius:8px; background:#F6F7F8; font-size:12px"><span aria-hidden="true" style="display:flex; align-items:center; justify-content:flex-end; width:26px; height:16px; padding:2px; border-radius:8px; background:#1A1D22"><span style="width:12px; height:12px; border-radius:6px; background:#FFFFFF"></span></span>跟随最新</button>
+      <div style="display:flex; align-items:center; height:36px; border:1px solid #C3C7CC; border-radius:8px; background:#F6F7F8">
+        <button type="button" aria-label="缩小时间线" style="width:34px; height:34px; display:grid; place-items:center; border:0; border-radius:8px 0 0 8px; background:transparent"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3.5 8h9"></path></svg></button>
+        <span style="padding:0 6px; font-family:'JetBrains Mono', 'Noto Sans SC', ui-monospace, monospace; font-size:12px; color:#4C5055">8 分钟</span>
+        <button type="button" aria-label="放大时间线" style="width:34px; height:34px; display:grid; place-items:center; border:0; border-radius:0 8px 8px 0; background:transparent"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M8 3.5v9M3.5 8h9"></path></svg></button>
+      </div>
+      <button type="button" style="display:flex; align-items:center; gap:6px; height:36px; padding:0 8px 0 12px; border:1px solid #C3C7CC; border-radius:8px; background:#F6F7F8; font-size:12px">Opus 5.5<span style="color:#5F6469">· 高</span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#5F6469" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 6.5L8 10l3.5-3.5"></path></svg></button>
+    </div>
+  </header>
+
+  <section aria-labelledby="c-tl" style="margin:0 12px; padding:12px 16px 16px; border:1px solid #D3D6DA; border-radius:10px; background:#F6F7F8">
+    <div style="display:flex; flex-wrap:wrap; align-items:center; gap:8px 20px; margin-bottom:10px">
+      <h2 id="c-tl" style="margin:0; font-size:13px; font-weight:600">时间线</h2>
+      <ul aria-label="图例" style="list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:4px 14px; font-size:12px; color:#4C5055">
+        <li style="display:flex; align-items:center; gap:6px"><span style="width:14px; height:10px; border-radius:2px; border:1px solid #6A9FD8; background:#BDDCF7"></span>读取</li>
+        <li style="display:flex; align-items:center; gap:6px"><span style="width:14px; height:10px; border-radius:2px; border:1px solid #D9904F; background:#F8CFA7"></span>编辑</li>
+        <li style="display:flex; align-items:center; gap:6px"><span style="width:14px; height:10px; border-radius:2px; background:#2C333D"></span>运行</li>
+        <li style="display:flex; align-items:center; gap:6px"><span style="width:14px; height:10px; border-radius:2px; border:1px dashed #5F6469; background:#FFFFFF"></span>搜索</li>
+        <li style="display:flex; align-items:center; gap:6px"><span style="width:14px; height:10px; border-radius:2px; border:1px solid #C3C7CC; background:repeating-linear-gradient(135deg, #9BA1A8 0 1.5px, transparent 1.5px 4px)"></span>思考</li>
+        <li style="display:flex; align-items:center; gap:6px"><span style="width:14px; height:10px; border-radius:2px; background:#D02B31"></span>失败</li>
+        <li style="display:flex; align-items:center; gap:6px"><span style="width:14px; height:10px; border-radius:2px; background:repeating-linear-gradient(135deg, {{attn}} 0 3px, {{attnLight}} 3px 6px)"></span>等你</li>
+      </ul>
+      <span style="margin-left:auto; font-family:'JetBrains Mono', 'Noto Sans SC', ui-monospace, monospace; font-size:12px; color:#5F6469">显示 14:15 – 14:23</span>
+    </div>
+
+    <div style="overflow-x:auto">
+      <div style="min-width:880px">
+
+        <div style="display:flex; align-items:center; height:30px">
+          <div style="flex:none; width:120px; padding-right:12px; font-size:12px; color:#4C5055">全程 <span style="font-family:'JetBrains Mono', ui-monospace, monospace; color:#5F6469">14:02 起</span></div>
+          <div role="img" aria-label="全程概览：第 1 到 4 步已完成，第 5 步进行中；当前显示 14:15 到 14:23" style="position:relative; flex:1 1 auto; min-width:0; height:16px; border-radius:3px; background:#E1E4E7">
+            <span style="position:absolute; top:4px; bottom:4px; left:4.762%; width:11.905%; border-radius:2px; background:#A9AFB6"></span>
+            <span style="position:absolute; top:4px; bottom:4px; left:16.667%; width:7.937%; border-radius:2px; background:#C3C7CC"></span>
+            <span style="position:absolute; top:4px; bottom:4px; left:24.603%; width:8.730%; border-radius:2px; background:#A9AFB6"></span>
+            <span style="position:absolute; top:4px; bottom:4px; left:33.333%; width:44.444%; border-radius:2px; background:#C3C7CC"></span>
+            <span style="position:absolute; top:4px; bottom:4px; left:77.778%; width:18.254%; border-radius:2px; background:{{attn}}"></span>
+            <span style="position:absolute; top:-3px; bottom:-3px; left:61.905%; width:38.095%; border:2px solid #1A1D22; border-radius:4px"></span>
+          </div>
+        </div>
+
+        <div style="display:flex; height:26px; margin-top:6px">
+          <div style="flex:none; width:120px"></div>
+          <div style="position:relative; flex:1 1 auto; min-width:0; border-bottom:1px solid #C3C7CC; font-family:'JetBrains Mono', ui-monospace, monospace; font-size:11px; line-height:18px; color:#5F6469">
+            <span style="position:absolute; left:0; top:2px">14:15</span>
+            <span style="position:absolute; left:12.5%; top:2px; transform:translateX(-50%)">14:16</span>
+            <span style="position:absolute; left:25%; top:2px; transform:translateX(-50%)">14:17</span>
+            <span style="position:absolute; left:37.5%; top:2px; transform:translateX(-50%)">14:18</span>
+            <span style="position:absolute; left:50%; top:2px; transform:translateX(-50%)">14:19</span>
+            <span style="position:absolute; left:62.5%; top:2px; transform:translateX(-50%)">14:20</span>
+            <span style="position:absolute; left:75%; top:2px; transform:translateX(-50%)">14:21</span>
+            <span style="position:absolute; right:0; top:2px">14:23</span>
+            <span style="position:absolute; left:89.583%; top:1px; transform:translateX(-50%); padding:0 5px; border-radius:3px; background:#1A1D22; color:#FFFFFF; font-weight:500">14:22:10</span>
+          </div>
+        </div>
+
+        <div style="display:flex; height:34px">
+          <div style="flex:none; width:120px; display:flex; align-items:center; padding-right:12px; font-size:12px; color:#4C5055">对话</div>
+          <div style="position:relative; flex:1 1 auto; min-width:0; background-color:#EDEFF1; background-image:repeating-linear-gradient(to right, #D3D6DA 0 1px, transparent 1px 12.5%)">
+            <span style="position:absolute; left:45.417%; top:9px; display:flex; align-items:center; gap:6px; margin-left:-5px; font-size:11.5px; line-height:16px; color:#4C5055; white-space:nowrap"><span style="width:10px; height:10px; border-radius:5px; background:#1A1D22"></span>开始逐格对照</span>
+            <span style="position:absolute; left:57.083%; top:9px; display:flex; align-items:center; gap:6px; margin-left:-5px; font-size:11.5px; line-height:16px; color:#4C5055; white-space:nowrap"><span style="width:10px; height:10px; border-radius:5px; background:#1A1D22"></span>改为只截格子</span>
+            <span style="position:absolute; left:73.75%; top:9px; display:flex; align-items:center; gap:6px; margin-left:-5px; font-size:11.5px; line-height:16px; color:#4C5055; white-space:nowrap"><span style="width:10px; height:10px; border-radius:5px; background:#1A1D22"></span>想构建 Whirl</span>
+            <span aria-hidden="true" style="position:absolute; top:0; bottom:0; left:89.583%; right:0; background:repeating-linear-gradient(135deg, rgba(95,100,105,.12) 0 1px, transparent 1px 7px)"></span>
+            <span style="position:absolute; left:89.583%; top:9px; display:flex; align-items:center; gap:6px; margin-left:6px; font-size:11.5px; line-height:16px; font-weight:600; color:#1A1D22; white-space:nowrap"><span style="width:10px; height:10px; border-radius:5px; border:2px solid {{attn}}; background:#FFFFFF"></span>等你回复</span>
+            <span aria-hidden="true" style="position:absolute; top:0; bottom:0; left:89.583%; width:2px; margin-left:-1px; background:#1A1D22"></span>
+          </div>
+        </div>
+
+        <div style="display:flex; height:34px">
+          <div style="flex:none; width:120px; display:flex; align-items:center; padding-right:12px; font-size:12px; color:#4C5055">计划</div>
+          <div style="position:relative; flex:1 1 auto; min-width:0; background-color:#F2F4F5; background-image:repeating-linear-gradient(to right, #D3D6DA 0 1px, transparent 1px 12.5%)">
+            <span style="position:absolute; top:6px; height:22px; left:0; width:41.667%; display:flex; align-items:center; gap:6px; padding:0 8px 0 4px; border-radius:0 4px 4px 0; background:#C9CDD2; font-size:11.5px; font-weight:500; white-space:nowrap; overflow:hidden"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 4.5L6 8l3.5 3.5"></path></svg>4 · 录制复刻页，各 61 帧<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-left:auto"><path d="M3.5 8.5l3 3 6-7"></path></svg></span>
+            <span style="position:absolute; top:6px; height:22px; left:41.667%; width:47.917%; display:flex; align-items:center; padding:0 8px; margin-left:2px; border:1.5px solid #1A1D22; border-radius:4px; background:#FFFFFF; font-size:11.5px; font-weight:600; white-space:nowrap; overflow:hidden">5 · 逐格对照相位</span>
+            <span aria-hidden="true" style="position:absolute; top:0; bottom:0; left:89.583%; right:0; background:repeating-linear-gradient(135deg, rgba(95,100,105,.12) 0 1px, transparent 1px 7px)"></span>
+            <span style="position:absolute; top:6px; height:22px; left:89.583%; right:0; display:flex; align-items:center; padding:0 8px; margin-left:4px; border:1px dashed #8E949A; border-radius:4px; font-size:11.5px; color:#4C5055; white-space:nowrap; overflow:hidden">6 · 并入组件库</span>
+            <span aria-hidden="true" style="position:absolute; top:0; bottom:0; left:89.583%; width:2px; margin-left:-1px; background:#1A1D22"></span>
+          </div>
+        </div>
+
+        <div style="display:flex; height:42px">
+          <div style="flex:none; width:120px; display:flex; align-items:center; gap:8px; padding-right:12px; font-size:12px; font-weight:600">主代理<span style="width:8px; height:8px; border-radius:4px; background:{{attn}}"></span></div>
+          <div style="position:relative; flex:1 1 auto; min-width:0; background-color:#EDEFF1; background-image:repeating-linear-gradient(to right, #D3D6DA 0 1px, transparent 1px 12.5%)">
+            <span aria-hidden="true" style="position:absolute; top:12px; height:18px; left:1.042%; width:4px; border-radius:2px; background:#1A1D22"></span>
+            <button type="button" aria-label="14:15 到 14:18，等待 2 个子代理" style="position:absolute; top:9px; height:24px; left:2.5%; width:36.042%; display:flex; align-items:center; padding:0 8px; border:1px solid #8E949A; border-radius:4px; background:transparent; color:#4C5055; font-size:11.5px; text-align:left; white-space:nowrap; overflow:hidden">等待 2 个子代理</button>
+            <button type="button" aria-label="14:18:10 读取两组录制结果" style="position:absolute; top:9px; height:24px; left:39.583%; width:0.4%; min-width:8px; padding:0; border:1px solid #6A9FD8; border-radius:3px; background:#BDDCF7"></button>
+            <button type="button" aria-label="14:18:40 读取 tools/tilecmp.py" style="position:absolute; top:9px; height:24px; left:45.833%; width:0.4%; min-width:8px; padding:0; border:1px solid #6A9FD8; border-radius:3px; background:#BDDCF7"></button>
+            <button type="button" aria-label="14:18:44 运行 tilecmp，41 秒后失败，退出 137" style="position:absolute; top:9px; height:24px; left:46.667%; width:8.542%; display:flex; align-items:center; gap:5px; padding:0 6px; border:0; border-radius:4px; background:#D02B31; color:#FFFFFF; font-family:'JetBrains Mono', 'Noto Sans SC', ui-monospace, monospace; font-size:11px; text-align:left; white-space:nowrap; overflow:hidden"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex:none"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7"></path></svg>退出 137</button>
+            <span aria-hidden="true" style="position:absolute; top:9px; height:24px; left:55.208%; width:1.667%; border:1px solid #C3C7CC; border-radius:3px; background:repeating-linear-gradient(135deg, #9BA1A8 0 1.5px, transparent 1.5px 4px)"></span>
+            <button type="button" aria-label="14:19:40 编辑 tools/tilecmp.py，已选中" aria-pressed="true" style="position:absolute; top:9px; height:24px; left:58.333%; width:0.6%; min-width:10px; padding:0; border:1px solid #D9904F; border-radius:3px; background:#F8CFA7; box-shadow:0 0 0 2px #F6F7F8, 0 0 0 4px #026FD7"></button>
+            <button type="button" aria-label="14:19:45 运行 tilecmp，30 秒，完成" style="position:absolute; top:9px; height:24px; left:59.375%; width:6.25%; display:flex; align-items:center; padding:0 6px; border:0; border-radius:4px; background:#2C333D; color:#FFFFFF; font-family:'JetBrains Mono', 'Noto Sans SC', ui-monospace, monospace; font-size:11px; text-align:left; white-space:nowrap; overflow:hidden">运行 30s</button>
+            <button type="button" aria-label="14:20:17 在 ref-whirl/ 中搜索" style="position:absolute; top:9px; height:24px; left:66.04%; width:0.4%; min-width:8px; padding:0; border:1px dashed #5F6469; border-radius:3px; background:#FFFFFF"></button>
+            <span style="position:absolute; top:9px; height:24px; left:66.875%; width:6.458%; display:flex; align-items:center; padding:0 6px; border:1px solid #C3C7CC; border-radius:4px; background:repeating-linear-gradient(135deg, rgba(155,161,168,.55) 0 1.5px, transparent 1.5px 5px); font-family:'JetBrains Mono', 'Noto Sans SC', ui-monospace, monospace; font-size:11px; color:#1A1D22; white-space:nowrap; overflow:hidden">思考 31s</span>
+            <span aria-hidden="true" style="position:absolute; top:0; bottom:0; left:89.583%; right:0; background:repeating-linear-gradient(135deg, rgba(95,100,105,.12) 0 1px, transparent 1px 7px)"></span>
+            <a href="#c-gate" style="position:absolute; top:7px; height:28px; left:74.583%; width:15%; display:flex; align-items:center; gap:6px; padding:0 8px; border-radius:4px; background:repeating-linear-gradient(135deg, {{attn}} 0 8px, {{attnLight}} 8px 16px); color:#1A1D22; font-size:11.5px; font-weight:700; text-decoration:none; white-space:nowrap; overflow:hidden">等你确认<span style="font-family:'JetBrains Mono', ui-monospace, monospace; font-weight:500">1:12</span></a>
+            <span aria-hidden="true" style="position:absolute; top:0; bottom:0; left:89.583%; width:2px; margin-left:-1px; background:#1A1D22"></span>
+          </div>
+        </div>
+
+        <div style="display:{{subDisplay}}; height:30px">
+          <div style="flex:none; width:120px; display:flex; align-items:center; gap:6px; padding-right:12px; font-size:12px; color:#4C5055">子代理 1<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#4C5055" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"></path></svg></div>
+          <div style="position:relative; flex:1 1 auto; min-width:0; background-color:#F2F4F5; background-image:repeating-linear-gradient(to right, #D3D6DA 0 1px, transparent 1px 12.5%)">
+            <button type="button" aria-label="14:15:10 到 14:17:30，子代理 1 录制 recA，61 帧" style="position:absolute; top:5px; height:20px; left:2.083%; width:29.167%; display:flex; align-items:center; padding:0 8px; border:0; border-radius:4px; background:#2C333D; color:#FFFFFF; font-family:'JetBrains Mono', 'Noto Sans SC', ui-monospace, monospace; font-size:11px; text-align:left; white-space:nowrap; overflow:hidden">录制 recA · 61 帧</button>
+            <span aria-hidden="true" style="position:absolute; top:0; bottom:0; left:89.583%; right:0; background:repeating-linear-gradient(135deg, rgba(95,100,105,.12) 0 1px, transparent 1px 7px)"></span>
+            <span aria-hidden="true" style="position:absolute; top:0; bottom:0; left:89.583%; width:2px; margin-left:-1px; background:#1A1D22"></span>
+          </div>
+        </div>
+
+        <div style="display:{{subDisplay}}; height:30px">
+          <div style="flex:none; width:120px; display:flex; align-items:center; gap:6px; padding-right:12px; font-size:12px; color:#4C5055">子代理 2<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#4C5055" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"></path></svg></div>
+          <div style="position:relative; flex:1 1 auto; min-width:0; background-color:#EDEFF1; background-image:repeating-linear-gradient(to right, #D3D6DA 0 1px, transparent 1px 12.5%)">
+            <button type="button" aria-label="14:15:12 到 14:18:05，子代理 2 录制 recB，61 帧" style="position:absolute; top:5px; height:20px; left:2.5%; width:36.042%; display:flex; align-items:center; padding:0 8px; border:0; border-radius:4px; background:#2C333D; color:#FFFFFF; font-family:'JetBrains Mono', 'Noto Sans SC', ui-monospace, monospace; font-size:11px; text-align:left; white-space:nowrap; overflow:hidden">录制 recB · 61 帧</button>
+            <span aria-hidden="true" style="position:absolute; top:0; bottom:0; left:89.583%; right:0; background:repeating-linear-gradient(135deg, rgba(95,100,105,.12) 0 1px, transparent 1px 7px)"></span>
+            <span aria-hidden="true" style="position:absolute; top:0; bottom:0; left:89.583%; width:2px; margin-left:-1px; background:#1A1D22"></span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <div style="flex:1 0 auto; display:flex; flex-wrap:wrap; align-items:stretch; gap:12px; padding:12px">
+
+    <section aria-labelledby="c-chat" style="flex:1 1 340px; min-width:0; display:flex; flex-direction:column; gap:12px; padding:14px 16px 16px; border:1px solid #D3D6DA; border-radius:10px; background:#F6F7F8">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px">
+        <h2 id="c-chat" style="margin:0; font-size:13px; font-weight:600">对话</h2>
+        <span style="font-size:12px; color:#5F6469">任务 · 14:03 你：先做加载合集</span>
+      </div>
+      <ol style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px">
+        <li style="display:flex; flex-direction:column; gap:2px; padding:10px 12px; border-radius:8px; background:#FFFFFF; border:1px solid #E1E4E7">
+          <span style="font-family:'JetBrains Mono', ui-monospace, monospace; font-size:11px; color:#5F6469">14:18:38</span>
+          <span>两段视频共 72 格，出处都已对上。现在逐格比较相位：复刻页各录了 61 帧，和原片逐格算误差。</span>
+        </li>
+        <li style="display:flex; flex-direction:column; gap:2px; padding:10px 12px; border-radius:8px; background:#FFFFFF; border:1px solid #E1E4E7">
+          <span style="font-family:'JetBrains Mono', ui-monospace, monospace; font-size:11px; color:#5F6469">14:19:34</span>
+          <span>原片每帧 1080×1350，整段按 float32 读进内存，每帧约 5.8 MB，内存撑不住。改成只截 36 个格子、用 uint8 存，每帧 0.73 MB。</span>
+        </li>
+        <li style="display:flex; flex-direction:column; gap:2px; padding:10px 12px; border-radius:8px; background:#FFFFFF; border:1px solid #E1E4E7">
+          <span style="font-family:'JetBrains Mono', ui-monospace, monospace; font-size:11px; color:#5F6469">14:20:54</span>
+          <span>不一致的 5 格都来自 Whirl。最直接的确认办法，是用它仓库自带的构建重新生成 CSS 来比。你之前拒绝过一次类似的构建，所以我也准备了只读方案。</span>
+        </li>
+      </ol>
+      <div style="margin-top:auto; border:1px solid #8E949A; border-radius:8px; background:#FFFFFF">
+        <label for="c-compose" style="position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap">回复 Agent</label>
+        <textarea id="c-compose" rows="2" placeholder="回复会和你在闸口的选择一起发出" style="display:block; width:100%; min-height:56px; resize:none; border:0; border-radius:8px 8px 0 0; padding:10px 12px 2px; background:transparent; font-size:13px; line-height:1.6"></textarea>
+        <div style="display:flex; align-items:center; gap:2px; padding:4px 6px 6px">
+          <button type="button" aria-label="引用片段" style="width:36px; height:36px; display:grid; place-items:center; border:0; border-radius:6px; background:transparent; color:#4C5055"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="2.5"></circle><path d="M10.5 8v.9a1.85 1.85 0 0 0 3.7 0V8a6.25 6.25 0 1 0-2.45 4.95"></path></svg></button>
+          <button type="button" style="margin-left:auto; height:36px; padding:0 16px; border:0; border-radius:8px; background:#1A1D22; color:#FFFFFF; font-weight:600">发送</button>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="c-clip" style="flex:999 1 520px; min-width:0; display:flex; flex-direction:column; border:1px solid #D3D6DA; border-radius:10px; background:#F6F7F8; overflow:hidden">
+      <div style="display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; padding:12px 12px 12px 16px; border-bottom:1px solid #D3D6DA">
+        <span style="width:14px; height:14px; border-radius:3px; border:1px solid #D9904F; background:#F8CFA7; box-shadow:0 0 0 2px #F6F7F8, 0 0 0 3.5px #026FD7"></span>
+        <h2 id="c-clip" style="margin:0; font-size:13px; font-weight:600">编辑 <span style="font-family:'JetBrains Mono', ui-monospace, monospace; font-weight:500">tools/tilecmp.py</span></h2>
+        <span style="display:flex; gap:8px; font-family:'JetBrains Mono', ui-monospace, monospace; font-size:12px"><span style="color:#5F6469">14:19:40</span><span style="color:#026FD7">+7</span><span style="color:#D02B31">−5</span></span>
+        <span style="margin-left:auto; display:flex; gap:4px">
+          <button type="button" style="display:flex; align-items:center; gap:4px; height:32px; padding:0 10px 0 6px; border:1px solid #C3C7CC; border-radius:6px; background:#FFFFFF; font-size:12px"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 4.5L6 8l3.5 3.5"></path></svg>上一段</button>
+          <button type="button" style="display:flex; align-items:center; gap:4px; height:32px; padding:0 6px 0 10px; border:1px solid #C3C7CC; border-radius:6px; background:#FFFFFF; font-size:12px">下一段<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 4.5L10 8l-3.5 3.5"></path></svg></button>
+        </span>
+      </div>
+      <p style="margin:0; padding:10px 16px; border-bottom:1px solid #D3D6DA; font-size:12.5px; line-height:1.7; color:#4C5055"><span style="font-weight:600; color:#1A1D22">理由</span>　每帧只留 36 个格子并改用 uint8，内存从约 5.8 MB 降到 0.73 MB；比较时再转成 int16，避免减法溢出。</p>
+      <div style="flex:1 1 auto; overflow-x:auto; padding:8px 0 12px; background:#FFFFFF; font-family:'JetBrains Mono', 'Noto Sans SC', ui-monospace, monospace; font-size:12px; line-height:20px">
+        <div style="min-width:max-content">
+          <div style="padding:0 16px 4px; color:#5F6469">@@ -5,13 +5,15 @@</div>
+          <sc-for list="{{diff}}" as="d" hint-placeholder-count="18">
+            <div style="display:flex; background:{{d.bg}}; color:{{d.fg}}">
+              <span style="flex:none; width:36px; padding-right:6px; text-align:right; color:#5F6469">{{d.o}}</span>
+              <span style="flex:none; width:36px; padding-right:6px; text-align:right; color:#5F6469">{{d.n}}</span>
+              <span style="flex:none; width:20px; text-align:center; font-weight:500; color:{{d.sc}}">{{d.s}}</span>
+              <span style="white-space:pre; padding-right:16px">{{d.t}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+    <section id="c-gate" aria-labelledby="c-gate-title" style="flex:1 1 380px; min-width:0; display:flex; flex-direction:column; border:1px solid #D3D6DA; border-radius:10px; background:#FFFFFF; overflow:hidden">
+      <div style="display:flex; align-items:center; gap:8px; min-height:40px; padding:0 16px; background:repeating-linear-gradient(135deg, {{attn}} 0 10px, {{attnLight}} 10px 20px); color:#1A1D22">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="M5.5 3.5v9M10.5 3.5v9"></path></svg>
+        <span style="font-size:13px; font-weight:700">闸口 · 等你确认</span>
+        <span style="margin-left:auto; font-family:'JetBrains Mono', ui-monospace, monospace; font-size:13px; font-weight:500">1:12</span>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:14px; padding:16px 18px 18px">
+        <h2 id="c-gate-title" style="margin:0; font-size:17px; line-height:1.45; font-weight:700">运行下载的第三方代码</h2>
+        <div style="display:flex; align-items:center; gap:10px; min-height:44px; padding:0 4px 0 12px; border:1px solid #D3D6DA; border-radius:6px; background:#F6F7F8; font-family:'JetBrains Mono', ui-monospace, monospace; font-size:12.5px">
+          <span aria-hidden="true" style="color:#5F6469">$</span>
+          <code style="flex:1 1 auto; min-width:0; padding:10px 0; overflow-wrap:anywhere; font-family:inherit">cd ref-whirl &amp;&amp; npm ci &amp;&amp; npm run build</code>
+          <button type="button" aria-label="复制命令" style="flex:none; width:36px; height:36px; display:grid; place-items:center; border:0; border-radius:6px; background:transparent; color:#4C5055"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5.25" y="5.25" width="8.5" height="8.5" rx="1.5"></rect><path d="M10.75 5.25V3.5c0-.7-.55-1.25-1.25-1.25H3.5c-.7 0-1.25.55-1.25 1.25v6c0 .7.55 1.25 1.25 1.25h1.75"></path></svg></button>
+        </div>
+        <ul aria-label="影响" style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; font-size:13px">
+          <li style="display:flex; flex-wrap:wrap; align-items:center; gap:2px 8px; min-height:30px; border-bottom:1px solid #E1E4E7"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#4C5055" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6"></circle><path d="M2 8h12M8 2c1.7 1.7 2.5 3.7 2.5 6s-.8 4.3-2.5 6c-1.7-1.7-2.5-3.7-2.5-6S6.3 3.7 8 2z"></path></svg>联网<span style="margin-left:auto; font-family:'JetBrains Mono', ui-monospace, monospace; font-size:12px; color:#4C5055">registry.npmjs.org</span></li>
+          <li style="display:flex; flex-wrap:wrap; align-items:center; gap:2px 8px; min-height:30px; border-bottom:1px solid #E1E4E7"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#4C5055" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"></rect><path d="M4.75 6.25L6.5 8l-1.75 1.75M8.5 10h2.75"></path></svg>执行安装和构建脚本<span style="margin-left:auto; font-size:12px; font-weight:600; color:#D02B31">未经审阅</span></li>
+          <li style="display:flex; flex-wrap:wrap; align-items:center; gap:2px 8px; min-height:30px"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#4C5055" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.75 4.75c0-.55.45-1 1-1h3.1l1.4 1.5h6c.55 0 1 .45 1 1v5.5c0 .55-.45 1-1 1H2.75c-.55 0-1-.45-1-1z"></path></svg>写入<span style="margin-left:auto; font-family:'JetBrains Mono', ui-monospace, monospace; font-size:12px; color:#4C5055">ref-whirl/node_modules · dist</span></li>
+        </ul>
+        <div style="padding:12px 14px; border-radius:8px; background:#F2F4F5">
+          <div style="font-size:12px; font-weight:600; color:#4C5055">Agent 的备选</div>
+          <p style="margin:2px 0 0; font-size:13px; line-height:1.65">只读 npm 包里编译好的 <code style="font-family:'JetBrains Mono', ui-monospace, monospace; font-size:12px">css/</code>，逐条对照关键帧，不执行任何代码。</p>
+        </div>
+        <p style="margin:0; font-size:12.5px; line-height:1.6; color:#4C5055"><span style="font-weight:600; color:#1A1D22">先例</span>　14:11 你拒绝过 <code style="font-family:'JetBrains Mono', ui-monospace, monospace; font-size:12px">node gallery/svg-spinners/build.mjs</code></p>
+        <div style="display:flex; flex-wrap:wrap; gap:8px">
+          <button type="button" style="height:44px; padding:0 16px; border:0; border-radius:8px; background:#1A1D22; color:#FFFFFF; font-weight:600">放行一次</button>
+          <button type="button" style="height:44px; padding:0 14px; border:1px solid #1A1D22; border-radius:8px; background:#FFFFFF; font-weight:600">改用只读方案</button>
+          <button type="button" style="height:44px; padding:0 12px; border:0; border-radius:8px; background:transparent; color:#4C5055">拒绝</button>
+        </div>
+        <p style="margin:-4px 0 0; font-size:12px; line-height:1.6; color:#5F6469">放行后，时间线从闸口继续。第三方代码不提供“始终允许”。</p>
+      </div>
+    </section>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"attn":{"editor":"color","default":"#F37513","options":["#F37513","#F2B33D","#EE7AA9"],"section":"外观"},"subagents":{"editor":"boolean","default":true,"section":"布局"},"$preview":{"width":1440,"height":1024}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const attn = this.props.attn ?? '#F37513';
+    const showSub = this.props.subagents ?? true;
+    const mix = (hex, t) => {
+      let h = String(hex).replace('#', '');
+      if (h.length === 3) h = h.split('').map((c) => c + c).join('');
+      const n = parseInt(h.slice(0, 6), 16);
+      const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => Math.round(v + (255 - v) * t));
+      return 'rgb(' + ch.join(', ') + ')';
+    };
+    const rows = [
+      ['5', '5', ' ', 'ref, rdir, fps, out_json = sys.argv[1], sys.argv[2], float(sys.argv[3]), sys.argv[4]'],
+      ['6', '6', ' ', 'files = sorted(glob.glob(f"{rdir}/r*.png"))'],
+      ['7', '', '−', 'rep = [cv2.imread(f, cv2.IMREAD_GRAYSCALE).astype(np.float32) for f in files]'],
+      ['', '7', '+', 'def card(i): r, c = divmod(i, 6); x, y = 28 + c * 172.4, 106 + r * 198; return int(x) + 3, int(y) + 22, int(x) + 159, int(y) + 152'],
+      ['', '8', '+', 'boxes = [card(i) for i in range(36)]'],
+      ['', '9', '+', 'def crops(g):  # 只留 36 个格子，uint8 存储'],
+      ['', '10', '+', '    return np.stack([g[y0:y1, x0:x1] for x0, y0, x1, y1 in boxes])'],
+      ['', '11', '+', 'rep = [crops(cv2.imread(f, cv2.IMREAD_GRAYSCALE)) for f in files]'],
+      ['8', '12', ' ', 'cap = cv2.VideoCapture(ref); vfps = cap.get(cv2.CAP_PROP_FPS); nref = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))'],
+      ['', '', '~', '⋯ 3 行未改动'],
+      ['12', '16', ' ', '    if not ok: break'],
+      ['13', '', '−', '    refs.append(cv2.cvtColor(f, cv2.COLOR_BGR2GRAY).astype(np.float32))'],
+      ['', '17', '+', '    refs.append(crops(cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)))'],
+      ['14', '', '−', 'def card(i): r, c = divmod(i, 6); x, y = 28 + c * 172.4, 106 + r * 198; return int(x) + 3, int(y) + 22, int(x) + 159, int(y) + 152'],
+      ['15', '', '−', 'boxes = [card(i) for i in range(36)]'],
+      ['16', '18', ' ', 'def tile_err(a, b, i):'],
+      ['17', '', '−', '    x0, y0, x1, y1 = boxes[i]; return float(np.abs(a[y0:y1, x0:x1] - b[y0:y1, x0:x1]).mean())'],
+      ['', '19', '+', '    return float(np.abs(a[i].astype(np.int16) - b[i]).mean())'],
+    ];
+    const diff = rows.map(([o, n, s, t]) => ({
+      o, n, t,
+      s: s === '~' || s === ' ' ? '' : s,
+      bg: s === '+' ? '#E3EEFB' : s === '−' ? '#FBE7E8' : s === '~' ? '#EEF0F2' : 'transparent',
+      fg: s === ' ' ? '#4C5055' : s === '~' ? '#5F6469' : '#1A1D22',
+      sc: s === '+' ? '#026FD7' : '#D02B31',
+    }));
+    return {
+      attn,
+      attnLight: mix(attn, 0.38),
+      subDisplay: showSub ? 'flex' : 'none',
+      diff,
+    };
+  }
+}
+</script>
+</body>
+</html>

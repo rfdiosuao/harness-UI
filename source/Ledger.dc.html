@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>工作记录：Agent 工作台</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+SC:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0;background:#FFFFFF}
+*,*::before,*::after{box-sizing:border-box}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:#1C50B5}
+a:hover{color:#163F8F}
+:focus-visible{outline:2px solid #1C50B5;outline-offset:2px}
+::placeholder{color:#66696F}
+</style>
+</helmet>
+<div id="b-top" style="min-height:100vh; background:#FFFFFF; color:#181B1F; font-family:'Instrument Sans', 'Noto Sans SC', system-ui, sans-serif; font-size:15px; line-height:1.75">
+
+  <header style="display:flex; flex-wrap:wrap; align-items:center; gap:8px 20px; min-height:56px; padding:8px 32px; border-bottom:1px solid #D6D7DA; font-size:13px; line-height:1.5">
+    <div style="display:flex; align-items:center; gap:10px; min-width:0">
+      <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#181B1F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.75" y="1.75" width="10.5" height="12.5" rx="1.5"></rect><path d="M5.5 5h5M5.5 8h5M5.5 11h3"></path></svg>
+      <a href="#b-top" style="color:#52555B; text-decoration:none">ui-kit</a>
+      <span aria-hidden="true" style="color:#9A9DA2">/</span>
+      <span style="font-weight:600; white-space:nowrap">加载合集逐帧校验</span>
+    </div>
+    <div style="display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-left:auto">
+      <a href="#b-sign" style="display:flex; align-items:center; gap:8px; height:36px; padding:0 14px; border-radius:18px; background:{{accentWash}}; color:{{accent}}; font-weight:600; text-decoration:none"><span style="width:7px; height:7px; border-radius:4px; background:{{accent}}"></span>第 5 步待你签批</a>
+      <button type="button" style="display:flex; align-items:center; gap:7px; height:36px; padding:0 12px; border:1px solid #D6D7DA; border-radius:8px; background:#FFFFFF"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10V2.75M5 5.75l3-3 3 3"></path><path d="M3 9.5v3c0 .55.45 1 1 1h8c.55 0 1-.45 1-1v-3"></path></svg>导出</button>
+      <button type="button" style="display:flex; align-items:center; gap:7px; height:36px; padding:0 12px; border:1px solid #D6D7DA; border-radius:8px; background:#FFFFFF"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 9.5l3-3"></path><path d="M7 4.5l1.2-1.2a2.5 2.5 0 0 1 3.5 3.5L10.5 8M9 11.5l-1.2 1.2a2.5 2.5 0 0 1-3.5-3.5L5.5 8"></path></svg>分享</button>
+    </div>
+  </header>
+
+  <main style="max-width:1200px; margin:0 auto; padding:40px 32px 64px">
+
+    <div style="display:flex; flex-wrap:wrap; align-items:flex-start; gap:32px 64px">
+      <div style="flex:999 1 560px; min-width:0">
+        <p style="margin:0; display:flex; flex-wrap:wrap; gap:4px 12px; font-size:13px; line-height:1.5; color:#52555B"><span style="font-weight:600; color:#181B1F">工作记录</span><span>11月20日 周五</span></p>
+        <h1 style="margin:10px 0 0; font-size:36px; line-height:1.25; font-weight:700; letter-spacing:-.01em">加载合集逐帧校验</h1>
+        <p style="margin:12px 0 0; max-width:36em; font-size:16px; line-height:1.7; color:#52555B">按两段原视频逐格逐帧复刻 72 个加载动画，并校准每一格的相位。</p>
+        <p style="margin:14px 0 0; display:flex; flex-wrap:wrap; gap:4px 18px; font-family:'DM Mono', 'Noto Sans SC', ui-monospace, monospace; font-size:12.5px; line-height:1.6; color:#66696F"><span>ui-kit</span><span>Opus 5.5</span><span>询问后执行</span><span>开始 14:02</span><span>已运行 20 分钟</span></p>
+      </div>
+      <section aria-labelledby="b-ledger" style="flex:1 1 340px; min-width:0; font-size:12.5px; line-height:1.5">
+        <div style="display:flex; align-items:baseline; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid #181B1F">
+          <h2 id="b-ledger" style="margin:0; font-size:13px; font-weight:600">改动账目</h2>
+          <span style="color:#66696F">5 个文件</span>
+        </div>
+        <div style="display:flex; align-items:baseline; gap:10px; padding:6px 0; border-bottom:1px solid #E6E7E9; font-family:'DM Mono', ui-monospace, monospace">
+          <span style="flex:1 1 auto; min-width:0; display:flex"><span style="flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#66696F">tools/</span><span style="flex:none; white-space:nowrap">tilecmp.py</span></span>
+          <span style="flex:none; width:60px; text-align:right">+7</span>
+          <span style="flex:none; width:36px; text-align:right; color:#C22823">−5</span>
+        </div>
+        <div style="display:flex; align-items:baseline; gap:10px; padding:6px 0; border-bottom:1px solid #E6E7E9; font-family:'DM Mono', ui-monospace, monospace">
+          <span style="flex:1 1 auto; min-width:0; display:flex"><span style="flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#66696F">components/05-loaders/</span><span style="flex:none; white-space:nowrap">grid-a.html</span></span>
+          <span style="flex:none; padding:0 4px; border:1px solid #D6D7DA; border-radius:3px; font-family:'Instrument Sans', 'Noto Sans SC', sans-serif; font-size:11px; line-height:16px; color:#52555B">新</span>
+          <span style="flex:none; width:60px; text-align:right">+1,025</span>
+          <span style="flex:none; width:36px; text-align:right; color:#66696F">—</span>
+        </div>
+        <div style="display:flex; align-items:baseline; gap:10px; padding:6px 0; border-bottom:1px solid #E6E7E9; font-family:'DM Mono', ui-monospace, monospace">
+          <span style="flex:1 1 auto; min-width:0; display:flex"><span style="flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#66696F">components/05-loaders/</span><span style="flex:none; white-space:nowrap">grid-b.html</span></span>
+          <span style="flex:none; padding:0 4px; border:1px solid #D6D7DA; border-radius:3px; font-family:'Instrument Sans', 'Noto Sans SC', sans-serif; font-size:11px; line-height:16px; color:#52555B">新</span>
+          <span style="flex:none; width:60px; text-align:right">+146</span>
+          <span style="flex:none; width:36px; text-align:right; color:#66696F">—</span>
+        </div>
+        <div style="display:flex; align-items:baseline; gap:10px; padding:6px 0; border-bottom:1px solid #E6E7E9; font-family:'DM Mono', ui-monospace, monospace">
+          <span style="flex:1 1 auto; min-width:0; display:flex"><span style="flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#66696F">tools/</span><span style="flex:none; white-space:nowrap">build_grids.py</span></span>
+          <span style="flex:none; padding:0 4px; border:1px solid #D6D7DA; border-radius:3px; font-family:'Instrument Sans', 'Noto Sans SC', sans-serif; font-size:11px; line-height:16px; color:#52555B">新</span>
+          <span style="flex:none; width:60px; text-align:right">+225</span>
+          <span style="flex:none; width:36px; text-align:right; color:#66696F">—</span>
+        </div>
+        <div style="display:flex; align-items:baseline; gap:10px; padding:6px 0; font-family:'DM Mono', ui-monospace, monospace">
+          <span style="flex:1 1 auto; min-width:0; display:flex"><span style="flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#66696F">grids/</span><span style="flex:none; white-space:nowrap">tune.json</span></span>
+          <span style="flex:none; padding:0 4px; border:1px solid #D6D7DA; border-radius:3px; font-family:'Instrument Sans', 'Noto Sans SC', sans-serif; font-size:11px; line-height:16px; color:#52555B">新</span>
+          <span style="flex:none; width:60px; text-align:right">+361</span>
+          <span style="flex:none; width:36px; text-align:right; color:#66696F">—</span>
+        </div>
+        <div style="display:flex; align-items:baseline; gap:10px; padding:8px 0 0; border-top:3px double #181B1F; font-family:'DM Mono', ui-monospace, monospace; font-weight:500">
+          <span style="flex:1 1 auto; font-family:'Instrument Sans', 'Noto Sans SC', sans-serif; font-size:13px; font-weight:600">合计</span>
+          <span style="flex:none; width:60px; text-align:right">+1,764</span>
+          <span style="flex:none; width:36px; text-align:right; color:#C22823">−5</span>
+        </div>
+      </section>
+    </div>
+
+    <ol aria-label="计划" style="list-style:none; margin:36px 0 0; padding:0; display:grid; grid-template-columns:repeat(auto-fit, minmax(min(168px, 100%), 1fr)); gap:16px; font-size:14px; line-height:1.5">
+      <li style="display:flex; flex-direction:column; gap:4px; padding-top:12px; border-top:2px solid #181B1F">
+        <span style="font-family:'DM Mono', 'Noto Sans SC', ui-monospace, monospace; font-size:12px; color:#66696F">01 · 完成</span>
+        <span style="font-weight:500">找到 72 格的开源出处</span>
+      </li>
+      <li style="display:flex; flex-direction:column; gap:4px; padding-top:12px; border-top:2px solid #181B1F">
+        <span style="font-family:'DM Mono', 'Noto Sans SC', ui-monospace, monospace; font-size:12px; color:#66696F">02 · 完成</span>
+        <span style="font-weight:500">生成 grid-a / grid-b 两页</span>
+      </li>
+      <li style="display:flex; flex-direction:column; gap:4px; padding-top:12px; border-top:2px solid #181B1F">
+        <span style="font-family:'DM Mono', 'Noto Sans SC', ui-monospace, monospace; font-size:12px; color:#66696F">03 · 完成</span>
+        <span style="font-weight:500">逐格校准位置和缩放</span>
+      </li>
+      <li style="display:flex; flex-direction:column; gap:4px; padding-top:12px; border-top:2px solid #181B1F">
+        <span style="font-family:'DM Mono', 'Noto Sans SC', ui-monospace, monospace; font-size:12px; color:#66696F">04 · 完成</span>
+        <span style="font-weight:500">录制复刻页，各 61 帧</span>
+      </li>
+      <li aria-current="step" style="display:flex; flex-direction:column; gap:4px; padding-top:11px; border-top:3px solid {{accent}}">
+        <span style="font-family:'DM Mono', 'Noto Sans SC', ui-monospace, monospace; font-size:12px; font-weight:500; color:{{accent}}">05 · 进行中，待签批</span>
+        <span style="font-weight:600">逐格对照相位</span>
+      </li>
+      <li style="display:flex; flex-direction:column; gap:4px; padding-top:12px; border-top:2px solid #D6D7DA">
+        <span style="font-family:'DM Mono', 'Noto Sans SC', ui-monospace, monospace; font-size:12px; color:#66696F">06 · 未开始</span>
+        <span style="color:#52555B">并入组件库并重新发布</span>
+      </li>
+    </ol>
+
+    <section aria-label="经过" style="margin-top:44px">
+
+      <div style="display:flex; flex-wrap:wrap; gap:16px 48px; padding:20px 0; border-top:1px solid #D6D7DA">
+        <div style="flex:1 1 560px; max-width:640px; min-width:0; display:flex; gap:20px">
+          <span style="flex:none; width:52px; font-family:'DM Mono', ui-monospace, monospace; font-size:12.5px; line-height:26px; color:#66696F">14:03</span>
+          <div style="flex:1 1 auto; min-width:0">
+            <div style="font-size:12px; line-height:26px; font-weight:600; letter-spacing:.04em; color:#66696F">你</div>
+            <p style="margin:0; font-size:17px; line-height:1.6; font-weight:500">先做加载合集</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-wrap:wrap; gap:16px 48px; padding:20px 0; border-top:1px solid #D6D7DA">
+        <div style="flex:1 1 560px; max-width:640px; min-width:0; display:flex; gap:20px">
+          <span style="flex:none; width:52px; font-family:'DM Mono', ui-monospace, monospace; font-size:12.5px; line-height:26px; color:#66696F">14:03</span>
+          <div style="flex:1 1 auto; min-width:0">
+            <div style="font-size:12px; line-height:26px; font-weight:600; letter-spacing:.04em; color:#66696F">第 1–4 步 · 至 14:18</div>
+            <div style="display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px">
+              <p style="margin:0; flex:1 1 260px; color:#52555B">找出处、生成两页、逐格校准 72 格、录制复刻页。</p>
+              <button type="button" style="display:flex; align-items:center; gap:6px; height:36px; padding:0 12px 0 8px; border:1px solid #D6D7DA; border-radius:8px; background:#FFFFFF; font-size:13px"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 6.5L8 10l3.5-3.5"></path></svg>展开这 4 步</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-wrap:wrap; gap:16px 48px; padding:20px 0; border-top:1px solid #D6D7DA">
+        <div style="flex:1 1 560px; max-width:640px; min-width:0; display:flex; gap:20px">
+          <span style="flex:none; width:52px; font-family:'DM Mono', ui-monospace, monospace; font-size:12.5px; line-height:26px; color:#66696F">14:18</span>
+          <div style="flex:1 1 auto; min-width:0">
+            <div style="font-size:12px; line-height:26px; font-weight:600; letter-spacing:.04em; color:#66696F">Agent</div>
+            <p style="margin:0">两段视频共 72 格，出处都已对上。现在逐格比较相位：复刻页各录了 61 帧，和原片逐格算误差。</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-wrap:wrap; gap:16px 48px; padding:20px 0; border-top:1px solid #D6D7DA">
+        <div style="flex:1 1 560px; max-width:640px; min-width:0; display:flex; gap:20px">
+          <span style="flex:none; width:52px; font-family:'DM Mono', ui-monospace, monospace; font-size:12.5px; line-height:36px; color:#66696F">14:18</span>
+          <div style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column">
+            <div style="display:flex; align-items:baseline; gap:10px; font-size:14px; line-height:36px">
+              <span style="flex:none; width:32px; color:#52555B">读取</span>
+              <span style="flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:'DM Mono', ui-monospace, monospace; font-size:13px">tools/tilecmp.py</span>
+              <span aria-hidden="true" style="flex:1 1 24px; min-width:24px; align-self:center; border-bottom:1px dotted #9A9DA2"></span>
+              <span style="flex:none; font-family:'DM Mono', 'Noto Sans SC', ui-monospace, monospace; font-size:13px; color:#66696F">45 行</span>
+            </div>
+            <div style="display:flex; align-items:baseline; gap:10px; font-size:14px; line-height:36px">
+              <span style="flex:none; width:32px; color:#C22823; font-weight:600">运行</span>
+              <span style="flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:'DM Mono', ui-monospace, monospace; font-size:13px">python3 tools/tilecmp.py refs/grid-a.mp4 grids/recA 10 out/tile-a.json</span>
+              <span aria-hidden="true" style="flex:1 1 24px; min-width:24px; align-self:center; border-bottom:1px dotted #9A9DA2"></span>
+              <span style="flex:none; font-family:'DM Mono', 'Noto Sans SC', ui-monospace, monospace; font-size:13px; font-weight:500; color:#C22823">退出 137</span>
+            </div>
+          </div>
+        </div>
+        <aside aria-label="终端输出" style="flex:1 1 360px; min-width:0">
+          <div style="font-size:12px; line-height:26px; font-weight:600; letter-spacing:.04em; color:#66696F">终端输出</div>
+          <div style="padding:12px 14px; border-radius:6px; background:#F2F4F5; font-size:13px; line-height:1.7">
+            <div style="overflow-x:auto; white-space:nowrap; font-family:'DM Mono', ui-monospace, monospace; font-size:12px; color:#52555B">zsh: killed     python3 tools/tilecmp.py refs/grid-a.mp4 grids/recA 10 out/tile-a.json</div>
+            <div style="margin-top:4px; color:#C22823">内存不足，进程在 41 秒后被系统终止</div>
+          </div>
+        </aside>
+      </div>
+
+      <div style="display:flex; flex-wrap:wrap; gap:16px 48px; padding:20px 0; border-top:1px solid #D6D7DA">
+        <div style="flex:1 1 560px; max-width:640px; min-width:0; display:flex; gap:20px">
+          <span style="flex:none; width:52px; font-family:'DM Mono', ui-monospace, monospace; font-size:12.5px; line-height:26px; color:#66696F">14:19</span>
+          <div style="flex:1 1 auto; min-width:0">
+            <div style="font-size:12px; line-height:26px; font-weight:600; letter-spacing:.04em; color:#66696F">Agent · 思考 8 秒后</div>
+            <p style="margin:0">原片每帧 1080×1350，整段按 <code style="font-family:'DM Mono', ui-monospace, monospace; font-size:13.5px">float32</code> 读进内存，每帧约 5.8 MB，内存撑不住。改成只截 36 个格子、用 <code style="font-family:'DM Mono', ui-monospace, monospace; font-size:13.5px">uint8</code> 存，每帧 0.73 MB。</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-wrap:wrap; gap:16px 48px; padding:20px 0; border-top:1px solid #D6D7DA">
+        <div style="flex:1 1 560px; max-width:640px; min-width:0; display:flex; gap:20px">
+          <span style="flex:none; width:52px; font-family:'DM Mono', ui-monospace, monospace; font-size:12.5px; line-height:36px; color:#66696F">14:19</span>
+          <div style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column">
+            <div style="display:flex; align-items:baseline; gap:10px; font-size:14px; line-height:36px">
+              <span style="flex:none; width:32px; color:#52555B">编辑</span>
+              <span style="flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:'DM Mono', ui-monospace, monospace; font-size:13px">tools/tilecmp.py</span>
+              <span aria-hidden="true" style="flex:1 1 24px; min-width:24px; align-self:center; border-bottom:1px dotted #9A9DA2"></span>
+              <span style="flex:none; display:flex; gap:8px; font-family:'DM Mono', ui-monospace, monospace; font-size:13px"><span>+7</span><span style="color:#C22823">−5</span></span>
+            </div>
+          </div>
+        </div>
+        <aside aria-label="附件 1" style="flex:1 1 360px; min-width:0">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px">
+            <span style="font-size:12px; line-height:26px; font-weight:600; letter-spacing:.04em; color:#66696F">附件 1 · 改动要点</span>
+            <a href="#b-diff" style="font-size:13px; line-height:26px; text-decoration:none">完整改动 +7 −5</a>
+          </div>
+          <div id="b-diff" style="overflow-x:auto; padding:10px 0; border-radius:6px; background:#F2F4F5; font-family:'DM Mono', 'Noto Sans SC', ui-monospace, monospace; font-size:12px; line-height:20px">
+            <div style="min-width:max-content">
+              <sc-for list="{{keyDiff}}" as="d" hint-placeholder-count="6">
+                <div style="display:flex; background:{{d.bg}}">
+                  <span style="flex:none; width:28px; text-align:center; font-weight:500; color:{{d.sc}}">{{d.s}}</span>
+                  <span style="white-space:pre; padding-right:14px; color:{{d.fg}}; text-decoration:{{d.deco}}; text-decoration-color:#C22823">{{d.t}}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <div style="display:flex; flex-wrap:wrap; gap:16px 48px; padding:20px 0; border-top:1px solid #D6D7DA">
+        <div style="flex:1 1 560px; max-width:640px; min-width:0; display:flex; gap:20px">
+          <span style="flex:none; width:52px; font-family:'DM Mono', ui-monospace, monospace; font-size:12.5px; line-height:36px; color:#66696F">14:19</span>
+          <div style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column">
+            <div style="display:flex; align-items:baseline; gap:10px; font-size:14px; line-height:36px">
+              <span style="flex:none; width:32px; color:#52555B">运行</span>
+              <span style="flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:'DM Mono', ui-monospace, monospace; font-size:13px">python3 tools/tilecmp.py refs/grid-a.mp4 grids/recA 10 out/tile-a.json</span>
+              <span aria-hidden="true" style="flex:1 1 24px; min-width:24px; align-self:center; border-bottom:1px dotted #9A9DA2"></span>
+              <span style="flex:none; font-size:13px; color:#66696F">完成</span>
+            </div>
+            <div style="display:flex; align-items:baseline; gap:10px; font-size:14px; line-height:36px">
+              <span style="flex:none; width:32px; color:#52555B">搜索</span>
+              <span style="flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:'DM Mono', ui-monospace, monospace; font-size:13px">feeder|slide-in|fidget|gyro|waterfall · ref-whirl/</span>
+              <span aria-hidden="true" style="flex:1 1 24px; min-width:24px; align-self:center; border-bottom:1px dotted #9A9DA2"></span>
+              <span style="flex:none; font-size:13px; color:#66696F">5 个文件</span>
+            </div>
+            <p style="margin:4px 0 0; color:#52555B">36 格中 <span style="color:#C22823; font-weight:600">5 格动作不一致</span>，见附件 2。</p>
+          </div>
+        </div>
+        <aside aria-label="附件 2" style="flex:1 1 360px; min-width:0">
+          <div style="font-size:12px; line-height:26px; font-weight:600; letter-spacing:.04em; color:#66696F">附件 2 · A 组 36 格对照</div>
+          <div style="display:flex; flex-wrap:wrap; align-items:flex-start; gap:16px 28px; margin-top:4px">
+            <div role="img" aria-label="A 组 36 格：第 7、18、22、26、31 格动作不一致，其余已对齐" style="display:grid; grid-template-columns:repeat(6, 26px); gap:4px">
+              <sc-for list="{{tiles}}" as="t" hint-placeholder-count="36"><span style="display:grid; place-items:center; width:26px; height:26px; border-radius:4px; border:1px solid {{t.border}}; background:{{t.bg}}; color:{{t.fg}}; font-family:'DM Mono', ui-monospace, monospace; font-size:10.5px; line-height:1">{{t.n}}</span></sc-for>
+            </div>
+            <div style="min-width:0">
+              <ul style="list-style:none; margin:0; padding:0; font-family:'DM Mono', ui-monospace, monospace; font-size:12.5px; line-height:26px">
+                <li><span style="display:inline-block; width:36px; color:#C22823; font-weight:500">A7</span>Feeder</li>
+                <li><span style="display:inline-block; width:36px; color:#C22823; font-weight:500">A18</span>Slide In</li>
+                <li><span style="display:inline-block; width:36px; color:#C22823; font-weight:500">A22</span>Fidget</li>
+                <li><span style="display:inline-block; width:36px; color:#C22823; font-weight:500">A26</span>Gyro</li>
+                <li><span style="display:inline-block; width:36px; color:#C22823; font-weight:500">A31</span>Waterfall</li>
+              </ul>
+              <p style="margin:6px 0 0; font-size:13px; line-height:1.6; color:#52555B">都来自 Whirl。其余 31 格相位已对齐。</p>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <div style="display:flex; flex-wrap:wrap; gap:16px 48px; padding:20px 0 28px; border-top:1px solid #D6D7DA">
+        <div style="flex:1 1 560px; max-width:640px; min-width:0; display:flex; gap:20px">
+          <span style="flex:none; width:52px; font-family:'DM Mono', ui-monospace, monospace; font-size:12.5px; line-height:26px; color:#66696F">14:20</span>
+          <div style="flex:1 1 auto; min-width:0">
+            <div style="font-size:12px; line-height:26px; font-weight:600; letter-spacing:.04em; color:#66696F">Agent</div>
+            <p style="margin:0">不一致的 5 格都来自 Whirl。最直接的确认办法，是用它仓库自带的构建重新生成 CSS 来比。你在 14:11 驳回过一次类似的构建，所以我也准备了只读方案，写在下面的<a href="#b-sign">签批单</a>里。</p>
+          </div>
+        </div>
+      </div>
+
+      <section id="b-sign" aria-labelledby="b-sign-title" style="display:flex; flex-wrap:wrap; gap:24px 48px; padding-top:28px; border-top:3px double #181B1F">
+        <div style="flex:1 1 560px; max-width:640px; min-width:0; display:flex; gap:20px">
+          <span style="flex:none; width:52px; font-family:'DM Mono', ui-monospace, monospace; font-size:12.5px; line-height:26px; color:#66696F">14:20</span>
+          <div style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:16px">
+            <div style="display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 14px; line-height:26px">
+              <span style="font-size:12px; font-weight:700; letter-spacing:.16em; color:{{accent}}">待你签批</span>
+              <span style="font-family:'DM Mono', 'Noto Sans SC', ui-monospace, monospace; font-size:12.5px; color:#66696F">已等待 1:12</span>
+            </div>
+            <h2 id="b-sign-title" style="margin:-8px 0 0; font-size:22px; line-height:1.4; font-weight:700">在 ref-whirl/ 里执行下载的第三方代码</h2>
+            <div style="display:flex; align-items:center; gap:12px; min-height:48px; padding:0 6px 0 16px; border-radius:6px; background:#F2F4F5; font-family:'DM Mono', ui-monospace, monospace; font-size:14px">
+              <span aria-hidden="true" style="color:#66696F">$</span>
+              <code style="flex:1 1 auto; min-width:0; padding:12px 0; overflow-wrap:anywhere; font-family:inherit">cd ref-whirl &amp;&amp; npm ci &amp;&amp; npm run build</code>
+              <button type="button" aria-label="复制命令" style="flex:none; width:36px; height:36px; display:grid; place-items:center; border:0; border-radius:6px; background:transparent; color:#52555B"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5.25" y="5.25" width="8.5" height="8.5" rx="1.5"></rect><path d="M10.75 5.25V3.5c0-.7-.55-1.25-1.25-1.25H3.5c-.7 0-1.25.55-1.25 1.25v6c0 .7.55 1.25 1.25 1.25h1.75"></path></svg></button>
+            </div>
+            <div>
+              <h3 style="margin:0 0 4px; font-size:12px; line-height:26px; font-weight:600; letter-spacing:.04em; color:#66696F">影响</h3>
+              <ul style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; font-size:14.5px; line-height:1.6">
+                <li style="display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; padding:6px 0; border-bottom:1px solid #E6E7E9"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#52555B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6"></circle><path d="M2 8h12M8 2c1.7 1.7 2.5 3.7 2.5 6s-.8 4.3-2.5 6c-1.7-1.7-2.5-3.7-2.5-6S6.3 3.7 8 2z"></path></svg><span>联网下载依赖</span><span style="margin-left:auto; font-family:'DM Mono', ui-monospace, monospace; font-size:13px; color:#66696F">registry.npmjs.org</span></li>
+                <li style="display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; padding:6px 0; border-bottom:1px solid #E6E7E9"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#52555B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"></rect><path d="M4.75 6.25L6.5 8l-1.75 1.75M8.5 10h2.75"></path></svg><span>运行安装脚本和构建脚本</span><span style="margin-left:auto; font-size:13px; font-weight:500; color:#C22823">代码未经审阅</span></li>
+                <li style="display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; padding:6px 0"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#52555B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.75 4.75c0-.55.45-1 1-1h3.1l1.4 1.5h6c.55 0 1 .45 1 1v5.5c0 .55-.45 1-1 1H2.75c-.55 0-1-.45-1-1z"></path></svg><span>写入两个目录</span><span style="margin-left:auto; font-family:'DM Mono', ui-monospace, monospace; font-size:13px; color:#66696F">ref-whirl/node_modules、dist/</span></li>
+              </ul>
+            </div>
+            <div>
+              <label for="b-note" style="display:block; font-size:12px; line-height:26px; font-weight:600; letter-spacing:.04em; color:#66696F">签批意见（可选）</label>
+              <input id="b-note" type="text" placeholder="例如：只看 css/ 就够了" style="display:block; width:100%; height:44px; padding:0 14px; border:1px solid #8C8F94; border-radius:6px; background:#FFFFFF; font-size:14.5px">
+            </div>
+          </div>
+        </div>
+        <div style="flex:1 1 360px; min-width:0; display:flex; flex-direction:column; gap:20px">
+          <div style="padding:16px 18px; border:1px solid #D6D7DA; border-radius:8px">
+            <h3 style="margin:0; font-size:12px; line-height:26px; font-weight:600; letter-spacing:.04em; color:#66696F">Agent 的备选</h3>
+            <p style="margin:2px 0 0; font-size:14.5px; line-height:1.7">只读 npm 包里编译好的 <code style="font-family:'DM Mono', ui-monospace, monospace; font-size:13.5px">css/</code>，逐条对照关键帧，不执行任何代码。</p>
+          </div>
+          <div>
+            <h3 style="margin:0; font-size:12px; line-height:26px; font-weight:600; letter-spacing:.04em; color:#66696F">先例</h3>
+            <p style="margin:2px 0 0; font-size:14px; line-height:1.7; color:#52555B">14:11 你驳回过 <code style="font-family:'DM Mono', ui-monospace, monospace; font-size:13px">node gallery/svg-spinners/build.mjs</code>，之后改为只读文件。</p>
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:10px">
+            <button type="button" style="height:44px; padding:0 20px; border:0; border-radius:8px; background:{{accent}}; color:#FFFFFF; font-weight:600">批准这一次</button>
+            <button type="button" style="height:44px; padding:0 18px; border:1px solid #181B1F; border-radius:8px; background:#FFFFFF; font-weight:600">改用备选</button>
+            <button type="button" style="height:44px; padding:0 14px; border:0; border-radius:8px; background:transparent; color:#52555B">驳回</button>
+          </div>
+          <p style="margin:-6px 0 0; font-size:12.5px; line-height:1.6; color:#66696F">这类操作每次都要你签批，不能设为“始终允许”。</p>
+        </div>
+      </section>
+
+      <section aria-label="继续" style="display:flex; flex-wrap:wrap; gap:16px 48px; margin-top:48px">
+        <div style="flex:1 1 560px; max-width:640px; min-width:0; display:flex; gap:20px">
+          <span style="flex:none; width:52px"></span>
+          <div style="flex:1 1 auto; min-width:0">
+            <label for="b-compose" style="display:block; font-size:12px; line-height:26px; font-weight:600; letter-spacing:.04em; color:#66696F">继续这份记录</label>
+            <div style="border:1px solid #8C8F94; border-radius:8px; background:#FFFFFF">
+              <textarea id="b-compose" rows="3" placeholder="写给 Agent 的话会记入这份记录" style="display:block; width:100%; min-height:84px; resize:vertical; border:0; border-radius:8px 8px 0 0; padding:12px 14px; background:transparent; font-size:15px; line-height:1.7"></textarea>
+              <div style="display:flex; align-items:center; gap:4px; padding:6px 8px 8px">
+                <button type="button" aria-label="引用文件" style="width:36px; height:36px; display:grid; place-items:center; border:0; border-radius:6px; background:transparent; color:#52555B"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="2.5"></circle><path d="M10.5 8v.9a1.85 1.85 0 0 0 3.7 0V8a6.25 6.25 0 1 0-2.45 4.95"></path></svg></button>
+                <button type="button" aria-label="添加附件" style="width:36px; height:36px; display:grid; place-items:center; border:0; border-radius:6px; background:transparent; color:#52555B"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.75 7.5l-5 5a3 3 0 0 1-4.25-4.25l5.5-5.5a2 2 0 0 1 2.85 2.85l-5.4 5.4a1 1 0 0 1-1.45-1.4l4.9-4.9"></path></svg></button>
+                <button type="button" style="margin-left:auto; height:40px; padding:0 18px; border:0; border-radius:8px; background:#181B1F; color:#FFFFFF; font-weight:600">发送</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#1C50B5","options":["#1C50B5","#0B6B5E","#5B3CC4","#181B1F"],"section":"外观"},"$preview":{"width":1440,"height":2400}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#1C50B5';
+    const rgba = (hex, a) => {
+      let h = String(hex).replace('#', '');
+      if (h.length === 3) h = h.split('').map((c) => c + c).join('');
+      const n = parseInt(h.slice(0, 6), 16);
+      return 'rgba(' + ((n >> 16) & 255) + ', ' + ((n >> 8) & 255) + ', ' + (n & 255) + ', ' + a + ')';
+    };
+    const bad = [7, 18, 22, 26, 31];
+    const tiles = Array.from({ length: 36 }, (_, i) => {
+      const off = bad.indexOf(i + 1) >= 0;
+      return { n: String(i + 1), bg: off ? '#C22823' : '#FFFFFF', fg: off ? '#FFFFFF' : '#66696F', border: off ? '#C22823' : '#D6D7DA' };
+    });
+    const keyDiff = [
+      ['+', 'def crops(g):  # 只留 36 个格子，uint8 存储'],
+      ['+', '    return np.stack([g[y0:y1, x0:x1] for x0, y0, x1, y1 in boxes])'],
+      ['−', 'rep = [cv2.imread(f, cv2.IMREAD_GRAYSCALE).astype(np.float32) for f in files]'],
+      ['+', 'rep = [crops(cv2.imread(f, cv2.IMREAD_GRAYSCALE)) for f in files]'],
+      ['−', '    refs.append(cv2.cvtColor(f, cv2.COLOR_BGR2GRAY).astype(np.float32))'],
+      ['+', '    refs.append(crops(cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)))'],
+    ].map(([s, t]) => ({
+      s, t,
+      bg: s === '+' ? '#FFFFFF' : 'transparent',
+      fg: s === '−' ? '#66696F' : '#181B1F',
+      sc: s === '−' ? '#C22823' : '#181B1F',
+      deco: s === '−' ? 'line-through' : 'none',
+    }));
+    return { accent, accentWash: rgba(accent, 0.08), tiles, keyDiff };
+  }
+}
+</script>
+</body>
+</html>
