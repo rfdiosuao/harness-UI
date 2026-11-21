@@ -8,6 +8,7 @@
 //   node prompts/roll.mjs --card flight-card --world split-flap   钉住其中几项，其余随机
 //   node prompts/roll.mjs --list       列出所有可钉住的 id（卡片后面带它适合的 harness）
 //   node prompts/roll.mjs --harness 法律审查   只从适合这类 harness 的卡片里抽
+//   node prompts/roll.mjs --form sidebar      只抽侧边栏组件（card 是回答里的卡片，sidebar 是常驻在工作台一侧的面板）
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -25,7 +26,7 @@ const opt = (names, fallback) => {
 if (argv.includes('--list')) {
   for (const key of ['cards', 'worlds', 'motions', 'constraints']) {
     console.log(`\n${key}:`);
-    for (const x of pools[key]) console.log(`  ${x.id.padEnd(22)} ${x.name}${x.harness ? '  → ' + x.harness.join('、') : ''}`);
+    for (const x of pools[key]) console.log(`  ${x.id.padEnd(22)} ${x.name}${x.form === 'sidebar' ? '［侧边栏］' : ''}${x.harness ? '  → ' + x.harness.join('、') : ''}`);
   }
   process.exit(0);
 }
@@ -50,6 +51,13 @@ if (wanted) {
   if (!pools.cards.length) { console.error(`没有卡片标注了“${wanted}”（用 --list 查看）`); process.exit(1); }
 }
 
+// --form card|sidebar：只抽这种形态的组件（没写 form 的都算 card）
+const form = opt(['--form'], null);
+if (form) {
+  pools.cards = pools.cards.filter((c) => (c.form || 'card') === form);
+  if (!pools.cards.length) { console.error(`没有 form 为“${form}”的组件（可选 card、sidebar）`); process.exit(1); }
+}
+
 // 洗牌后依次取，保证同一次里不重复；用完了再洗一遍
 const decks = {};
 function draw(key) {
@@ -71,41 +79,56 @@ function pinned(key, flag) {
   return hit;
 }
 
-const COMMON = `【通用要求】
+const common = (what) => `【通用要求】
 1. 只输出一个完整的 HTML 文件（<!doctype html> 开头），CSS 和 JS 全部内联；除 Google Fonts 外不引用任何外部资源，不用框架。
 2. <head> 里写 <meta name="hx-component" content="卡片 id">、<meta name="hx-style" content="视觉世界 id"> 和 <meta name="hx-harness" content="适合的 harness，用顿号分隔">；页面标题下面再用一行小字写出“适合的 harness：……”。
 3. 接口：实现 window.card.set(props)（可反复调用，只给一部分数据时显示骨架，不闪烁）；用户操作时 document.dispatchEvent(new CustomEvent('hx-action', { detail: { name, params } }))；页面底部放一个“Agent 回传”小条，显示最近一次动作的 JSON。
-4. 页面上方放一个“模拟 Agent”的小面板：几个按钮，分别把示例 props 的各个状态（加载、正常、特殊、出错、已操作）喂给 window.card.set。卡片的每种状态都要能切换到。
+4. 页面上方放一个“模拟 Agent”的小面板：几个按钮，分别把示例 props 的各个状态（加载、正常、特殊、出错、已操作）喂给 window.card.set。${what}的每种状态都要能切换到。
 5. 颜色、圆角、间距、字体都写成 :root 上的 CSS 变量（--hx- 前缀）；做深色和浅色两套，默认跟随系统，也支持 <html data-theme="light|dark">。视觉世界本来的那一套做到最好，另一套保证能用。中文字体配 Noto Sans SC。
 6. 质感是重点：材质要真实可信，动效有重量和节奏，不要用普通卡片加阴影加渐变糊弄。有音效时默认静音，必须有开关。
 7. 具体的名字、数字、时间都要像真的，贴合上面的场景；不要 lorem ipsum，不要 emoji。
 8. 用真的 <button>、<input>、<label>；图标用内联 SVG；文字对比度至少 4.5:1；能用键盘操作，焦点可见；尊重 prefers-reduced-motion（减动效时放慢而不是直接停住）。
-9. 卡片是主角，页面本身保持素净；不要紫色渐变，不要左边带彩色竖线的卡片。`;
+9. ${what}是主角，页面本身保持素净；不要紫色渐变，不要左边带彩色竖线的卡片。`;
 
 const out = [];
 for (let n = 1; n <= count; n++) {
   const card = pinned('cards', '--card') || draw('cards');
   const world = pinned('worlds', '--world') || draw('worlds');
   const motion = pinned('motions', '--motion') || draw('motions');
-  const constraint = pinned('constraints', '--constraint') || draw('constraints');
+  let constraint = pinned('constraints', '--constraint') || draw('constraints');
+  // 侧边栏是竖长、占满高度的面板，和“小组件尺寸”矛盾，抽到就换一个
+  while (card.form === 'sidebar' && constraint.id === 'widget' && !opt(['--constraint'], null)) constraint = draw('constraints');
   const scene = pools.scenes[Math.floor(rand() * pools.scenes.length)];
   const fit = card.harness.join('、');
-  out.push(`## ${n} · ${card.name} × ${world.name} × ${motion.name} × ${constraint.name}
+  const side = card.form === 'sidebar';
+  const intro = side
+    ? `做一个 AI Agent 工作台侧边栏里的「${card.name}」面板（id: ${card.id}）。适合用在这些 harness 里：${fit}。`
+    : `做一张 AI Agent 画给用户的「${card.name}」（id: ${card.id}）。适合用在这些 harness 里：${fit}。`;
+  const where = side
+    ? '这个面板常驻在 harness 界面的一侧，Agent 工作的时候它跟着实时更新，用户随时瞄一眼、点一下'
+    : '这张卡片是它在回答里直接画出来的';
+  const states = side
+    ? '加载（骨架）、正常、一个特殊情况（比如预警、冲突、异常，由你按场景定）、出错（可重试）、用户操作之后的确认态，以及收起成窄条（只剩图标或数字）的样子。'
+    : '加载（骨架）、正常、一个特殊情况（比如预警、冲突、异常，由你按场景定）、出错（可重试）、用户操作之后的确认态。';
+  const shape = side
+    ? '\n形态：竖长的面板，宽 280–340px、高度占满（页面上演示时给它一个 640px 左右的高度），旁边用一块浅浅的占位示意主对话区；内容多了在面板内部滚动，标题和底部操作固定；能收起成 56px 左右的窄条，再展开。'
+    : '';
+  out.push(`## ${n} · ${card.name}${side ? '（侧边栏）' : ''} × ${world.name} × ${motion.name} × ${constraint.name}
 
 **适合的 harness：${fit}**
 
 \`\`\`text
-做一张 AI Agent 画给用户的「${card.name}」（id: ${card.id}）。适合用在这些 harness 里：${fit}。
+${intro}
 
-场景：${scene}。Agent 正在帮用户处理这个处境里的一件具体的事，这张卡片是它在回答里直接画出来的。如果这个处境和这种卡片不太搭，就在同一个人的处境里找一件合理的、会用到这种卡片的小事。
+场景：${scene}。Agent 正在帮用户处理这个处境里的一件具体的事，${where}。如果这个处境和这种${side ? '面板' : '卡片'}不太搭，就在同一个人的处境里找一件合理的、会用到它的小事。
 数据与动作（你来具体设计字段，并编出贴合场景的真实示例）：${card.spec}。
-要画出的状态：加载（骨架）、正常、一个特殊情况（比如预警、冲突、异常，由你按场景定）、出错（可重试）、用户操作之后的确认态。
+要画出的状态：${states}${shape}
 
 视觉世界：${world.name}。${world.text}
 动效：${motion.name}。${motion.text}
 额外限制：${constraint.name}。${constraint.text}
 
-${COMMON}
+${common(side ? '面板' : '卡片')}
 \`\`\``);
 }
 

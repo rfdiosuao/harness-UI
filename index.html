@@ -246,7 +246,7 @@ footer a:hover { text-decoration-color: currentColor; }
       <div>
         <p class="eyebrow"><i aria-hidden="true"></i>AGENT HARNESS · UI 组件</p>
         <h1 id="hero-title">Agent 工作台的<br>组件<em>陈列馆</em></h1>
-        <p class="lede">权限确认、工具调用、费用计数、命令面板……每一件展品都是真的能点、能用的组件，标好了适合哪种 harness，也都能单独拿走改。</p>
+        <p class="lede">权限确认、工具调用、任务队列、文件树……每一件展品都是真的能点、能用的组件，标好了适合哪种 harness，也都能单独拿走改。</p>
         <div class="cta">
           <a class="btn solid" href="#exhibits">看展品<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.5v11M3.5 9L8 13.5 12.5 9"/></svg></a>
           <a class="btn" href="#roll">怎么抽一张</a>
@@ -272,10 +272,11 @@ footer a:hover { text-decoration-color: currentColor; }
       </div>
       <div class="filters" role="group" aria-label="筛选展品">
         <div class="frow" id="f-harness"><span class="k">适合的 harness</span></div>
+        <div class="frow" id="f-form"><span class="k">形态</span></div>
         <div class="frow" id="f-family"><span class="k">风格</span></div>
       </div>
       <div class="grid" id="grid"></div>
-      <p class="empty" id="empty" hidden>没有同时满足这两个条件的展品。换一个筛选试试。</p>
+      <p class="empty" id="empty" hidden>没有同时满足这些条件的展品。换一个筛选试试。</p>
     </div>
   </section>
 
@@ -422,7 +423,7 @@ footer a:hover { text-decoration-color: currentColor; }
 
   function theme() { return root.getAttribute('data-theme') || (mq.matches ? 'dark' : 'light'); }
   function src(it, mode) {
-    var p = new URLSearchParams(); if (mode !== 'full') { p.set('embed', '1'); if (it.zoom !== 1) p.set('zoom', it.zoom); } p.set('theme', theme());
+    var p = new URLSearchParams(); if (mode !== 'full') { p.set('embed', '1'); if (it.zoom !== 1 && !(mode === 'embed' && it.zoom < 1)) p.set('zoom', it.zoom); } // 展厅够大，缩小过的侧边栏在那里用原尺寸 p.set('theme', theme());
     return it.file + '?' + p.toString();
   }
 
@@ -458,7 +459,7 @@ footer a:hover { text-decoration-color: currentColor; }
       '<span class="enter" aria-hidden="true">进入展厅<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span></div>' +
       '<div class="ex-label" aria-hidden="true"><span class="ex-no">' + it.no + '</span><h3>' + esc(it.name) + '</h3>' +
       '<p class="meta">' + esc(it.world) + ' · ' + esc(it.motion) + ' · ' + esc(it.constraint) + '</p>' +
-      '<ul class="tags">' + it.harness.map(function (h) { return '<li' + (h === '通用核心' ? ' class="core"' : '') + '>' + esc(h) + '</li>'; }).join('') + '<li>' + esc(it.family) + '</li></ul></div>';
+      '<ul class="tags">' + it.harness.map(function (h) { return '<li' + (h === '通用核心' ? ' class="core"' : '') + '>' + esc(h) + '</li>'; }).join('') + (it.form === '侧边栏' ? '<li>侧边栏</li>' : '') + '<li>' + esc(it.family) + '</li></ul></div>';
     grid.appendChild(a);
     var fr = a.querySelector('.ex-frame'), ifr = a.querySelector('iframe');
     ifr.addEventListener('load', function () { if (ifr.getAttribute('src')) ifr.classList.add('ready'); });
@@ -479,8 +480,8 @@ footer a:hover { text-decoration-color: currentColor; }
   cards.forEach(function (c) { io.observe(c.el); });
 
   /* ---------- 筛选 ---------- */
-  var filt = { h: '全部', f: '全部' };
-  function counts(key) { var m = {}; items.forEach(function (it) { (key === 'h' ? it.harness : [it.family]).forEach(function (v) { m[v] = (m[v] || 0) + 1; }); }); return m; }
+  var filt = { h: '全部', f: '全部', m: '全部' };
+  function counts(key) { var m = {}; items.forEach(function (it) { (key === 'h' ? it.harness : key === 'm' ? [it.form] : [it.family]).forEach(function (v) { m[v] = (m[v] || 0) + 1; }); }); return m; }
   function chipRow(box, key, order) {
     var m = counts(key), keys = Object.keys(m);
     keys.sort(order || function (a, b) { return m[b] - m[a] || a.localeCompare(b, 'zh'); });
@@ -493,8 +494,9 @@ footer a:hover { text-decoration-color: currentColor; }
   }
   var FAM_ORDER = ['极简', '实物', '玩具', '规整'];
   chipRow($('#f-harness'), 'h');
+  chipRow($('#f-form'), 'm', function (a, b) { return a === '卡片' ? -1 : b === '卡片' ? 1 : 0; });
   chipRow($('#f-family'), 'f', function (a, b) { return FAM_ORDER.indexOf(a) - FAM_ORDER.indexOf(b); });
-  function visible(it) { return (filt.h === '全部' || it.harness.indexOf(filt.h) >= 0) && (filt.f === '全部' || it.family === filt.f); }
+  function visible(it) { return (filt.h === '全部' || it.harness.indexOf(filt.h) >= 0) && (filt.f === '全部' || it.family === filt.f) && (filt.m === '全部' || it.form === filt.m); }
   function applyFilter() {
     var run = function () {
       var n = 0; cards.forEach(function (c) { var v = visible(c.it); c.el.hidden = !v; if (v) { n++; c.el.classList.add('in'); if (!c.iframe.getAttribute('src')) c.iframe.setAttribute('src', src(c.it)); } });

@@ -12,6 +12,8 @@
 | [cost-ticker--lab-instrument.html](cost-ticker--lab-instrument.html) | 费用计数 | 实验室仪器 | 待机的生命感 | 流式进场 | **通用核心**（长时间自动运行的 Agent 尤其需要） |
 | [slash-palette--graph-paper.html](slash-palette--graph-paper.html) | 命令面板 | 坐标纸工程图 | 丝滑连续 | 只用两种颜色 | **通用核心**（任何 harness 都要有） |
 | [translate-card--toy-slot.html](translate-card--toy-slot.html) | 翻译对照卡 | 老虎机转轴 | 一个惊喜（三个转轴合成一句） | 不加额外限制（带合成音效） | **翻译助手**、出行差旅助手 |
+| [file-tree--toy-bubblewrap.html](file-tree--toy-bubblewrap.html) | 工作区文件树（侧边栏） | 气泡膜 | 丝滑连续 | 带合成音效 | **通用核心**（任何会改文件的 harness）、开发运维助手 |
+| [task-queue--min-type.html](task-queue--min-type.html) | 任务队列（侧边栏） | 极简字排 | 描边绘制 | 不加额外限制 | **通用核心**（一次要做好几件事的 harness） |
 
 ## 怎么挑 harness
 

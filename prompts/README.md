@@ -14,7 +14,9 @@
 
 完整清单：`node prompts/roll.mjs --list`；要加新的，直接改 [pools.json](pools.json)。
 
-**每张卡片都标注了适合的 harness**（比如合同条款高亮卡 → 法律审查，转账确认卡 → 金融支付）。抽出来的提示词里会写明，并要求生成的页面把它写进 `<head>` 的 `hx-harness` 和标题下的一行小字。只想为某一类 harness 抽卡：`node prompts/roll.mjs --harness 法律审查`。已经做好的组件见 [../components/INDEX.md](../components/INDEX.md)。
+**每张卡片都标注了适合的 harness**（比如合同条款高亮卡 → 法律审查，转账确认卡 → 金融支付）。抽出来的提示词里会写明，并要求生成的页面把它写进 `<head>` 的 `hx-harness` 和标题下的一行小字。只想为某一类 harness 抽卡：`node prompts/roll.mjs --harness 法律审查`。
+
+**还有侧边栏组件**（会话列表、文件树、任务队列、上下文书架、子 Agent 名册、案卷侧栏、患者信息侧栏……共 13 种）。它们不是回答里的卡片，而是常驻在工作台一侧、跟着 Agent 实时更新的面板。抽到它们时，提示词会换成面板的写法：竖长、占满高度、内部滚动，还要能收起成窄条。只抽侧边栏：`node prompts/roll.mjs --form sidebar`。已经做好的组件见 [../components/INDEX.md](../components/INDEX.md)。
 
 ## 怎么随机
 

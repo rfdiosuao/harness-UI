@@ -52,7 +52,20 @@
     {"id": "interrupt-bar", "name": "中断条", "spec": "运行状态、已运行时长、当前在做什么 → 停止、暂停、接管", "harness": ["通用核心"]},
     {"id": "cost-ticker", "name": "费用计数", "spec": "本次会话的花费、速率、预算上限 → 设上限、看明细、切换更便宜的模型", "harness": ["通用核心"]},
     {"id": "error-banner", "name": "错误横幅", "spec": "错误原因、可恢复程度、已自动重试几次 → 重试、跳过、查看详情", "harness": ["通用核心"]},
-    {"id": "fallback-notice", "name": "降级提示", "spec": "原来的模型和现在改用的模型、原因 → 改回去、知道了、查看区别", "harness": ["通用核心"]}
+    {"id": "fallback-notice", "name": "降级提示", "spec": "原来的模型和现在改用的模型、原因 → 改回去、知道了、查看区别", "harness": ["通用核心"]},
+    {"id": "session-list", "form": "sidebar", "name": "会话列表", "spec": "历史会话（标题、时间、按天分组）、置顶的、正在运行的、等你回复的 → 切换、搜索、重命名、置顶、归档", "harness": ["通用核心"]},
+    {"id": "file-tree", "form": "sidebar", "name": "工作区文件树", "spec": "目录和文件、Agent 这次改过的（新增、修改、删除）、改动行数 → 打开、只看改过的、查看差异、撤销某个文件", "harness": ["通用核心", "开发运维助手"]},
+    {"id": "task-queue", "form": "sidebar", "name": "任务队列", "spec": "排队中、进行中、已完成、失败的子任务，进度和耗时 → 暂停、取消、重试、拖动调整顺序", "harness": ["通用核心"]},
+    {"id": "context-shelf", "form": "sidebar", "name": "上下文书架", "spec": "已经放进上下文的文件、网页、记忆，各自占多少 token、总用量 → 移除、钉住、刷新、加一个", "harness": ["通用核心"]},
+    {"id": "agent-roster", "form": "sidebar", "name": "子 Agent 名册", "spec": "并行运行的子 Agent，各自的任务、当前步骤、状态、用时 → 查看详情、停止、给它发一句话", "harness": ["通用核心"]},
+    {"id": "tool-permissions", "form": "sidebar", "name": "工具权限面板", "spec": "这个 Agent 能用的工具，每个的权限（总是允许、每次询问、禁止）、最近一次使用 → 改权限、全部恢复默认", "harness": ["通用核心"]},
+    {"id": "outline-nav", "form": "sidebar", "name": "对话大纲", "spec": "这次对话里的问题、Agent 的步骤和产出、当前读到哪里 → 跳转、折叠、只看产出", "harness": ["通用核心"]},
+    {"id": "case-file", "form": "sidebar", "name": "案卷侧栏", "spec": "当事人、关键日期和期限、证据清单、待办 → 打开证据、标记存疑、加提醒", "harness": ["法律审查"]},
+    {"id": "patient-panel", "form": "sidebar", "name": "患者信息侧栏", "spec": "过敏史、在用药、最近化验和异常值、诊断 → 展开详情、核对用药冲突、标记已确认", "harness": ["健康医疗助手"]},
+    {"id": "watchlist", "form": "sidebar", "name": "账户与持仓侧栏", "spec": "各个账户余额、本月收支、即将到期的账单、异常提醒 → 查看明细、设提醒、隐藏金额", "harness": ["个人理财助手", "金融支付助手"]},
+    {"id": "incident-sidebar", "form": "sidebar", "name": "告警侧栏", "spec": "正在发生的告警、受影响的服务、持续时长、值班人 → 确认、升级、静音一段时间", "harness": ["开发运维助手"]},
+    {"id": "customer-profile", "form": "sidebar", "name": "客户画像侧栏", "spec": "客户等级、历史工单、最近情绪、SLA 剩余时间 → 打开历史工单、插入建议话术、转人工", "harness": ["客服工单助手"]},
+    {"id": "research-notes", "form": "sidebar", "name": "研究笔记侧栏", "spec": "已经收集的来源、摘录、每条的可信程度 → 引用到回答里、删掉、按主题分组", "harness": ["研究检索助手"]}
   ],
   "worlds": [
     {"id": "split-flap", "name": "机场翻牌屏", "text": "机械翻牌显示屏：每个字符是一块上下对折的翻牌，换内容时逐块翻转，带金属轴和阴影；黑底、琥珀色字；字体用窄体无衬线。"},

@@ -21,7 +21,8 @@ const FAMILY = {
 };
 const famOf = (style) => FAMILY[style] || '实物';
 // 160×160 这样的小组件，缩略图里放大一些才看得清
-const ZOOM = { 'transfer-confirm--sea-chart': 2, 'subscription-list--min-type': 2 };
+// 侧边栏连着主对话区占位，有 640px 高，缩略图里缩小一点才放得下
+const ZOOM = { 'transfer-confirm--sea-chart': 2, 'subscription-list--min-type': 2, 'file-tree--toy-bubblewrap': 0.8, 'task-queue--min-type': 0.8 };
 
 const strip = (s) => s.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
 const cell = (s) => strip(s.replace(/\*\*/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1'));
@@ -35,6 +36,9 @@ for (const line of index.split('\n')) {
   const cols = line.split('|').slice(1, -1).map((c) => c.trim());
   rows.push({ file: m[1], motion: cell(cols[3] || ''), constraint: cell(cols[4] || '') });
 }
+
+const pools = JSON.parse(fs.readFileSync(path.join(ROOT, 'prompts/pools.json'), 'utf8'));
+const formOf = (cid) => ((pools.cards.find((c) => c.id === cid) || {}).form === 'sidebar' ? '侧边栏' : '卡片');
 
 const items = rows.map((r, i) => {
   const html = fs.readFileSync(path.join(COMP, r.file), 'utf8');
@@ -51,7 +55,7 @@ const items = rows.map((r, i) => {
     no: 'HX-' + String(i + 1).padStart(2, '0'),
     id, file: 'components/' + r.file,
     name: name || title, world: world || style,
-    component: meta('hx-component'), style, family: famOf(style),
+    component: meta('hx-component'), form: formOf(meta('hx-component')), style, family: famOf(style),
     harness: meta('hx-harness').split('、').map((s) => s.trim()).filter(Boolean),
     fit, desc, motion: r.motion, constraint: r.constraint,
     zoom: ZOOM[id] || 1,
@@ -59,7 +63,6 @@ const items = rows.map((r, i) => {
 });
 
 // 卡池的规模，展示在首页
-const pools = JSON.parse(fs.readFileSync(path.join(ROOT, 'prompts/pools.json'), 'utf8'));
 const stats = {
   exhibits: items.length,
   cards: pools.cards.length,
@@ -73,4 +76,4 @@ const stats = {
 const out = '/* 由 tools/build_site.mjs 生成，不要手改。 */\nwindow.HX_SITE = ' + JSON.stringify({ items, stats }, null, 2) + ';\n';
 fs.writeFileSync(path.join(ROOT, 'site-data.js'), out);
 console.log(`site-data.js: ${items.length} 件展品；卡池 ${stats.cards} 种卡片（通用核心 ${stats.core.length}）、${stats.worlds} 个视觉世界、${stats.motions} 种动效`);
-for (const it of items) console.log(`  ${it.no}  ${it.name} · ${it.world} · ${it.family} → ${it.harness.join('、')}`);
+for (const it of items) console.log(`  ${it.no}  ${it.name} · ${it.world} · ${it.form} · ${it.family} → ${it.harness.join('、')}`);

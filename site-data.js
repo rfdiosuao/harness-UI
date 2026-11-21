@@ -8,6 +8,7 @@ window.HX_SITE = {
       "name": "合同条款高亮卡",
       "world": "极简单线",
       "component": "clause-highlight",
+      "form": "卡片",
       "style": "min-monoline",
       "family": "极简",
       "harness": [
@@ -27,6 +28,7 @@ window.HX_SITE = {
       "name": "转账确认卡",
       "world": "航海海图",
       "component": "transfer-confirm",
+      "form": "卡片",
       "style": "sea-chart",
       "family": "实物",
       "harness": [
@@ -46,6 +48,7 @@ window.HX_SITE = {
       "name": "订阅管理卡",
       "world": "极简字排",
       "component": "subscription-list",
+      "form": "卡片",
       "style": "min-type",
       "family": "极简",
       "harness": [
@@ -64,6 +67,7 @@ window.HX_SITE = {
       "name": "工具调用行",
       "world": "极简字排",
       "component": "tool-call-row",
+      "form": "卡片",
       "style": "min-type",
       "family": "极简",
       "harness": [
@@ -82,6 +86,7 @@ window.HX_SITE = {
       "name": "权限确认卡",
       "world": "极简字排",
       "component": "permission-prompt",
+      "form": "卡片",
       "style": "min-type",
       "family": "极简",
       "harness": [
@@ -100,6 +105,7 @@ window.HX_SITE = {
       "name": "费用计数",
       "world": "实验室仪器",
       "component": "cost-ticker",
+      "form": "卡片",
       "style": "lab-instrument",
       "family": "实物",
       "harness": [
@@ -118,6 +124,7 @@ window.HX_SITE = {
       "name": "命令面板",
       "world": "坐标纸工程图",
       "component": "slash-palette",
+      "form": "卡片",
       "style": "graph-paper",
       "family": "规整",
       "harness": [
@@ -136,6 +143,7 @@ window.HX_SITE = {
       "name": "翻译对照卡",
       "world": "老虎机转轴",
       "component": "translate-card",
+      "form": "卡片",
       "style": "toy-slot",
       "family": "玩具",
       "harness": [
@@ -147,11 +155,50 @@ window.HX_SITE = {
       "motion": "一个惊喜（三个转轴合成一句）",
       "constraint": "不加额外限制（带合成音效）",
       "zoom": 1
+    },
+    {
+      "no": "HX-09",
+      "id": "file-tree--toy-bubblewrap",
+      "file": "components/file-tree--toy-bubblewrap.html",
+      "name": "工作区文件树",
+      "world": "气泡膜",
+      "component": "file-tree",
+      "form": "侧边栏",
+      "style": "toy-bubblewrap",
+      "family": "玩具",
+      "harness": [
+        "通用核心",
+        "开发运维助手"
+      ],
+      "fit": "通用核心（任何会改文件的 harness 都要有）、开发运维助手",
+      "desc": "常驻在工作台左侧。Agent 每改一处，就鼓起一个气泡；按破它，就算你看过了，下面露出“查看差异”和“撤销”。没按破的气泡一眼就能看出还剩几处没看。",
+      "motion": "丝滑连续",
+      "constraint": "带合成音效",
+      "zoom": 0.8
+    },
+    {
+      "no": "HX-10",
+      "id": "task-queue--min-type",
+      "file": "components/task-queue--min-type.html",
+      "name": "任务队列",
+      "world": "极简字排",
+      "component": "task-queue",
+      "form": "侧边栏",
+      "style": "min-type",
+      "family": "极简",
+      "harness": [
+        "通用核心"
+      ],
+      "fit": "通用核心（任何一次要做好几件事的 harness 都要有）",
+      "desc": "常驻在工作台一侧，Agent 排着队做的事都在这里。每件任务只有一根细线：做到哪画到哪，做完了变淡，失败了弯成波浪，取消了缩回去。拖动排队的任务换顺序，预计完成时间会跟着重新算。",
+      "motion": "描边绘制",
+      "constraint": "不加额外限制",
+      "zoom": 0.8
     }
   ],
   "stats": {
-    "exhibits": 8,
-    "cards": 53,
+    "exhibits": 10,
+    "cards": 66,
     "worlds": 29,
     "motions": 13,
     "constraints": 10,
@@ -216,6 +263,34 @@ window.HX_SITE = {
       {
         "id": "fallback-notice",
         "name": "降级提示"
+      },
+      {
+        "id": "session-list",
+        "name": "会话列表"
+      },
+      {
+        "id": "file-tree",
+        "name": "工作区文件树"
+      },
+      {
+        "id": "task-queue",
+        "name": "任务队列"
+      },
+      {
+        "id": "context-shelf",
+        "name": "上下文书架"
+      },
+      {
+        "id": "agent-roster",
+        "name": "子 Agent 名册"
+      },
+      {
+        "id": "tool-permissions",
+        "name": "工具权限面板"
+      },
+      {
+        "id": "outline-nav",
+        "name": "对话大纲"
       }
     ]
   }
