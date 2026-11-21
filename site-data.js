@@ -19,7 +19,9 @@ window.HX_SITE = {
       "desc": "Agent 读完一份合同，把有风险的条款画给用户。底色和墨色，两种颜色。建议改法像抽屉，往下拉。",
       "motion": "抽屉",
       "constraint": "只用两种颜色",
-      "zoom": 1
+      "zoom": 1,
+      "vw": 760,
+      "vh": 570
     },
     {
       "no": "HX-02",
@@ -39,7 +41,9 @@ window.HX_SITE = {
       "desc": "Agent 在回答里画出的 160×160 小组件。数字像里程表滚动，转账是一次航行。",
       "motion": "数字翻滚",
       "constraint": "小组件尺寸",
-      "zoom": 2
+      "zoom": 2,
+      "vw": 760,
+      "vh": 570
     },
     {
       "no": "HX-03",
@@ -58,7 +62,9 @@ window.HX_SITE = {
       "desc": "Agent 在回答里画出的 160×160 小组件。几乎只有文字，状态变化时颜色像墨水一样晕开。",
       "motion": "墨水晕染",
       "constraint": "小组件尺寸",
-      "zoom": 2
+      "zoom": 2,
+      "vw": 760,
+      "vh": 570
     },
     {
       "no": "HX-04",
@@ -77,7 +83,9 @@ window.HX_SITE = {
       "desc": "Agent 每调用一次工具就是一行：读取、搜索、运行、编辑。所有变化都是连续的，没有瞬间跳变。只用键盘就能操作。",
       "motion": "丝滑连续",
       "constraint": "只用键盘",
-      "zoom": 1
+      "zoom": 1,
+      "vw": 760,
+      "vh": 570
     },
     {
       "no": "HX-05",
@@ -96,7 +104,9 @@ window.HX_SITE = {
       "desc": "Agent 要做一件有影响的事之前，停下来问你。字段一个个流进来，位置从一开始就留好，不会跳动。",
       "motion": "丝滑连续",
       "constraint": "流式进场",
-      "zoom": 1
+      "zoom": 1,
+      "vw": 760,
+      "vh": 570
     },
     {
       "no": "HX-06",
@@ -115,7 +125,9 @@ window.HX_SITE = {
       "desc": "一台桌面仪器：指针表盘、液晶读数、LED 速率条、示波屏、限额旋钮。Agent 一路花钱，你一眼看到离上限多远。",
       "motion": "待机的生命感",
       "constraint": "流式进场",
-      "zoom": 1
+      "zoom": 1,
+      "vw": 760,
+      "vh": 570
     },
     {
       "no": "HX-07",
@@ -134,7 +146,9 @@ window.HX_SITE = {
       "desc": "输入 / 召出命令面板：分组、模糊搜索、快捷键。选择框在行之间滑动，列表随输入平滑让位。图纸只有纸色和墨色两种颜色。",
       "motion": "丝滑连续",
       "constraint": "只用两种颜色",
-      "zoom": 1
+      "zoom": 1,
+      "vw": 760,
+      "vh": 570
     },
     {
       "no": "HX-08",
@@ -154,7 +168,9 @@ window.HX_SITE = {
       "desc": "Agent 把一句话翻成日语，三个转轴转动、依次停下，停下来的组合就是它的译文；最后三个转轴合成一句。",
       "motion": "一个惊喜（三个转轴合成一句）",
       "constraint": "不加额外限制（带合成音效）",
-      "zoom": 1
+      "zoom": 1,
+      "vw": 760,
+      "vh": 570
     },
     {
       "no": "HX-09",
@@ -174,7 +190,9 @@ window.HX_SITE = {
       "desc": "常驻在工作台左侧。Agent 每改一处，就鼓起一个气泡；按破它，就算你看过了，下面露出“查看差异”和“撤销”。没按破的气泡一眼就能看出还剩几处没看。",
       "motion": "丝滑连续",
       "constraint": "带合成音效",
-      "zoom": 0.8
+      "zoom": 0.8,
+      "vw": 760,
+      "vh": 570
     },
     {
       "no": "HX-10",
@@ -193,12 +211,35 @@ window.HX_SITE = {
       "desc": "常驻在工作台一侧，Agent 排着队做的事都在这里。每件任务只有一根细线：做到哪画到哪，做完了变淡，失败了弯成波浪，取消了缩回去。拖动排队的任务换顺序，预计完成时间会跟着重新算。",
       "motion": "描边绘制",
       "constraint": "不加额外限制",
-      "zoom": 0.8
+      "zoom": 0.8,
+      "vw": 760,
+      "vh": 570
+    },
+    {
+      "no": "HX-11",
+      "id": "travel--rotary-dial",
+      "file": "harnesses/travel--rotary-dial.html",
+      "name": "出行差旅 harness",
+      "world": "拨盘电话",
+      "component": "travel",
+      "form": "整套",
+      "style": "rotary-dial",
+      "family": "实物",
+      "harness": [
+        "出行差旅助手"
+      ],
+      "fit": "出行差旅助手（经常出差的人；风险中等，订错了要花钱改）",
+      "desc": "一整套工作台，不是单个组件：左边是计划，中间是对话，航班、酒店、天气、翻译、付定金这些卡片按时间出现在对话里，右边是按天分页的行程单。它们互相联动：选了酒店就要确认定金，付了定金计划打勾、行程单标上“已订”，改签航班会重算第一天，赶不上的地方标出“冲突”。输入框旁边是一只能拨的转盘，拨号就是快捷指令。",
+      "motion": "描边绘制",
+      "constraint": "高对比无障碍",
+      "zoom": 1,
+      "vw": 1400,
+      "vh": 1050
     }
   ],
   "stats": {
-    "exhibits": 10,
-    "cards": 66,
+    "exhibits": 11,
+    "cards": 76,
     "worlds": 29,
     "motions": 13,
     "constraints": 10,
@@ -291,6 +332,46 @@ window.HX_SITE = {
       {
         "id": "outline-nav",
         "name": "对话大纲"
+      },
+      {
+        "id": "model-switcher",
+        "name": "模型切换"
+      },
+      {
+        "id": "attachment-card",
+        "name": "附件卡"
+      },
+      {
+        "id": "code-block",
+        "name": "代码块"
+      },
+      {
+        "id": "artifact-pane",
+        "name": "产物面板"
+      },
+      {
+        "id": "voice-input",
+        "name": "语音输入"
+      },
+      {
+        "id": "rate-limit",
+        "name": "限流等待"
+      },
+      {
+        "id": "media-viewer",
+        "name": "图片查看器"
+      },
+      {
+        "id": "mention-picker",
+        "name": "引用选择器"
+      },
+      {
+        "id": "new-message-pill",
+        "name": "新消息提示"
+      },
+      {
+        "id": "share-export",
+        "name": "分享与导出"
       }
     ]
   }

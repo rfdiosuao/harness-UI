@@ -28,20 +28,24 @@ const strip = (s) => s.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
 const cell = (s) => strip(s.replace(/\*\*/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1'));
 
 // INDEX.md：| [文件](文件) | 卡片 | 视觉世界 | 动效 | 限制 | 适合的 harness |
-const index = fs.readFileSync(path.join(COMP, 'INDEX.md'), 'utf8');
+// 单个组件在 components/，整套 harness 在 harnesses/，两边的 INDEX.md 格式一样
 const rows = [];
-for (const line of index.split('\n')) {
-  const m = /^\|\s*\[([^\]]+\.html)\]/.exec(line);
-  if (!m) continue;
-  const cols = line.split('|').slice(1, -1).map((c) => c.trim());
-  rows.push({ file: m[1], motion: cell(cols[3] || ''), constraint: cell(cols[4] || '') });
+for (const dir of ['components', 'harnesses']) {
+  const f = path.join(ROOT, dir, 'INDEX.md');
+  if (!fs.existsSync(f)) continue;
+  for (const line of fs.readFileSync(f, 'utf8').split('\n')) {
+    const m = /^\|\s*\[([^\]]+\.html)\]/.exec(line);
+    if (!m) continue;
+    const cols = line.split('|').slice(1, -1).map((c) => c.trim());
+    rows.push({ dir, file: m[1], motion: cell(cols[3] || ''), constraint: cell(cols[4] || '') });
+  }
 }
 
 const pools = JSON.parse(fs.readFileSync(path.join(ROOT, 'prompts/pools.json'), 'utf8'));
 const formOf = (cid) => ((pools.cards.find((c) => c.id === cid) || {}).form === 'sidebar' ? '侧边栏' : '卡片');
 
 const items = rows.map((r, i) => {
-  const html = fs.readFileSync(path.join(COMP, r.file), 'utf8');
+  const html = fs.readFileSync(path.join(ROOT, r.dir, r.file), 'utf8');
   const meta = (name) => ((new RegExp('<meta name="' + name + '" content="([^"]*)"')).exec(html) || [])[1] || '';
   const title = strip((/<title>([\s\S]*?)<\/title>/.exec(html) || [])[1] || r.file);
   const [name, world] = title.split(' · ');
@@ -53,12 +57,14 @@ const items = rows.map((r, i) => {
   const style = meta('hx-style');
   return {
     no: 'HX-' + String(i + 1).padStart(2, '0'),
-    id, file: 'components/' + r.file,
+    id, file: r.dir + '/' + r.file,
     name: name || title, world: world || style,
-    component: meta('hx-component'), form: formOf(meta('hx-component')), style, family: famOf(style),
+    component: meta('hx-component'), form: meta('hx-form') === 'whole' ? '整套' : formOf(meta('hx-component')), style, family: famOf(style),
     harness: meta('hx-harness').split('、').map((s) => s.trim()).filter(Boolean),
     fit, desc, motion: r.motion, constraint: r.constraint,
     zoom: ZOOM[id] || 1,
+    // 整套 harness 要在宽屏下才看得到完整布局：缩略图用一个更大的虚拟窗口再缩小
+    vw: meta('hx-form') === 'whole' ? 1400 : 760, vh: meta('hx-form') === 'whole' ? 1050 : 570,
   };
 });
 

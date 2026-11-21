@@ -65,7 +65,17 @@
     {"id": "watchlist", "form": "sidebar", "name": "账户与持仓侧栏", "spec": "各个账户余额、本月收支、即将到期的账单、异常提醒 → 查看明细、设提醒、隐藏金额", "harness": ["个人理财助手", "金融支付助手"]},
     {"id": "incident-sidebar", "form": "sidebar", "name": "告警侧栏", "spec": "正在发生的告警、受影响的服务、持续时长、值班人 → 确认、升级、静音一段时间", "harness": ["开发运维助手"]},
     {"id": "customer-profile", "form": "sidebar", "name": "客户画像侧栏", "spec": "客户等级、历史工单、最近情绪、SLA 剩余时间 → 打开历史工单、插入建议话术、转人工", "harness": ["客服工单助手"]},
-    {"id": "research-notes", "form": "sidebar", "name": "研究笔记侧栏", "spec": "已经收集的来源、摘录、每条的可信程度 → 引用到回答里、删掉、按主题分组", "harness": ["研究检索助手"]}
+    {"id": "research-notes", "form": "sidebar", "name": "研究笔记侧栏", "spec": "已经收集的来源、摘录、每条的可信程度 → 引用到回答里、删掉、按主题分组", "harness": ["研究检索助手"]},
+    {"id": "model-switcher", "name": "模型切换", "spec": "当前用的模型、思考强度、这次对话的用量和剩余额度 → 换模型、调强度、看各模型的区别", "harness": ["通用核心"]},
+    {"id": "attachment-card", "name": "附件卡", "spec": "文件名、类型、大小、上传进度、能不能读、缩略预览 → 打开、移除、重新上传", "harness": ["通用核心"]},
+    {"id": "code-block", "name": "代码块", "spec": "语言、代码、行号、哪几行是新改的、运行结果 → 复制、自动换行、在编辑器里打开、运行", "harness": ["通用核心", "开发运维助手"]},
+    {"id": "artifact-pane", "form": "sidebar", "name": "产物面板", "spec": "Agent 正在做出来的东西（文档、代码、表格、图），有几个版本、哪里刚改过 → 切换版本、对比、下载、全屏", "harness": ["通用核心"]},
+    {"id": "voice-input", "name": "语音输入", "spec": "录音电平、边说边出的转写文字、时长、识别不清的词 → 开始、暂停、改字、发送、取消", "harness": ["通用核心"]},
+    {"id": "rate-limit", "name": "限流等待", "spec": "为什么要等、还要等多久、会自动重试几次 → 现在重试、换个模型、取消这次", "harness": ["通用核心"]},
+    {"id": "media-viewer", "name": "图片查看器", "spec": "一组图片、当前第几张、缩放比例、Agent 在图上的标注 → 放大、拖动、上一张下一张、下载", "harness": ["通用核心", "设计创作助手"]},
+    {"id": "mention-picker", "name": "引用选择器", "spec": "输入 @ 时弹出：可以引用的文件、之前的对话、网页、记忆，最近用过的排前面 → 搜索、选中、移除", "harness": ["通用核心"]},
+    {"id": "new-message-pill", "name": "新消息提示", "spec": "用户往上翻的时候 Agent 又写了几条、最新一条的开头 → 跳到最新、留在这里", "harness": ["通用核心"]},
+    {"id": "share-export", "name": "分享与导出", "spec": "分享范围（仅自己、链接可见、团队）、包含哪些内容、导出格式 → 复制链接、导出、撤回分享", "harness": ["通用核心"]}
   ],
   "worlds": [
     {"id": "split-flap", "name": "机场翻牌屏", "text": "机械翻牌显示屏：每个字符是一块上下对折的翻牌，换内容时逐块翻转，带金属轴和阴影；黑底、琥珀色字；字体用窄体无衬线。"},
@@ -142,5 +152,25 @@
     "用户在跑第一次半程马拉松，还有 5 周，膝盖有点不舒服",
     "用户是个独立开发者，今晚要发布 1.0，但支付回调还有一个 bug",
     "用户在和房东谈续租，对方想涨 15%"
+  ],
+  "harnesses": [
+    {"id": "legal-review", "name": "法律审查 harness", "who": "律师、公司法务", "job": "逐条审合同，找出风险条款，给出修改建议并附上依据，最后生成修订版", "risk": "高：改动会进到要签字的合同里", "scene": "一家 40 人的设计公司要和新客户签一份 18 页的年度服务合同，周五前要回复对方律师", "parts": ["case-file", "clause-highlight", "source-card", "confidence-card", "diff-viewer", "permission-prompt", "plan-checklist", "composer"]},
+    {"id": "personal-finance", "name": "个人理财 harness", "who": "想把钱管明白的普通人", "job": "对账、找出浪费的订阅、做预算、提醒到期账单，动钱之前一定先问", "risk": "高：涉及真实的钱", "scene": "用户月入 1.6 万，刚发现上个月信用卡多花了 2300 元，想弄清楚钱去了哪里", "parts": ["watchlist", "subscription-list", "budget-ring", "transfer-confirm", "split-bill", "permission-prompt", "streaming-text", "composer"]},
+    {"id": "devops", "name": "开发运维 harness", "who": "值班的工程师", "job": "看告警、查日志、定位原因、提出修复并在批准后部署，出事能一键回滚", "risk": "高：会动线上系统", "scene": "周六凌晨 2 点，支付服务的错误率从 0.1% 涨到 7%，值班的人刚被叫醒", "parts": ["incident-sidebar", "tool-call-row", "diff-viewer", "deploy-progress", "danger-confirm", "checkpoint-rewind", "cost-ticker", "composer"]},
+    {"id": "medical", "name": "健康医疗 harness", "who": "社区医生、家庭照护者", "job": "整理病历和化验单、核对用药冲突、生成给病人看得懂的说明，诊断永远留给医生", "risk": "很高：错了会伤到人", "scene": "一位 72 岁的老人刚出院，带回 6 种药和一沓化验单，女儿想弄清楚怎么吃", "parts": ["patient-panel", "pill-reminder", "confidence-card", "source-card", "clarify-card", "permission-prompt", "thinking-block", "composer"]},
+    {"id": "support", "name": "客服工单 harness", "who": "客服坐席", "job": "读懂客户的问题、查订单、起草回复、需要时转人工或升级", "risk": "中：回错了会丢客户", "scene": "双十一后第三天，一位老客户的冰箱送到时外壳凹了一块，已经是第二次来问", "parts": ["customer-profile", "ticket-card", "parcel-track", "email-draft", "choice-card", "status-chip", "interrupt-bar", "composer"]},
+    {"id": "travel", "name": "出行差旅 harness", "who": "经常出差的人", "job": "订机票酒店、排行程、盯航班变化、到了当地帮忙翻译", "risk": "中：订错了要花钱改", "scene": "用户下周要去大阪出差 4 天，第一次去，不会日语", "parts": ["trip-timeline", "flight-card", "hotel-compare", "weather-card", "translate-card", "transfer-confirm", "plan-checklist", "composer"]},
+    {"id": "research", "name": "研究检索 harness", "who": "做调研的学生、分析师", "job": "按问题搜资料、读原文、摘录并标注可信度、写成带引用的报告", "risk": "中：引错了会误导结论", "scene": "一个研究生要在三天内写完一份关于城市共享单车停放治理的文献综述", "parts": ["research-notes", "source-card", "confidence-card", "outline-nav", "context-shelf", "thinking-block", "streaming-text", "composer"]},
+    {"id": "coding", "name": "编程 harness", "who": "写代码的人", "job": "读代码、改文件、跑测试、开 PR，每一步都看得见、改得回去", "risk": "中：会改到用户的代码", "scene": "用户是个独立开发者，今晚要发布 1.0，但支付回调还有一个 bug", "parts": ["file-tree", "task-queue", "tool-call-row", "diff-viewer", "permission-prompt", "context-meter", "checkpoint-rewind", "slash-palette", "composer"]},
+    {"id": "studio", "name": "自由职业工作室 harness", "who": "一个人接活的设计师、插画师", "job": "排期、跟进客户反馈、导出交付物、开发票，几个客户同时推进", "risk": "低到中：拖延会丢客户", "scene": "用户是个自由插画师，同时有三个客户在催稿", "parts": ["task-queue", "session-list", "meeting-summary", "schedule-conflict", "photo-pick", "expense-report", "cost-ticker", "composer"]},
+    {"id": "general", "name": "通用助手 harness", "who": "所有人", "job": "什么都能聊、能动手做事，但每次动手前讲清楚要做什么", "risk": "看具体任务", "scene": "用户在筹备一场 12 个人的生日聚会，预算 2400 元，地点还没定", "parts": ["session-list", "composer", "mention-picker", "attachment-card", "model-switcher", "thinking-block", "tool-call-row", "permission-prompt", "artifact-pane", "context-meter", "new-message-pill", "share-export"]}
+  ],
+  "layouts": [
+    {"id": "three-pane", "name": "三栏", "text": "左边侧边栏、中间对话流、右边面板（产出、任务或证据），两侧都能收起，收起后对话流居中变宽。"},
+    {"id": "chat-drawer", "name": "对话 + 抽屉", "text": "对话流占满宽度，点到某个对象（文件、条款、订单）时右边滑出详情抽屉，抽屉可以钉住。"},
+    {"id": "split-artifact", "name": "对话 | 产物分屏", "text": "左边对话，右边是 Agent 正在做出来的东西（文档、代码、表格、行程），中间的分隔线可以拖动。"},
+    {"id": "cockpit", "name": "驾驶舱", "text": "顶部一条状态带（运行状态、费用、上下文用量、模型），下面三块等高的面板并排，对话只是其中一块。"},
+    {"id": "focus", "name": "单栏专注", "text": "窄单栏居中，所有组件按时间顺序出现在对话里；侧边信息收成顶部几个胶囊，点开是浮层。"},
+    {"id": "board", "name": "看板", "text": "任务按列排开（排队、进行中、等你确认、完成），卡片能拖；对话收在右下角，可以展开成半屏。"}
   ]
 }

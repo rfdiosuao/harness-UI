@@ -346,6 +346,7 @@ footer a:hover { text-decoration-color: currentColor; }
         <p class="kicker">Roll</p>
         <h2 id="roll-title">抽一张</h2>
         <p class="sub" style="margin-top:14px;color:var(--ink-2)">展品是从卡池里随机抽出来的：卡片 × 视觉世界 × 动效 × 限制，再配一个生活场景。抽到的提示词可以交给任何生成工具，也可以交给我来做。</p>
+        <p class="sub" style="margin-top:10px;color:var(--ink-2)">也能抽<b>一整套</b>：<code>--whole</code> 抽「行业 × 布局 × 视觉世界」，连同这类 harness 该有的一组组件做成一整个工作台；<code>--form sidebar</code> 只抽侧边栏。</p>
         <p class="combo" id="combo"></p>
         <div class="cta"><a class="btn" href="https://github.com/rfdiosuao/harness-UI/tree/main/prompts" target="_blank" rel="noopener">看卡池和提示词 ↗</a></div>
       </div>
@@ -459,11 +460,12 @@ footer a:hover { text-decoration-color: currentColor; }
       '<span class="enter" aria-hidden="true">进入展厅<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span></div>' +
       '<div class="ex-label" aria-hidden="true"><span class="ex-no">' + it.no + '</span><h3>' + esc(it.name) + '</h3>' +
       '<p class="meta">' + esc(it.world) + ' · ' + esc(it.motion) + ' · ' + esc(it.constraint) + '</p>' +
-      '<ul class="tags">' + it.harness.map(function (h) { return '<li' + (h === '通用核心' ? ' class="core"' : '') + '>' + esc(h) + '</li>'; }).join('') + (it.form === '侧边栏' ? '<li>侧边栏</li>' : '') + '<li>' + esc(it.family) + '</li></ul></div>';
+      '<ul class="tags">' + it.harness.map(function (h) { return '<li' + (h === '通用核心' ? ' class="core"' : '') + '>' + esc(h) + '</li>'; }).join('') + (it.form !== '卡片' ? '<li' + (it.form === '整套' ? ' class="core"' : '') + '>' + (it.form === '整套' ? '整套 harness' : it.form) + '</li>' : '') + '<li>' + esc(it.family) + '</li></ul></div>';
     grid.appendChild(a);
     var fr = a.querySelector('.ex-frame'), ifr = a.querySelector('iframe');
     ifr.addEventListener('load', function () { if (ifr.getAttribute('src')) ifr.classList.add('ready'); });
-    new ResizeObserver(function () { ifr.style.transform = 'scale(' + (fr.clientWidth / 760) + ')'; }).observe(fr);
+    ifr.style.width = it.vw + 'px'; ifr.style.height = it.vh + 'px';
+    new ResizeObserver(function () { ifr.style.transform = 'scale(' + (fr.clientWidth / it.vw) + ')'; }).observe(fr);
     cards.push({ el: a, it: it, iframe: ifr });
   });
 
@@ -494,7 +496,8 @@ footer a:hover { text-decoration-color: currentColor; }
   }
   var FAM_ORDER = ['极简', '实物', '玩具', '规整'];
   chipRow($('#f-harness'), 'h');
-  chipRow($('#f-form'), 'm', function (a, b) { return a === '卡片' ? -1 : b === '卡片' ? 1 : 0; });
+  var FORM_ORDER = ['卡片', '侧边栏', '整套'];
+  chipRow($('#f-form'), 'm', function (a, b) { return FORM_ORDER.indexOf(a) - FORM_ORDER.indexOf(b); });
   chipRow($('#f-family'), 'f', function (a, b) { return FAM_ORDER.indexOf(a) - FAM_ORDER.indexOf(b); });
   function visible(it) { return (filt.h === '全部' || it.harness.indexOf(filt.h) >= 0) && (filt.f === '全部' || it.family === filt.f) && (filt.m === '全部' || it.form === filt.m); }
   function applyFilter() {
