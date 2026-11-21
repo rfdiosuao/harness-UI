@@ -5,3 +5,4 @@
 | 文件 | 整套 | 视觉世界 | 动效 | 限制 | 适合的 harness |
 |---|---|---|---|---|---|
 | [travel--rotary-dial.html](travel--rotary-dial.html) | 出行差旅 harness（三栏：计划 / 对话 / 行程单） | 拨盘电话 | 描边绘制 | 高对比无障碍 | **出行差旅助手**（风险中等：订错了要花钱改） |
+| [team-group--vinyl-sleeve.html](team-group--vinyl-sleeve.html) | 团队群聊 harness（群聊：会话 / 群消息 / 群信息） | 黑胶唱片封套 | 翻页 | 只用键盘 | **团队群聊**（几个人和几个 Agent 在一个群里推进同一件事） |

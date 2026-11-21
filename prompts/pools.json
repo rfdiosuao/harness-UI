@@ -75,7 +75,13 @@
     {"id": "media-viewer", "name": "图片查看器", "spec": "一组图片、当前第几张、缩放比例、Agent 在图上的标注 → 放大、拖动、上一张下一张、下载", "harness": ["通用核心", "设计创作助手"]},
     {"id": "mention-picker", "name": "引用选择器", "spec": "输入 @ 时弹出：可以引用的文件、之前的对话、网页、记忆，最近用过的排前面 → 搜索、选中、移除", "harness": ["通用核心"]},
     {"id": "new-message-pill", "name": "新消息提示", "spec": "用户往上翻的时候 Agent 又写了几条、最新一条的开头 → 跳到最新、留在这里", "harness": ["通用核心"]},
-    {"id": "share-export", "name": "分享与导出", "spec": "分享范围（仅自己、链接可见、团队）、包含哪些内容、导出格式 → 复制链接、导出、撤回分享", "harness": ["通用核心"]}
+    {"id": "share-export", "name": "分享与导出", "spec": "分享范围（仅自己、链接可见、团队）、包含哪些内容、导出格式 → 复制链接、导出、撤回分享", "harness": ["通用核心"]},
+    {"id": "member-roster", "form": "sidebar", "name": "群成员名册", "spec": "群里的人和 Agent 分开列，各自在忙什么、谁在线、谁被 @ 了还没回 → 私聊、@ 他、把 Agent 移出群", "harness": ["团队群聊"]},
+    {"id": "mention-task", "name": "@ 派活卡", "spec": "被派活的 Agent、要做的事、截止时间、接单状态和进度 → 改要求、催一下、收回", "harness": ["团队群聊"]},
+    {"id": "agent-handoff", "name": "Agent 交接卡", "spec": "从哪个 Agent 转给哪个、为什么转、带过去哪些上下文 → 同意交接、改派给别人、拉回给自己", "harness": ["团队群聊"]},
+    {"id": "decision-log", "name": "决定记录卡", "spec": "群里拍板的事、谁拍的板、依据是哪几条消息、影响到哪些任务 → 确认、修改、撤回", "harness": ["团队群聊"]},
+    {"id": "thread-reply", "name": "线程回复", "spec": "原消息、几条回复、谁参与了、有没有结论 → 展开、回复、标为已解决", "harness": ["团队群聊", "通用核心"]},
+    {"id": "agent-profile", "name": "Agent 名片", "spec": "名字、擅长什么、能用哪些工具和权限、最近做过的事 → 拉进群、私聊、调权限", "harness": ["团队群聊"]}
   ],
   "worlds": [
     {"id": "split-flap", "name": "机场翻牌屏", "text": "机械翻牌显示屏：每个字符是一块上下对折的翻牌，换内容时逐块翻转，带金属轴和阴影；黑底、琥珀色字；字体用窄体无衬线。"},
@@ -163,7 +169,8 @@
     {"id": "research", "name": "研究检索 harness", "who": "做调研的学生、分析师", "job": "按问题搜资料、读原文、摘录并标注可信度、写成带引用的报告", "risk": "中：引错了会误导结论", "scene": "一个研究生要在三天内写完一份关于城市共享单车停放治理的文献综述", "parts": ["research-notes", "source-card", "confidence-card", "outline-nav", "context-shelf", "thinking-block", "streaming-text", "composer"]},
     {"id": "coding", "name": "编程 harness", "who": "写代码的人", "job": "读代码、改文件、跑测试、开 PR，每一步都看得见、改得回去", "risk": "中：会改到用户的代码", "scene": "用户是个独立开发者，今晚要发布 1.0，但支付回调还有一个 bug", "parts": ["file-tree", "task-queue", "tool-call-row", "diff-viewer", "permission-prompt", "context-meter", "checkpoint-rewind", "slash-palette", "composer"]},
     {"id": "studio", "name": "自由职业工作室 harness", "who": "一个人接活的设计师、插画师", "job": "排期、跟进客户反馈、导出交付物、开发票，几个客户同时推进", "risk": "低到中：拖延会丢客户", "scene": "用户是个自由插画师，同时有三个客户在催稿", "parts": ["task-queue", "session-list", "meeting-summary", "schedule-conflict", "photo-pick", "expense-report", "cost-ticker", "composer"]},
-    {"id": "general", "name": "通用助手 harness", "who": "所有人", "job": "什么都能聊、能动手做事，但每次动手前讲清楚要做什么", "risk": "看具体任务", "scene": "用户在筹备一场 12 个人的生日聚会，预算 2400 元，地点还没定", "parts": ["session-list", "composer", "mention-picker", "attachment-card", "model-switcher", "thinking-block", "tool-call-row", "permission-prompt", "artifact-pane", "context-meter", "new-message-pill", "share-export"]}
+    {"id": "general", "name": "通用助手 harness", "who": "所有人", "job": "什么都能聊、能动手做事，但每次动手前讲清楚要做什么", "risk": "看具体任务", "scene": "用户在筹备一场 12 个人的生日聚会，预算 2400 元，地点还没定", "parts": ["session-list", "composer", "mention-picker", "attachment-card", "model-switcher", "thinking-block", "tool-call-row", "permission-prompt", "artifact-pane", "context-meter", "new-message-pill", "share-export"]},
+    {"id": "team-group", "name": "团队群聊 harness", "who": "一起推进同一件事的几个人和几个 Agent", "job": "在一个群里讨论、拍板、@ Agent 派活、Agent 之间交接，所有决定和产出都留在群里", "risk": "中：派错活或记错决定会让大家白忙", "scene": "一个 6 人的小团队下周五要上线新版本，群里还有负责研发、测试和文案的 3 个 Agent", "parts": ["session-list", "member-roster", "mention-task", "agent-handoff", "decision-log", "thread-reply", "agent-profile", "mention-picker", "composer"]}
   ],
   "layouts": [
     {"id": "three-pane", "name": "三栏", "text": "左边侧边栏、中间对话流、右边面板（产出、任务或证据），两侧都能收起，收起后对话流居中变宽。"},
@@ -171,6 +178,7 @@
     {"id": "split-artifact", "name": "对话 | 产物分屏", "text": "左边对话，右边是 Agent 正在做出来的东西（文档、代码、表格、行程），中间的分隔线可以拖动。"},
     {"id": "cockpit", "name": "驾驶舱", "text": "顶部一条状态带（运行状态、费用、上下文用量、模型），下面三块等高的面板并排，对话只是其中一块。"},
     {"id": "focus", "name": "单栏专注", "text": "窄单栏居中，所有组件按时间顺序出现在对话里；侧边信息收成顶部几个胶囊，点开是浮层。"},
-    {"id": "board", "name": "看板", "text": "任务按列排开（排队、进行中、等你确认、完成），卡片能拖；对话收在右下角，可以展开成半屏。"}
+    {"id": "board", "name": "看板", "text": "任务按列排开（排队、进行中、等你确认、完成），卡片能拖；对话收在右下角，可以展开成半屏。"},
+    {"id": "group-chat", "name": "群聊", "text": "左边会话列表（私聊、群聊、Agent 混在一起，未读数和“有人 @ 你”分开标），中间是群消息流（人和 Agent 都是群成员，消息里能带卡片和线程），右边是群信息（成员、共享文件、群里定下的事），两侧都能收起。"}
   ]
 }

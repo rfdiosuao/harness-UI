@@ -235,11 +235,32 @@ window.HX_SITE = {
       "zoom": 1,
       "vw": 1400,
       "vh": 1050
+    },
+    {
+      "no": "HX-12",
+      "id": "team-group--vinyl-sleeve",
+      "file": "harnesses/team-group--vinyl-sleeve.html",
+      "name": "团队群聊 harness",
+      "world": "黑胶唱片封套",
+      "component": "team-group",
+      "form": "整套",
+      "style": "vinyl-sleeve",
+      "family": "实物",
+      "harness": [
+        "团队群聊"
+      ],
+      "fit": "团队群聊（几个人和几个 Agent 一起推进同一件事；风险中等，派错活或记错决定会让大家白忙）",
+      "desc": "人和 Agent 都是群成员。群头部是一张唱片封套：唱片标着这次的版本，Agent 在干活时它就转、唱针落下；旁边的曲目单就是这周要做的几件事。消息里能 @ Agent 派活、Agent 之间交接、把群里拍板的事记下来。右边的群信息是一本小册子，成员、定下的事、文件、线程、Agent 名片之间用真的翻页切换，可以抓着右下角拖着翻。全部操作都能用键盘完成，按 ? 看快捷键。",
+      "motion": "翻页",
+      "constraint": "只用键盘",
+      "zoom": 1,
+      "vw": 1400,
+      "vh": 1050
     }
   ],
   "stats": {
-    "exhibits": 11,
-    "cards": 76,
+    "exhibits": 12,
+    "cards": 82,
     "worlds": 29,
     "motions": 13,
     "constraints": 10,
@@ -372,6 +393,10 @@ window.HX_SITE = {
       {
         "id": "share-export",
         "name": "分享与导出"
+      },
+      {
+        "id": "thread-reply",
+        "name": "线程回复"
       }
     ]
   }
