@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>命令面板 · 坐标纸工程图</title>
+<meta name="hx-component" content="slash-palette">
+<meta name="hx-style" content="graph-paper">
+<meta name="hx-harness" content="通用核心">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* 图纸本身只有两种颜色：纸色和墨色。页面（图纸以外）的颜色不算。 */
+:root {
+  --hx-paper: #F3F0E4; --hx-ink: #1F3A8A;
+  --hx-page: #CFCBBC; --hx-page-ink: #2A261E; --hx-page-ink-2: #5A5346; --hx-page-line: #A9A491;
+  --u: 16px;
+  --hx-mono: 'DM Mono', 'Noto Sans SC', ui-monospace, monospace;
+  --hx-ease: cubic-bezier(.2, .8, .2, 1); --hx-spring: cubic-bezier(.3, 1.3, .5, 1);
+  --hx-fast: 160ms; --hx-slow: 420ms;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --hx-paper: #0F1D45; --hx-ink: #D9E3FF; --hx-page: #070D22; --hx-page-ink: #E4EAFB; --hx-page-ink-2: #9DAAD0; --hx-page-line: #26335F; } }
+:root[data-theme="dark"] { --hx-paper: #0F1D45; --hx-ink: #D9E3FF; --hx-page: #070D22; --hx-page-ink: #E4EAFB; --hx-page-ink-2: #9DAAD0; --hx-page-line: #26335F; }
+@media (prefers-reduced-motion: reduce) { :root { --hx-fast: 360ms; --hx-slow: 1000ms; } }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--hx-page); color: var(--hx-page-ink); font-family: 'Noto Sans SC', system-ui, sans-serif; font-size: 15px; line-height: 1.6; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--hx-ink); outline-offset: 2px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---------- 页面 ---------- */
+.page { max-width: 1000px; margin: 0 auto; padding: 32px 20px 72px; display: flex; flex-direction: column; gap: 36px; }
+.head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+.head h1 { margin: 0; font-size: 20px; font-weight: 700; }
+.head p { margin: 2px 0 0; font-size: 12px; color: var(--hx-page-ink-2); }
+.pbtn { min-height: 44px; padding: 0 14px; border: 1px solid var(--hx-page-line); border-radius: 0; background: transparent; font-size: 12px; }
+.pbtn:hover, .pbtn[aria-pressed="true"] { background: var(--hx-page-ink); color: var(--hx-page); border-color: var(--hx-page-ink); }
+.simbtns { display: flex; flex-wrap: wrap; gap: 8px; }
+.main { display: flex; flex-wrap: wrap; gap: 28px 40px; align-items: flex-start; }
+.mcol { flex: 0 1 640px; min-width: 0; width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.sim { flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.lab { font-size: 12px; color: var(--hx-page-ink-2); }
+.sim h2, .gal h2 { margin: 0; font-size: 12px; font-weight: 700; }
+.log { margin: 0; padding: 12px 14px; border: 1px solid var(--hx-page-line); font: 12px/1.7 var(--hx-mono); white-space: pre-wrap; overflow-wrap: anywhere; min-height: 92px; }
+.gal { display: flex; flex-direction: column; gap: 14px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(640px, 100%), 1fr)); gap: 32px; align-items: start; }
+.cell { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+
+/* ---------- 图纸：40u × 31u（640 × 496），所有东西都落在 16px 的网格上 ---------- */
+.mc { position: relative; width: 100%; max-width: 640px; }
+.fit { position: absolute; left: 0; top: 0; width: 640px; transform-origin: 0 0; }
+.sheet { position: relative; width: 640px; height: 496px; background: var(--hx-paper); color: var(--hx-ink); font-family: var(--hx-mono); font-size: 13px; line-height: 1.4; overflow: hidden; }
+.gridsvg { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--hx-ink); pointer-events: none; }
+.frame { position: absolute; inset: var(--u); border: 2px solid var(--hx-ink); pointer-events: none; }
+.frame::after { content: ""; position: absolute; inset: 4px; border: 1px solid var(--hx-ink); }
+.cap { position: absolute; left: calc(2 * var(--u)); top: calc(1.5 * var(--u)); padding: 0 6px; background: var(--hx-paper); font-size: 12px; font-weight: 500; letter-spacing: .04em; }
+.dim { position: absolute; left: calc(4.5 * var(--u)); top: calc(3 * var(--u)); width: calc(31 * var(--u)); height: var(--u); color: var(--hx-ink); overflow: visible; }
+.dim text { font: 500 11px var(--hx-mono); fill: var(--hx-ink); text-anchor: middle; }
+.co { position: absolute; width: 20px; height: 20px; display: grid; place-items: center; border: 1.5px solid var(--hx-ink); border-radius: 50%; background: var(--hx-paper); font-size: 11px; font-weight: 700; }
+.leader { position: absolute; height: 0; border-top: 1.5px solid var(--hx-ink); }
+
+.panel { position: absolute; left: calc(5 * var(--u)); top: calc(5 * var(--u)); width: calc(30 * var(--u)); background: var(--hx-paper); border: 2px solid var(--hx-ink); }
+.inp { display: flex; align-items: center; height: calc(3 * var(--u)); padding: 0 var(--u); gap: 10px; border-bottom: 2px solid var(--hx-ink); }
+.inp .pr { font-size: 20px; font-weight: 700; }
+.inp input { flex: 1; min-width: 0; height: calc(3 * var(--u)); border: 0; background: transparent; font: 500 15px var(--hx-mono); color: var(--hx-ink); border-radius: 0; }
+.inp input:focus-visible { outline: none; }
+.inp input::placeholder { color: var(--hx-ink); opacity: 1; font-weight: 400; }
+.inp:focus-within { box-shadow: inset 0 -4px 0 var(--hx-ink); }
+.inp .cnt { font-size: 12px; white-space: nowrap; }
+.body { position: relative; height: calc(14 * var(--u)); }
+.listwrap { position: absolute; inset: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--hx-ink) transparent; transition: opacity var(--hx-slow) var(--hx-ease); }
+.inner { position: relative; width: 100%; }
+.row { position: absolute; left: 0; right: 0; top: 0; height: calc(2 * var(--u)); display: flex; align-items: center; gap: 12px; padding: 0 var(--u); transition: transform var(--hx-slow) var(--hx-ease), opacity var(--hx-fast); will-change: transform; }
+.row.off { opacity: 0; pointer-events: none; }
+.inner.noanim .row, .inner.noanim .cur { transition: none; }
+.hd { font-size: 11px; font-weight: 700; letter-spacing: .14em; gap: 10px; }
+.hd .rule { flex: 1; height: 8px; border-top: 1.5px solid var(--hx-ink); background: repeating-linear-gradient(90deg, var(--hx-ink) 0 1.5px, transparent 1.5px 16px) 0 100% / 100% 5px no-repeat; }
+.cmd { cursor: pointer; }
+.cmd .nm { font-size: 15px; white-space: nowrap; }
+.cmd .nm u { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.cmd .sid { flex: 1; min-width: 0; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cmd.sel .nm { font-weight: 700; }
+.keys { display: inline-flex; gap: 4px; }
+.keys kbd { font: 500 11px var(--hx-mono); min-width: 20px; height: 20px; padding: 0 4px; display: inline-grid; place-items: center; border: 1.5px solid var(--hx-ink); border-radius: 0; }
+.cmd.dis { background: repeating-linear-gradient(135deg, var(--hx-ink) 0 1px, transparent 1px 7px); cursor: not-allowed; }
+.cmd.dis .nm, .cmd.dis .sid, .cmd.dis .keys { background: var(--hx-paper); padding: 0 4px; }
+.cmd.nope { animation: nope .32s var(--hx-ease); }
+@keyframes nope { 0%, 100% { translate: 0; } 25% { translate: -5px; } 55% { translate: 4px; } 80% { translate: -2px; } }
+.cur { position: absolute; left: 0; right: 0; top: 0; height: calc(2 * var(--u)); pointer-events: none; border: 2px solid var(--hx-ink); transition: transform var(--hx-slow) var(--hx-spring), opacity var(--hx-fast); }
+.cur::after { content: ""; position: absolute; left: -7px; top: 50%; width: 10px; height: 10px; margin-top: -5px; border: 2px solid var(--hx-ink); background: var(--hx-paper); }
+.cur.off { opacity: 0; }
+.skl { position: absolute; inset: 0; padding: var(--u); display: flex; flex-direction: column; gap: calc(var(--u)); opacity: 0; pointer-events: none; transition: opacity var(--hx-slow) var(--hx-ease); }
+.skl i { display: block; height: 0; border-top: 2px dotted var(--hx-ink); animation: march 1.2s linear infinite; background: none; }
+.skl i:nth-child(odd) { width: 60%; } .skl i:nth-child(even) { width: 85%; }
+@keyframes march { to { border-top-color: var(--hx-ink); transform: translateX(10px); } }
+.panel[data-st="loading"] .skl { opacity: 1; } .panel[data-st="loading"] .listwrap { opacity: 0; }
+
+.run, .err { position: absolute; inset: 0; padding: var(--u) var(--u); display: flex; flex-direction: column; gap: var(--u); opacity: 0; pointer-events: none; transition: opacity var(--hx-slow) var(--hx-ease), transform var(--hx-slow) var(--hx-ease); transform: translateY(8px); }
+.panel[data-st="running"] .run, .panel[data-st="error"] .err { opacity: 1; pointer-events: auto; transform: none; }
+.panel[data-st="running"] .listwrap, .panel[data-st="error"] .listwrap { opacity: 0; pointer-events: none; }
+.run h3 { margin: 0; font: 700 20px var(--hx-mono); }
+.rail { position: relative; height: calc(1.5 * var(--u)); border: 2px solid var(--hx-ink); }
+.rail i { position: absolute; inset: 3px; background: var(--hx-ink); transform-origin: 0 50%; transform: scaleX(var(--p, 0)); transition: transform .5s var(--hx-ease); }
+.ticks { display: flex; justify-content: space-between; margin-top: -8px; height: 8px; }
+.ticks b { width: 1.5px; background: var(--hx-ink); }
+.run .meta { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; }
+.run .done { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn { min-height: 44px; padding: 0 14px; border: 2px solid var(--hx-ink); border-radius: 0; background: var(--hx-paper); font: 700 13px var(--hx-mono); transition: background-color var(--hx-fast), color var(--hx-fast), transform var(--hx-fast); }
+.btn:hover:not(:disabled) { background: var(--hx-ink); color: var(--hx-paper); }
+.btn:active:not(:disabled) { transform: translateY(2px); }
+.btn:disabled { border-style: dashed; cursor: default; }
+.err p { margin: 0; font-size: 15px; font-weight: 500; }
+.err .x { width: 100%; height: 36px; border: 2px dashed var(--hx-ink); display: grid; place-items: center; font-size: 12px; }
+
+.foot { display: flex; align-items: center; min-height: calc(2 * var(--u)); padding: 0 var(--u); border-top: 2px solid var(--hx-ink); font-size: 12px; gap: 8px; }
+.foot span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.foot .hat { flex: none; width: 24px; height: 12px; background: repeating-linear-gradient(135deg, var(--hx-ink) 0 1px, transparent 1px 5px); border: 1.5px solid var(--hx-ink); }
+
+.tbk { position: absolute; right: calc(2.5 * var(--u)); bottom: calc(2 * var(--u)); width: calc(15 * var(--u)); border: 2px solid var(--hx-ink); background: var(--hx-paper); font-size: 11px; }
+.tbk div { display: grid; grid-template-columns: 4em 1fr; }
+.tbk div + div { border-top: 1.5px solid var(--hx-ink); }
+.tbk span { padding: 2px 6px; } .tbk span:first-child { border-right: 1.5px solid var(--hx-ink); font-weight: 700; }
+.legend { position: absolute; left: calc(2.5 * var(--u)); bottom: calc(2 * var(--u)); background: var(--hx-paper); font-size: 11px; line-height: 1.5; padding: 2px 6px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="head">
+    <div>
+      <h1>命令面板 · 坐标纸工程图</h1>
+      <p>输入 / 召出命令面板：分组、模糊搜索、快捷键。选择框在行之间滑动，列表随输入平滑让位。图纸只有纸色和墨色两种颜色。</p>
+      <p>适合的 harness：通用核心（任何 harness 都要有）</p>
+    </div>
+    <button type="button" class="pbtn" id="theme" aria-pressed="false">蓝图（深色）</button>
+  </header>
+
+  <section class="main" aria-label="主组件">
+    <div class="mcol">
+      <div class="lab">可交互 · 直接打字筛选，↑↓ 选择，⏎ 执行，Esc 清空</div>
+      <div class="mc" id="main"></div>
+    </div>
+    <div class="sim">
+      <h2>模拟 Agent</h2>
+      <div class="simbtns" id="sim"></div>
+      <h2>Agent 回传</h2>
+      <pre class="log" id="log" aria-live="polite">（执行命令、关闭，这里显示 hx-action）</pre>
+    </div>
+  </section>
+
+  <section class="gal" aria-label="全部状态">
+    <h2>全部状态</h2>
+    <div class="grid" id="gallery"></div>
+  </section>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var U = 16, ROW = 32, uid = 0;
+  var clamp = function (x, a, b) { return Math.min(b, Math.max(a, x)); };
+
+  var COMMANDS = [
+    { id: 'archive-trips', group: '照片整理', name: '按旅行归档', desc: '按拍摄时间和地点，把 40,213 张照片分成旅行相册', keys: ['⌘', '⇧', 'A'], work: { total: 40213, done: '整理出 37 个旅行相册' } },
+    { id: 'find-dupes', group: '照片整理', name: '找重复照片', desc: '比对内容，找出重复和连拍的照片，只标记不删除', keys: ['⌘', 'D'] },
+    { id: 'this-year', group: '照片整理', name: '只看今年', desc: '只处理今年拍的 3,102 张', keys: [] },
+    { id: 'group-by-place', group: '照片整理', name: '按拍摄地点分组', desc: '用照片里的位置信息把照片分到城市', keys: [], disabled: true, reason: '需要先授权读取照片的位置信息' },
+    { id: 'compact', group: '会话', name: '压缩上下文', desc: '把前面的对话压成摘要，腾出空间', keys: ['⌘', 'K'] },
+    { id: 'rewind', group: '会话', name: '回退到检查点', desc: '回到上一次编辑之前的样子', keys: ['⌘', 'Z'] },
+    { id: 'new-session', group: '会话', name: '新建会话', desc: '开一个干净的会话，旧的会保留', keys: ['⌘', 'N'] },
+    { id: 'cheaper', group: '模型', name: '切换更便宜的模型', desc: '改用 Haiku 5.5，费用约省 70%', keys: [] },
+    { id: 'effort', group: '模型', name: '提高推理强度', desc: '让模型想得更久、更仔细，会更贵更慢', keys: ['⌘', 'E'] }
+  ];
+
+  var TEMPLATE =
+    '<div class="fit" data-f="fit"><div class="sheet">' +
+      '<svg class="gridsvg" aria-hidden="true"><defs><pattern id="p{u}m" width="16" height="16" patternUnits="userSpaceOnUse"><circle cx="0" cy="0" r=".9" fill="currentColor"/><circle cx="8" cy="0" r=".5" fill="currentColor"/><circle cx="0" cy="8" r=".5" fill="currentColor"/></pattern>' +
+      '<pattern id="p{u}M" width="80" height="80" patternUnits="userSpaceOnUse"><path d="M0 0H80M0 0V80" stroke="currentColor" stroke-width="1" fill="none"/></pattern></defs>' +
+      '<rect width="100%" height="100%" fill="url(#p{u}m)"/><rect width="100%" height="100%" fill="url(#p{u}M)"/></svg>' +
+      '<div class="frame"></div><div class="cap">图 1　命令面板</div>' +
+      '<svg class="dim" viewBox="0 0 496 16" preserveAspectRatio="none" aria-hidden="true"><path d="M0 8H496M0 1V15M496 1V15" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M0 8l9-4v8zM496 8l-9-4v8z" fill="currentColor"/><rect x="214" y="0" width="68" height="16" fill="var(--hx-paper)"/><text x="248" y="12">W = 30u</text></svg>' +
+      '<div class="panel" data-f="panel" data-st="loading" role="group" aria-label="命令面板">' +
+        '<div class="inp"><span class="pr" aria-hidden="true">/</span><input type="text" data-f="q" role="combobox" aria-expanded="true" aria-autocomplete="list" aria-label="搜索命令" placeholder="输入命令，比如 归档" autocomplete="off" spellcheck="false"><span class="cnt" data-f="cnt"></span></div>' +
+        '<div class="body">' +
+          '<div class="skl" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>' +
+          '<div class="listwrap" data-f="wrap"><div class="inner" data-f="inner" role="listbox" aria-label="命令"><div class="cur off" data-f="cur"></div></div></div>' +
+          '<div class="run" data-f="run"><h3 data-f="rtitle"></h3><div class="rail" aria-hidden="true"><i data-f="rbar"></i></div><div class="ticks" aria-hidden="true">' + new Array(21).join('<b></b>') + '</div><div class="meta"><span data-f="rtext"></span><span data-f="rcount"></span></div><div class="done" data-f="rdone"></div></div>' +
+          '<div class="err" data-f="err"><p data-f="etext">命令列表没加载出来</p><div class="x" aria-hidden="true">— — — —</div><div><button type="button" class="btn" data-f="retry">重试</button></div></div>' +
+        '</div>' +
+        '<div class="foot" data-f="foot"></div>' +
+      '</div>' +
+      '<i class="co" style="left:calc(2.4*var(--u));top:calc(6.5*var(--u) - 10px)">1</i><i class="leader" style="left:calc(3.6*var(--u));top:calc(6.5*var(--u));width:calc(1.4*var(--u))"></i>' +
+      '<i class="co" style="left:calc(2.4*var(--u));top:calc(9*var(--u) - 10px)">2</i><i class="leader" style="left:calc(3.6*var(--u));top:calc(9*var(--u));width:calc(1.4*var(--u))"></i>' +
+      '<i class="co" style="right:calc(2.4*var(--u));top:calc(11*var(--u) - 10px)">3</i><i class="leader" style="right:calc(3.6*var(--u));top:calc(11*var(--u));width:calc(1.4*var(--u))"></i>' +
+      '<div class="legend">1 输入　2 分组　3 快捷键</div>' +
+      '<div class="tbk"><div><span>图名</span><span>命令面板 /</span></div><div><span>图号</span><span>HX-02</span></div><div><span>比例</span><span>1:1　u = 16px</span></div></div>' +
+    '</div></div><div class="sr" aria-live="polite" data-f="live"></div>';
+
+  function fuzzy(q, text) {
+    q = q.toLowerCase().replace(/\s+/g, ''); if (!q) return [];
+    var t = text.toLowerCase(), idx = [], at = 0;
+    for (var i = 0; i < q.length; i++) { var f = t.indexOf(q[i], at); if (f < 0) return null; idx.push(f); at = f + 1; }
+    return idx;
+  }
+  function esc(t) { return String(t).replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); }
+  function hl(name, idx) { if (!idx || !idx.length) return esc(name); return name.split('').map(function (c, i) { return idx.indexOf(i) >= 0 ? '<u>' + esc(c) + '</u>' : esc(c); }).join(''); }
+
+  /**
+   * props: { state: 'loading'|'ready'|'running'|'error', query, commands: [{ id, group, name, desc, keys, disabled, reason, work }],
+   *          selected, running: { id, done, total, finished, text }, error }
+   * 动作（hx-action）：run { id } / close / retry
+   */
+  function mount(root, init, opts) {
+    opts = opts || {};
+    root.classList.add('mc'); var u = ++uid; root.innerHTML = TEMPLATE.replace(/\{u\}/g, u);
+    var $ = function (f) { return root.querySelector('[data-f="' + f + '"]'); };
+    var el = {}; ['fit', 'panel', 'q', 'cnt', 'wrap', 'inner', 'cur', 'run', 'rtitle', 'rbar', 'rtext', 'rcount', 'rdone', 'err', 'etext', 'retry', 'foot', 'live'].forEach(function (k) { el[k] = $(k); });
+    var s = { state: 'loading', query: '', commands: [], selected: null, running: null, error: null };
+    var rows = {}, seq = [], first = true, progT = 0, builtSig = '';
+
+    function emit(name, params) {
+      var ev = new CustomEvent('hx-action', { detail: { name: name, params: params || {} }, bubbles: !!opts.global });
+      (opts.global ? document : root).dispatchEvent(ev);
+    }
+    function say(t) { if (el.live.textContent !== t) el.live.textContent = t; }
+
+    function build() {
+      var sig = s.commands.map(function (c) { return c.id + c.name + c.group + (c.disabled ? 'x' : ''); }).join('|'); if (sig === builtSig) return; builtSig = sig;
+      [].slice.call(el.inner.querySelectorAll('.row')).forEach(function (r) { r.remove(); }); rows = {};
+      var groups = []; s.commands.forEach(function (c) { if (groups.indexOf(c.group) < 0) groups.push(c.group); });
+      groups.forEach(function (g) {
+        var h = document.createElement('div'); h.className = 'row hd off'; h.setAttribute('role', 'presentation'); h.innerHTML = '<span>' + esc(g) + '</span><i class="rule"></i>'; el.inner.insertBefore(h, el.cur); rows['g:' + g] = { el: h, group: g };
+      });
+      s.commands.forEach(function (c) {
+        var r = document.createElement('div'); r.className = 'row cmd off'; r.id = 'cmd' + u + '-' + c.id; r.setAttribute('role', 'option'); r.dataset.id = c.id; if (c.disabled) { r.classList.add('dis'); r.setAttribute('aria-disabled', 'true'); }
+        r.innerHTML = '<span class="nm"></span><span class="sid">/' + esc(c.id) + '</span><span class="keys">' + (c.keys || []).map(function (k) { return '<kbd>' + esc(k) + '</kbd>'; }).join('') + '</span>';
+        r.addEventListener('pointermove', function () { if (!c.disabled && s.selected !== c.id) { s.selected = c.id; place(false); } });
+        r.addEventListener('click', function () { if (c.disabled) { r.classList.remove('nope'); void r.offsetWidth; r.classList.add('nope'); s.selected = c.id; place(false); return; } s.selected = c.id; place(false); run(c.id); });
+        el.inner.insertBefore(r, el.cur); rows['c:' + c.id] = { el: r, cmd: c };
+      });
+    }
+
+    /* 排版：每一行落在 32px 的格子里，不匹配的淡出，其余按顺序平滑让位 */
+    function layout() {
+      build(); seq = [];
+      var groups = []; s.commands.forEach(function (c) { if (groups.indexOf(c.group) < 0) groups.push(c.group); });
+      var matched = {};
+      groups.forEach(function (g) {
+        var ms = s.commands.filter(function (c) { if (c.group !== g) return false; var m = fuzzy(s.query, c.name); if (m === null) { var m2 = fuzzy(s.query, '/' + c.id); if (m2 === null) return false; m = []; } matched[c.id] = m; return true; });
+        if (ms.length) { seq.push('g:' + g); ms.forEach(function (c) { seq.push('c:' + c.id); }); }
+      });
+      Object.keys(rows).forEach(function (k) { var r = rows[k], i = seq.indexOf(k); if (i < 0) r.el.classList.add('off'); else { r.el.classList.remove('off'); r.el.style.transform = 'translateY(' + (i * ROW) + 'px)'; if (r.cmd) r.el.querySelector('.nm').innerHTML = hl(r.cmd.name, matched[r.cmd.id]); } });
+      el.inner.style.height = Math.max(seq.length, 7) * ROW + 'px';
+      var n = seq.filter(function (k) { return k[0] === 'c'; }).length; el.cnt.textContent = n + ' / ' + s.commands.length;
+      var selectable = seq.filter(function (k) { return k[0] === 'c' && !rows[k].cmd.disabled; });
+      if (s.selected == null || seq.indexOf('c:' + s.selected) < 0) s.selected = selectable.length ? rows[selectable[0]].cmd.id : null;
+      place(true);
+    }
+    function place(scroll) {
+      var k = s.selected && 'c:' + s.selected, i = k ? seq.indexOf(k) : -1;
+      Object.keys(rows).forEach(function (kk) { if (rows[kk].cmd) { var on = kk === k; rows[kk].el.classList.toggle('sel', on); rows[kk].el.setAttribute('aria-selected', on); } });
+      el.cur.classList.toggle('off', i < 0); if (i >= 0) { el.cur.style.transform = 'translateY(' + (i * ROW) + 'px)'; el.q.setAttribute('aria-activedescendant', rows[k].el.id); if (scroll !== false) { var top = i * ROW, vh = el.wrap.clientHeight, st = el.wrap.scrollTop; if (top < st) el.wrap.scrollTo({ top: Math.max(0, top - ROW), behavior: reduce || first ? 'auto' : 'smooth' }); else if (top + ROW > st + vh) el.wrap.scrollTo({ top: top + ROW - vh + ROW, behavior: reduce || first ? 'auto' : 'smooth' }); } } else el.q.removeAttribute('aria-activedescendant');
+      foot();
+    }
+    function foot() {
+      var c = s.selected ? s.commands.filter(function (x) { return x.id === s.selected; })[0] : null, f = el.foot, st = s.state;
+      var dis = c && c.disabled;
+      if (st === 'loading') f.innerHTML = '<span>正在读取命令…</span>';
+      else if (st === 'error') f.innerHTML = '<span>' + esc(s.error || '读取失败') + '</span>';
+      else if (st === 'running') f.innerHTML = '<span>' + (s.running && s.running.finished ? '已完成' : '正在执行…') + '</span>';
+      else if (!seq.some(function (k) { return k[0] === 'c'; })) f.innerHTML = '<span>没有匹配「' + esc(s.query) + '」的命令</span>';
+      else if (dis) f.innerHTML = '<i class="hat" aria-hidden="true"></i><span>不能用：' + esc(c.reason) + '</span>';
+      else if (c) f.innerHTML = '<span>' + esc(c.desc) + '</span>';
+      else f.innerHTML = '<span>↑↓ 选择　⏎ 执行　Esc 清空</span>';
+    }
+
+    function run(id) {
+      var c = s.commands.filter(function (x) { return x.id === id; })[0]; if (!c || c.disabled || s.state !== 'ready') return;
+      emit('run', { id: id }); var work = c.work || { total: 0, done: '已执行：' + c.desc };
+      api.set({ state: 'running', running: { id: id, name: c.name, done: 0, total: work.total, finished: false, text: '' } });
+      if (opts.autoSettle === false) return;
+      clearInterval(progT); var t0 = performance.now(), dur = work.total ? 3200 : 700;
+      progT = setInterval(function () { var p = clamp((performance.now() - t0) / dur, 0, 1); api.set({ running: Object.assign({}, s.running, { done: Math.round(work.total * p), finished: p >= 1, text: p >= 1 ? work.done : '' }) }); if (p >= 1) clearInterval(progT); }, 120);
+    }
+    function paintRun() {
+      var r = s.running; if (!r) return;
+      el.rtitle.textContent = '/' + r.id; var p = r.total ? r.done / r.total : (r.finished ? 1 : 0.1);
+      el.rbar.style.setProperty('--p', p);
+      el.rtext.textContent = r.finished ? r.text : '正在执行「' + r.name + '」…'; el.rcount.textContent = r.total ? r.done.toLocaleString('en-US') + ' / ' + r.total.toLocaleString('en-US') + ' 张' : '';
+      el.rdone.innerHTML = r.finished ? '<button type="button" class="btn" data-f="close">关闭</button>' : '';
+      var cb = el.rdone.querySelector('[data-f="close"]'); if (cb) cb.addEventListener('click', function () { emit('close', {}); api.set({ state: 'ready', running: null, query: '' }); el.q.focus(); });
+      if (r.finished) say(r.text);
+    }
+
+    el.q.addEventListener('input', function () { s.query = el.q.value; layout(); });
+    el.q.addEventListener('keydown', function (e) {
+      if (s.state !== 'ready') { if (e.key === 'Escape') e.preventDefault(); return; }
+      var sel = seq.filter(function (k) { return k[0] === 'c' && !rows[k].cmd.disabled; }).map(function (k) { return rows[k].cmd.id; }), i = sel.indexOf(s.selected);
+      var go = function (n) { if (!sel.length) return; s.selected = sel[clamp(n, 0, sel.length - 1)]; place(true); e.preventDefault(); };
+      if (e.key === 'ArrowDown') go(i + 1); else if (e.key === 'ArrowUp') go(i - 1); else if (e.key === 'Home') go(0); else if (e.key === 'End') go(sel.length - 1); else if (e.key === 'PageDown') go(i + 5); else if (e.key === 'PageUp') go(i - 5);
+      else if (e.key === 'Enter') { e.preventDefault(); if (s.selected) run(s.selected); }
+      else if (e.key === 'Escape') { e.preventDefault(); if (s.query) { el.q.value = ''; s.query = ''; layout(); } else emit('close', {}); }
+    });
+    el.retry.addEventListener('click', function () { emit('retry', {}); api.set({ state: 'loading', error: null }); if (opts.demo && opts.autoSettle !== false) setTimeout(function () { api.set(opts.demo()); }, 900); });
+
+    function fit() { var w = root.clientWidth || 640, k = Math.min(1, w / 640); el.fit.style.transform = 'scale(' + k + ')'; root.style.height = (496 * k) + 'px'; }
+    if (window.ResizeObserver) new ResizeObserver(fit).observe(root);
+
+    var api = {
+      set: function (p) {
+        p = p || {}; Object.assign(s, p); if (p.commands) s.commands = p.commands.slice();
+        el.panel.dataset.st = s.state; el.q.disabled = s.state === 'loading' || s.state === 'error';
+        if (el.q.value !== s.query) el.q.value = s.query || '';
+        if (first) el.inner.classList.add('noanim');
+        layout(); paintRun();
+        if (first) { void el.inner.offsetWidth; el.inner.classList.remove('noanim'); first = false; }
+        var sayT = { loading: '正在读取命令', error: '命令列表没加载出来' }[s.state]; if (sayT) say(sayT);
+        fit(); return api;
+      },
+      get: function () { return JSON.parse(JSON.stringify(s)); }
+    };
+    api.set(init || {});
+    return api;
+  }
+
+  var READY = { state: 'ready', query: '', commands: COMMANDS, selected: null, running: null, error: null };
+  var main = mount(document.getElementById('main'), { state: 'loading', commands: COMMANDS }, { global: true, demo: function () { return READY; } });
+  window.card = { set: function (p) { return main.set(p); }, get: main.get };
+  setTimeout(function () { main.set(READY); }, 700);
+
+  var log = document.getElementById('log');
+  document.addEventListener('hx-action', function (e) { log.textContent = 'hx-action ' + JSON.stringify(e.detail); });
+
+  var sims = [
+    ['加载中', function () { main.set({ state: 'loading', query: '', running: null }); }],
+    ['正常', function () { main.set(READY); }],
+    ['筛选「旅」', function () { main.set(Object.assign({}, READY, { query: '旅' })); }],
+    ['选中不可用的命令', function () { main.set(Object.assign({}, READY, { selected: 'group-by-place' })); }],
+    ['执行「按旅行归档」', function () { main.set(READY); setTimeout(function () { var q = document.querySelector('#main [data-f=q]'); q.focus(); q.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); }, 300); }],
+    ['出错', function () { main.set({ state: 'error', error: '命令列表读取失败：技能目录无响应' }); }]
+  ];
+  var bar = document.getElementById('sim');
+  sims.forEach(function (x) { var b = document.createElement('button'); b.type = 'button'; b.className = 'pbtn'; b.textContent = x[0]; b.addEventListener('click', x[1]); bar.appendChild(b); });
+
+  var g = document.getElementById('gallery');
+  [
+    ['加载（骨架）', { state: 'loading', commands: COMMANDS }],
+    ['正常（列表有滚动）', READY],
+    ['筛选中（模糊匹配，匹配的字画线）', Object.assign({}, READY, { query: '压缩' })],
+    ['选中不可用的命令（斜线填充，写明原因）', Object.assign({}, READY, { selected: 'group-by-place' })],
+    ['执行中（刻度尺进度）', Object.assign({}, READY, { state: 'running', running: { id: 'archive-trips', name: '按旅行归档', done: 24128, total: 40213, finished: false, text: '' } })],
+    ['执行完成', Object.assign({}, READY, { state: 'running', running: { id: 'archive-trips', name: '按旅行归档', done: 40213, total: 40213, finished: true, text: '整理出 37 个旅行相册' } })],
+    ['出错（可重试）', { state: 'error', commands: COMMANDS, error: '命令列表读取失败：技能目录无响应' }]
+  ].forEach(function (x) {
+    var cell = document.createElement('div'); cell.className = 'cell';
+    cell.innerHTML = '<div class="lab">' + x[0] + '</div><div></div>'; g.appendChild(cell);
+    mount(cell.lastChild, x[1], { autoSettle: false, demo: function () { return READY; } });
+  });
+
+  var theme = document.getElementById('theme'), rootEl = document.documentElement;
+  theme.addEventListener('click', function () {
+    var on = theme.getAttribute('aria-pressed') !== 'true'; theme.setAttribute('aria-pressed', on);
+    rootEl.setAttribute('data-theme', on ? 'dark' : 'light'); theme.textContent = on ? '白图（浅色）' : '蓝图（深色）';
+  });
+})();
+</script>
+</body>
+</html>
