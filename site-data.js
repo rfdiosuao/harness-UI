@@ -1,0 +1,222 @@
+/* 由 tools/build_site.mjs 生成，不要手改。 */
+window.HX_SITE = {
+  "items": [
+    {
+      "no": "HX-01",
+      "id": "clause-highlight--min-monoline",
+      "file": "components/clause-highlight--min-monoline.html",
+      "name": "合同条款高亮卡",
+      "world": "极简单线",
+      "component": "clause-highlight",
+      "style": "min-monoline",
+      "family": "极简",
+      "harness": [
+        "法律审查",
+        "合同与采购审核"
+      ],
+      "fit": "法律审查、合同与采购审核（也能用在租房、租赁这类要逐条看条款的场景）",
+      "desc": "Agent 读完一份合同，把有风险的条款画给用户。底色和墨色，两种颜色。建议改法像抽屉，往下拉。",
+      "motion": "抽屉",
+      "constraint": "只用两种颜色",
+      "zoom": 1
+    },
+    {
+      "no": "HX-02",
+      "id": "transfer-confirm--sea-chart",
+      "file": "components/transfer-confirm--sea-chart.html",
+      "name": "转账确认卡",
+      "world": "航海海图",
+      "component": "transfer-confirm",
+      "style": "sea-chart",
+      "family": "实物",
+      "harness": [
+        "金融支付助手",
+        "个人理财助手"
+      ],
+      "fit": "金融支付助手、个人理财助手（记账、转账、缴费这类要用户最后点头的场景）",
+      "desc": "Agent 在回答里画出的 160×160 小组件。数字像里程表滚动，转账是一次航行。",
+      "motion": "数字翻滚",
+      "constraint": "小组件尺寸",
+      "zoom": 2
+    },
+    {
+      "no": "HX-03",
+      "id": "subscription-list--min-type",
+      "file": "components/subscription-list--min-type.html",
+      "name": "订阅管理卡",
+      "world": "极简字排",
+      "component": "subscription-list",
+      "style": "min-type",
+      "family": "极简",
+      "harness": [
+        "个人理财助手"
+      ],
+      "fit": "个人理财助手（订阅、试用、扣款提醒这类要用户最后点头的场景）",
+      "desc": "Agent 在回答里画出的 160×160 小组件。几乎只有文字，状态变化时颜色像墨水一样晕开。",
+      "motion": "墨水晕染",
+      "constraint": "小组件尺寸",
+      "zoom": 2
+    },
+    {
+      "no": "HX-04",
+      "id": "tool-call-row--min-type",
+      "file": "components/tool-call-row--min-type.html",
+      "name": "工具调用行",
+      "world": "极简字排",
+      "component": "tool-call-row",
+      "style": "min-type",
+      "family": "极简",
+      "harness": [
+        "通用核心"
+      ],
+      "fit": "通用核心（任何 harness 都要有）",
+      "desc": "Agent 每调用一次工具就是一行：读取、搜索、运行、编辑。所有变化都是连续的，没有瞬间跳变。只用键盘就能操作。",
+      "motion": "丝滑连续",
+      "constraint": "只用键盘",
+      "zoom": 1
+    },
+    {
+      "no": "HX-05",
+      "id": "permission-prompt--min-type",
+      "file": "components/permission-prompt--min-type.html",
+      "name": "权限确认卡",
+      "world": "极简字排",
+      "component": "permission-prompt",
+      "style": "min-type",
+      "family": "极简",
+      "harness": [
+        "通用核心"
+      ],
+      "fit": "通用核心（任何 harness 都要有）",
+      "desc": "Agent 要做一件有影响的事之前，停下来问你。字段一个个流进来，位置从一开始就留好，不会跳动。",
+      "motion": "丝滑连续",
+      "constraint": "流式进场",
+      "zoom": 1
+    },
+    {
+      "no": "HX-06",
+      "id": "cost-ticker--lab-instrument",
+      "file": "components/cost-ticker--lab-instrument.html",
+      "name": "费用计数",
+      "world": "实验室仪器",
+      "component": "cost-ticker",
+      "style": "lab-instrument",
+      "family": "实物",
+      "harness": [
+        "通用核心"
+      ],
+      "fit": "通用核心（任何 harness 都要有，长时间自动运行的 Agent 尤其需要）",
+      "desc": "一台桌面仪器：指针表盘、液晶读数、LED 速率条、示波屏、限额旋钮。Agent 一路花钱，你一眼看到离上限多远。",
+      "motion": "待机的生命感",
+      "constraint": "流式进场",
+      "zoom": 1
+    },
+    {
+      "no": "HX-07",
+      "id": "slash-palette--graph-paper",
+      "file": "components/slash-palette--graph-paper.html",
+      "name": "命令面板",
+      "world": "坐标纸工程图",
+      "component": "slash-palette",
+      "style": "graph-paper",
+      "family": "规整",
+      "harness": [
+        "通用核心"
+      ],
+      "fit": "通用核心（任何 harness 都要有）",
+      "desc": "输入 / 召出命令面板：分组、模糊搜索、快捷键。选择框在行之间滑动，列表随输入平滑让位。图纸只有纸色和墨色两种颜色。",
+      "motion": "丝滑连续",
+      "constraint": "只用两种颜色",
+      "zoom": 1
+    },
+    {
+      "no": "HX-08",
+      "id": "translate-card--toy-slot",
+      "file": "components/translate-card--toy-slot.html",
+      "name": "翻译对照卡",
+      "world": "老虎机转轴",
+      "component": "translate-card",
+      "style": "toy-slot",
+      "family": "玩具",
+      "harness": [
+        "翻译助手",
+        "出行差旅助手"
+      ],
+      "fit": "翻译助手、出行差旅助手（出国问路、点餐、订房这类要现学现说的场景）",
+      "desc": "Agent 把一句话翻成日语，三个转轴转动、依次停下，停下来的组合就是它的译文；最后三个转轴合成一句。",
+      "motion": "一个惊喜（三个转轴合成一句）",
+      "constraint": "不加额外限制（带合成音效）",
+      "zoom": 1
+    }
+  ],
+  "stats": {
+    "exhibits": 8,
+    "cards": 53,
+    "worlds": 29,
+    "motions": 13,
+    "constraints": 10,
+    "scenes": 16,
+    "core": [
+      {
+        "id": "tool-call-row",
+        "name": "工具调用行"
+      },
+      {
+        "id": "plan-checklist",
+        "name": "计划清单"
+      },
+      {
+        "id": "permission-prompt",
+        "name": "权限确认卡"
+      },
+      {
+        "id": "diff-viewer",
+        "name": "差异查看器"
+      },
+      {
+        "id": "thinking-block",
+        "name": "思考块"
+      },
+      {
+        "id": "context-meter",
+        "name": "上下文用量"
+      },
+      {
+        "id": "status-chip",
+        "name": "状态胶囊"
+      },
+      {
+        "id": "composer",
+        "name": "输入框"
+      },
+      {
+        "id": "checkpoint-rewind",
+        "name": "检查点"
+      },
+      {
+        "id": "slash-palette",
+        "name": "命令面板"
+      },
+      {
+        "id": "streaming-text",
+        "name": "流式文本"
+      },
+      {
+        "id": "interrupt-bar",
+        "name": "中断条"
+      },
+      {
+        "id": "cost-ticker",
+        "name": "费用计数"
+      },
+      {
+        "id": "error-banner",
+        "name": "错误横幅"
+      },
+      {
+        "id": "fallback-notice",
+        "name": "降级提示"
+      }
+    ]
+  }
+};

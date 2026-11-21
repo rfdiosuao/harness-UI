@@ -7,6 +7,32 @@
 <meta name="hx-component" content="subscription-list">
 <meta name="hx-style" content="min-type">
 <meta name="hx-harness" content="个人理财助手">
+<script>
+/* 陈列馆嵌入：?embed=1 只留下主组件并居中；&theme=light|dark 指定深浅色；&zoom=2 放大小组件 */
+(function () {
+  var q = new URLSearchParams(location.search), t = q.get('theme');
+  if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  if (!q.has('embed')) return;
+  var z = parseFloat(q.get('zoom')) || 1;
+  document.documentElement.classList.add('hx-embed');
+  document.addEventListener('DOMContentLoaded', function () {
+    var m = document.getElementById('main') || document.getElementById('main-card'); if (!m) return;
+    var n = m, top = m;
+    while (n.parentElement && n.parentElement !== document.body) {
+      [].forEach.call(n.parentElement.children, function (c) { if (c !== n) c.style.display = 'none'; });
+      var s = n.parentElement.style; s.display = 'flex'; s.flexDirection = 'column'; s.alignItems = 'center'; s.justifyContent = 'center'; if (n !== m) n.style.width = '100%';
+      if (n.parentElement.classList.contains('page')) top = n;
+      n = n.parentElement;
+    }
+    if (z !== 1) top.style.zoom = z;
+  });
+})();
+</script>
+<style>
+.hx-embed body { min-height: 100vh; display: grid; place-items: center; }
+.hx-embed .page { width: 100%; max-width: none !important; margin: 0 !important; padding: 28px 24px !important; display: grid !important; grid-template-columns: minmax(0, 1fr); place-items: center; }
+.hx-embed .page > * { margin: 0 auto !important; width: auto; max-width: 100%; }
+</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600&display=swap">
 <style>

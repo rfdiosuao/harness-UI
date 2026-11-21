@@ -65,6 +65,9 @@ harness 指包在 Agent 外面、让人看着它干活的那层界面：对话�
 ## 文件
 
 ```
+index.html     组件陈列馆网站：展示 components/ 里的全部组件，可以直接操作
+site-data.js   陈列馆的目录数据，由 node tools/build_site.mjs 生成
+components/    抽出来的 Agent 卡片组件，每个都是单个 HTML 文件（?embed=1 只显示组件本身）
 designs/       浏览器直接打开的静态页和截图
   a-console/   默认状态，以及点完权限按钮后的 allow / readonly / deny
   b-ledger/
@@ -74,6 +77,7 @@ prompts/       生成 Agent 卡片组件用的随机提示词组合器（roll.mj
 tools/
   render.mjs   source → designs 的导出脚本：node tools/render.mjs
   shoot.py     给 designs 截图：python3 tools/shoot.py
+  build_site.mjs  新组件加进 components/INDEX.md 后，跑一次更新陈列馆
 ```
 
 要改设计，就改 `source/` 里的文件，再跑一次导出和截图。`source/*.dc.html` 依赖设计画布的运行时，不能单独打开；A 的权限按钮在画布里可以点，静态页里改成了分别导出三种状态。
