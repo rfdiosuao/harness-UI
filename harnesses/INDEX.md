@@ -6,3 +6,4 @@
 |---|---|---|---|---|---|
 | [travel--rotary-dial.html](travel--rotary-dial.html) | 出行差旅 harness（三栏：计划 / 对话 / 行程单） | 拨盘电话 | 描边绘制 | 高对比无障碍 | **出行差旅助手**（风险中等：订错了要花钱改） |
 | [team-group--vinyl-sleeve.html](team-group--vinyl-sleeve.html) | 团队群聊 harness（群聊：会话 / 群消息 / 群信息） | 黑胶唱片封套 | 翻页 | 只用键盘 | **团队群聊**（几个人和几个 Agent 在一个群里推进同一件事） |
+| [general--min-geometry.html](general--min-geometry.html) | 通用助手 harness（对话｜产物分屏：会话 / 对话 / 产物） | 极简几何 | 丝滑连续 | 流式进场 | **通用核心**（什么都能聊、也能动手做事的通用助手） |

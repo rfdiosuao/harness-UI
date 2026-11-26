@@ -256,10 +256,31 @@ window.HX_SITE = {
       "zoom": 1,
       "vw": 1400,
       "vh": 1050
+    },
+    {
+      "no": "HX-13",
+      "id": "general--min-geometry",
+      "file": "harnesses/general--min-geometry.html",
+      "name": "通用助手 harness",
+      "world": "极简几何",
+      "component": "general",
+      "form": "整套",
+      "style": "min-geometry",
+      "family": "极简",
+      "harness": [
+        "通用核心"
+      ],
+      "fit": "通用核心（什么都能做、动手前讲清楚的通用助手）",
+      "desc": "一个什么都能聊、也能动手做事的通用工作台。左边会话，中间对话，右边是 Agent 正在做出来的东西，中间的分隔线可以拖。整套只用圆、方块、线三种形和一种钴蓝：搜索是圆、读取是方块、编辑是线、运行是实心圆；Agent 在想的时候是三个小圆，想完收成一条线；上下文用量是几段方块条。所有变化都是连续的位移和形变。",
+      "motion": "丝滑连续",
+      "constraint": "流式进场",
+      "zoom": 1,
+      "vw": 1400,
+      "vh": 1050
     }
   ],
   "stats": {
-    "exhibits": 12,
+    "exhibits": 13,
     "cards": 82,
     "worlds": 29,
     "motions": 13,

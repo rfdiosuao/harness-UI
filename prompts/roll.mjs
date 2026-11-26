@@ -9,6 +9,7 @@
 //   node prompts/roll.mjs --list       列出所有可钉住的 id（卡片后面带它适合的 harness）
 //   node prompts/roll.mjs --harness 法律审查   只从适合这类 harness 的卡片里抽
 //   node prompts/roll.mjs --form sidebar      只抽侧边栏组件（card 是回答里的卡片，sidebar 是常驻在工作台一侧的面板）
+//   node prompts/roll.mjs --minimal           视觉世界只抽极简的（单件和整套都能用）
 //   node prompts/roll.mjs --whole             抽一整套 harness：行业 × 布局 × 视觉世界 × 动效，连同它该有的组件一起做成一整个工作台
 //   node prompts/roll.mjs --whole --harness legal-review --layout three-pane   钉住其中几项
 
@@ -59,6 +60,9 @@ if (form) {
   pools.cards = pools.cards.filter((c) => (c.form || 'card') === form);
   if (!pools.cards.length) { console.error(`没有 form 为“${form}”的组件（可选 card、sidebar）`); process.exit(1); }
 }
+
+// --minimal：视觉世界只从极简的几种里抽（极简单线、极简字排、极简几何）
+if (argv.includes('--minimal')) pools.worlds = pools.worlds.filter((w) => w.id.startsWith('min-'));
 
 // 洗牌后依次取，保证同一次里不重复；用完了再洗一遍
 const decks = {};

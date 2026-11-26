@@ -18,7 +18,7 @@
 
 **还有侧边栏组件**（会话列表、文件树、任务队列、上下文书架、子 Agent 名册、案卷侧栏、患者信息侧栏……共 13 种）。它们不是回答里的卡片，而是常驻在工作台一侧、跟着 Agent 实时更新的面板。抽到它们时，提示词会换成面板的写法：竖长、占满高度、内部滚动，还要能收起成窄条。只抽侧边栏：`node prompts/roll.mjs --form sidebar`。
 
-**也能抽一整套 harness**：`node prompts/roll.mjs --whole`。一次抽「行业 harness × 布局 × 视觉世界 × 动效 × 限制」，提示词里会带上这类 harness 是谁在用、要做什么、风险多大，以及它该有的一组组件，要求做成一整个能用、组件之间互相联动的工作台。现在有 11 种 harness（法律审查、个人理财、开发运维、健康医疗、客服工单、出行差旅、研究检索、编程、自由职业工作室、通用助手、团队群聊）和 7 种布局（三栏、对话 + 抽屉、对话 | 产物分屏、驾驶舱、单栏专注、看板、群聊）。团队群聊是人和多个 Agent 在同一个群里干活：@ 派活、Agent 之间交接、群里拍板的事自动记下来，抽它最好钉住群聊布局：`--whole --harness team-group --layout group-chat`。高风险的 harness 不会抽到玩具皮肤。钉住某一项：`--whole --harness legal-review --layout three-pane`（harness 也可以写中文，比如 `--harness 法律`）。
+**也能抽一整套 harness**：`node prompts/roll.mjs --whole`。一次抽「行业 harness × 布局 × 视觉世界 × 动效 × 限制」，提示词里会带上这类 harness 是谁在用、要做什么、风险多大，以及它该有的一组组件，要求做成一整个能用、组件之间互相联动的工作台。现在有 11 种 harness（法律审查、个人理财、开发运维、健康医疗、客服工单、出行差旅、研究检索、编程、自由职业工作室、通用助手、团队群聊）和 7 种布局（三栏、对话 + 抽屉、对话 | 产物分屏、驾驶舱、单栏专注、看板、群聊）。团队群聊是人和多个 Agent 在同一个群里干活：@ 派活、Agent 之间交接、群里拍板的事自动记下来，抽它最好钉住群聊布局：`--whole --harness team-group --layout group-chat`。高风险的 harness 不会抽到玩具皮肤。想要极简的皮肤加 `--minimal`（视觉世界只从极简单线、极简字排、极简几何里抽），比如 `--whole --minimal --harness general --layout split-artifact --motion silky` 就是一套极简丝滑的通用助手。钉住某一项：`--whole --harness legal-review --layout three-pane`（harness 也可以写中文，比如 `--harness 法律`）。
 
 通用助手 harness 用到的通用组件（模型切换、附件卡、代码块、产物面板、语音输入、限流等待、图片查看器、引用选择器、新消息提示、分享与导出）是按“一个 AI 工作台通常有哪些功能块”整理的选题清单，外观全部由抽到的视觉世界决定，不照搬任何现有产品。已经做好的组件见 [../components/INDEX.md](../components/INDEX.md)。
 
