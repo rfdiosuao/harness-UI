@@ -63,7 +63,7 @@ if (form) {
   if (!pools.cards.length) { console.error(`没有 form 为“${form}”的组件（可选 card、sidebar）`); process.exit(1); }
 }
 
-// --minimal：视觉世界只从极简的几种里抽（极简单线、极简字排、极简几何）
+// --minimal：视觉世界只从极简的几种里抽（极简单线、极简字排、极简几何、极简夜玻璃）
 // 极简只是一种风格：它只决定长什么样，功能、骨架、行业组件一样都不能少
 if (argv.includes('--minimal')) {
   pools.worlds = pools.worlds.filter((w) => w.id.startsWith('min-'))

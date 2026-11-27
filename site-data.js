@@ -303,8 +303,8 @@ window.HX_SITE = {
   "stats": {
     "exhibits": 14,
     "cards": 86,
-    "worlds": 29,
-    "motions": 13,
+    "worlds": 30,
+    "motions": 14,
     "constraints": 10,
     "scenes": 16,
     "core": [
