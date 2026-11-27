@@ -277,11 +277,32 @@ window.HX_SITE = {
       "zoom": 1,
       "vw": 1400,
       "vh": 1050
+    },
+    {
+      "no": "HX-14",
+      "id": "task-pay--thermal-receipt",
+      "file": "harnesses/task-pay--thermal-receipt.html",
+      "name": "LOOM 麓鸣（带支付的任务执行 harness）",
+      "world": "热敏小票",
+      "component": "task-pay",
+      "form": "整套",
+      "style": "thermal-receipt",
+      "family": "实物",
+      "harness": [
+        "带支付的任务执行"
+      ],
+      "fit": "带支付的任务执行（AgentPay：任务、工具调用和付款在同一个工作流里；收款码为演示图样，不能付款）",
+      "desc": "让 Agent 替你办一件要花钱的事。对话是主体：Agent 在对话里思考、调工具、出核对单；走到付款这一步，收款码直接打印在对话里，和这笔钱付给谁、对应哪一步、还剩多久放在同一张小票上，你核对完自己扫码。左边是会话，右边是这次任务的进度和订单（订单有版本，能对比、能导出）。所有卡片最上面一行都是结论；金额和倒计时像里程表一样只滚变化的位；新卡片先出占位，字段一个个到齐，布局不跳。",
+      "motion": "数字翻滚",
+      "constraint": "流式进场",
+      "zoom": 1,
+      "vw": 1400,
+      "vh": 1050
     }
   ],
   "stats": {
-    "exhibits": 13,
-    "cards": 82,
+    "exhibits": 14,
+    "cards": 86,
     "worlds": 29,
     "motions": 13,
     "constraints": 10,
@@ -418,6 +439,10 @@ window.HX_SITE = {
       {
         "id": "thread-reply",
         "name": "线程回复"
+      },
+      {
+        "id": "task-run",
+        "name": "任务执行侧栏"
       }
     ]
   }

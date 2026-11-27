@@ -1,0 +1,1334 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LOOM 麓鸣（带支付的任务执行 harness） · 热敏小票</title>
+<meta name="hx-component" content="task-pay">
+<meta name="hx-form" content="whole">
+<meta name="hx-style" content="thermal-receipt">
+<meta name="hx-harness" content="带支付的任务执行">
+<script>
+/* 陈列馆嵌入：?embed=1 只留下主组件并居中；&theme=light|dark 指定深浅色 */
+(function () {
+  var q = new URLSearchParams(location.search), t = q.get('theme');
+  if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  if (!q.has('embed')) return;
+  var z = parseFloat(q.get('zoom')) || 1;
+  document.documentElement.classList.add('hx-embed');
+  document.addEventListener('DOMContentLoaded', function () {
+    var m = document.getElementById('main') || document.getElementById('main-card'); if (!m) return;
+    var n = m, top = m;
+    while (n.parentElement && n.parentElement !== document.body) {
+      [].forEach.call(n.parentElement.children, function (c) { if (c !== n) c.style.display = 'none'; });
+      var s = n.parentElement.style; s.display = 'flex'; s.flexDirection = 'column'; s.alignItems = 'center'; s.justifyContent = 'center'; if (n !== m) n.style.width = '100%';
+      if (n.parentElement.classList.contains('page')) top = n;
+      n = n.parentElement;
+    }
+    if (z !== 1) top.style.zoom = z;
+  });
+})();
+</script>
+<style>
+.hx-embed body { min-height: 100vh; display: grid; place-items: center; }
+.hx-embed .page { width: 100%; max-width: none !important; margin: 0 !important; padding: 20px !important; display: grid !important; grid-template-columns: minmax(0, 1fr); place-items: center; }
+.hx-embed .page > * { margin: 0 auto !important; width: auto; max-width: 100%; }
+.hx-embed .hx { width: 100% !important; }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
+<style>
+/* ---------- 令牌：热敏纸、褪色的墨、热敏打印机的第二色（红）只给“要你付的钱”和“出错” ---------- */
+:root {
+  --hx-desk: #E3DFD5; --hx-paper: #F7F4ED; --hx-paper2: #EEEAE0; --hx-ink: #22201C; --hx-red: #A8281F; --hx-on-ink: #F7F4ED;
+  --hx-mono: 'JetBrains Mono', 'Noto Sans SC', ui-monospace, monospace;
+  --hx-font: 'Noto Sans SC', system-ui, sans-serif;
+  --hx-tooth: 9px;
+  /* 迪士尼时间节奏：小东西快、大东西慢；缓入缓出；落地有一点过冲再停稳 */
+  --hx-t-s: 140ms; --hx-t-m: 300ms; --hx-t-l: 460ms;
+  --hx-ease: cubic-bezier(.45, 0, .2, 1); --hx-out: cubic-bezier(.2, .8, .2, 1); --hx-settle: cubic-bezier(.3, 1.3, .5, 1);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --hx-desk: #121110; --hx-paper: #1F1D1A; --hx-paper2: #181715; --hx-ink: #EEE9DE; --hx-red: #FF9A8F; --hx-on-ink: #1F1D1A; } }
+:root[data-theme="dark"] { --hx-desk: #121110; --hx-paper: #1F1D1A; --hx-paper2: #181715; --hx-ink: #EEE9DE; --hx-red: #FF9A8F; --hx-on-ink: #1F1D1A; }
+:root {
+  --hx-sub: color-mix(in srgb, var(--hx-ink) 80%, var(--hx-paper));
+  --hx-faint: color-mix(in srgb, var(--hx-ink) 66%, var(--hx-paper));
+  --hx-hair: color-mix(in srgb, var(--hx-ink) 26%, var(--hx-paper));
+  --hx-wash: color-mix(in srgb, var(--hx-ink) 6%, var(--hx-paper));
+  --hx-shade: color-mix(in srgb, #000 16%, transparent);
+  --hx-red-wash: color-mix(in srgb, var(--hx-red) 10%, var(--hx-paper));
+}
+@media (prefers-reduced-motion: reduce) { :root { --hx-t-s: 200ms; --hx-t-m: 320ms; --hx-t-l: 400ms; --hx-settle: var(--hx-out); } }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--hx-paper); color: var(--hx-ink); font-family: var(--hx-font); font-size: 14px; line-height: 1.7; -webkit-font-smoothing: antialiased; }
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; background: none; border: 0; padding: 0; }
+:focus-visible { outline: 2px solid var(--hx-ink); outline-offset: 2px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.mono { font-family: var(--hx-mono); }
+
+/* ---------- 页面外壳 ---------- */
+.page { max-width: 1400px; margin: 0 auto; padding: 32px 20px 72px; display: flex; flex-direction: column; gap: 26px; }
+.head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+.head h1 { margin: 0; font-size: 22px; font-weight: 900; }
+.head p { margin: 6px 0 0; font-size: 13px; color: var(--hx-sub); max-width: 60em; }
+.pbtn { min-height: 40px; padding: 0 14px; border: 1.5px solid var(--hx-ink); font-size: 13px; font-weight: 700; background: var(--hx-paper); transition: transform var(--hx-t-s) var(--hx-settle); }
+.pbtn:hover { background: var(--hx-ink); color: var(--hx-on-ink); }
+.pbtn:active { transform: scale(.97, .94); }
+.sec { display: flex; flex-direction: column; gap: 12px; }
+.sec > h2 { margin: 0; font: 600 12px var(--hx-mono); letter-spacing: .18em; color: var(--hx-sub); }
+.simbar { display: flex; flex-wrap: wrap; gap: 8px; }
+.log { margin: 0; padding: 12px 14px; border: 1.5px dashed var(--hx-hair); font: 12px/1.7 var(--hx-mono); color: var(--hx-sub); white-space: pre-wrap; overflow-wrap: anywhere; min-height: 46px; }
+
+/* ---------- 工作台：会话 | 对话（主体） | 产物，中间的齿孔线能拖 ---------- */
+.hx { --art: 400px; position: relative; height: 860px; border: 1.5px solid var(--hx-ink); overflow: hidden; display: grid; grid-template-columns: 248px minmax(0, 1fr) 12px var(--art); background: var(--hx-paper); }
+.hx.noside { grid-template-columns: 0 minmax(0, 1fr) 12px var(--art); }
+.hx.noart { grid-template-columns: 248px minmax(0, 1fr) 0 0; }
+.hx.noside.noart { grid-template-columns: 0 minmax(0, 1fr) 0 0; }
+.hx.noside .side, .hx.noart .art, .hx.noart .split { visibility: hidden; }
+
+/* 小票：锯齿撕边 */
+.rc { position: relative; background: var(--hx-paper);
+  -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / var(--hx-tooth) 51% repeat-x, conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) top / var(--hx-tooth) 51% repeat-x;
+          mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / var(--hx-tooth) 51% repeat-x, conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) top / var(--hx-tooth) 51% repeat-x; }
+.rc::after { content: ''; position: absolute; inset: auto 0 0; height: 18px; background: linear-gradient(transparent, color-mix(in srgb, var(--hx-ink) 5%, transparent)); pointer-events: none; }
+.slip { filter: drop-shadow(0 1.5px 0 var(--hx-shade)) drop-shadow(0 6px 10px color-mix(in srgb, #000 7%, transparent)); }
+.hr { height: 0; border: 0; border-top: 1.5px dashed var(--hx-hair); margin: 10px 0; }
+.lbl { margin: 0; font: 500 10.5px var(--hx-mono); letter-spacing: .14em; color: var(--hx-faint); }
+.bc { display: block; width: 100%; height: 24px; color: var(--hx-ink); margin-top: 10px; }
+.bcn { margin: 2px 0 0; text-align: center; font: 10px var(--hx-mono); letter-spacing: .3em; color: var(--hx-faint); }
+.gl { width: 14px; height: 14px; flex: none; display: block; }
+.gl .k { stroke: var(--hx-paper); }
+.spin { animation: spin 1.2s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* 按钮：按下压扁（挤压），松开带过冲回弹（拉伸） */
+.b { min-height: 34px; padding: 0 12px; border: 1.5px solid var(--hx-ink); background: var(--hx-paper); font-size: 13px; font-weight: 700; white-space: nowrap; transition: transform var(--hx-t-s) var(--hx-settle), background var(--hx-t-s); }
+.b:hover { background: var(--hx-wash); }
+.b:active { transform: scale(1.02, .92); transition-duration: 60ms; }
+.b.p { background: var(--hx-ink); color: var(--hx-on-ink); }
+.b.p:hover { background: color-mix(in srgb, var(--hx-ink) 86%, var(--hx-paper)); }
+.b.pay { background: var(--hx-red); border-color: var(--hx-red); color: var(--hx-paper); }
+.b:disabled { border-style: dashed; color: var(--hx-faint); background: var(--hx-paper); cursor: not-allowed; transform: none; }
+.b.sm { min-height: 28px; padding: 0 9px; font-size: 12px; }
+.lk { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; font-size: 12.5px; }
+.lk:hover { text-decoration-thickness: 2px; }
+.ib { width: 34px; height: 34px; display: grid; place-items: center; flex: none; transition: transform var(--hx-t-s) var(--hx-settle); }
+.ib:hover { background: var(--hx-wash); }
+.ib:active { transform: scale(.9); }
+.ib svg { width: 16px; height: 16px; }
+.acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; align-items: center; }
+input[type="text"], input[type="number"], input[type="search"], textarea { width: 100%; min-height: 34px; padding: 6px 9px; border: 1.5px solid var(--hx-ink); background: var(--hx-paper); border-radius: 0; font-size: 13px; }
+input[type="checkbox"], input[type="radio"] { appearance: none; -webkit-appearance: none; width: 16px; height: 16px; margin: 3px 0 0; flex: none; border: 1.5px solid var(--hx-ink); background: var(--hx-paper); cursor: pointer; transition: box-shadow var(--hx-t-s) var(--hx-settle), background var(--hx-t-s); }
+input[type="radio"] { border-radius: 50%; }
+input[type="checkbox"]:checked, input[type="radio"]:checked { background: var(--hx-ink); box-shadow: inset 0 0 0 2.5px var(--hx-paper); }
+
+/* 数字翻滚：每一位是一条 0–9 的纸带，只滚变化的位，低位先动、高位跟上（跟随与重叠） */
+.odo { display: inline-flex; font-family: var(--hx-mono); font-variant-numeric: tabular-nums; line-height: 1.15; vertical-align: bottom; }
+.odo .dg { display: inline-block; height: 1.15em; overflow: hidden; }
+.odo .strip { display: flex; flex-direction: column; transition: transform 520ms var(--hx-settle); will-change: transform; }
+.odo .strip span, .odo .oc { display: block; height: 1.15em; }
+
+/* 流式进场：字段没到时是同样大小的虚线占位，到了就填进去，布局一格都不跳 */
+.fld { transition: color var(--hx-t-m) var(--hx-out), background-color var(--hx-t-m) var(--hx-out); }
+.fld.sk { color: transparent !important; background: repeating-linear-gradient(90deg, var(--hx-hair) 0 6px, transparent 6px 9px) 0 55% / 100% 9px no-repeat; user-select: none; }
+.fld.sk * { visibility: hidden; }
+
+/* 打印：新纸条从上往下一行一行出来 */
+.pr { animation: print var(--hx-t-l) steps(6, end) both; }
+@keyframes print { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 -24px 0); } }
+.flash { animation: flash 1.2s var(--hx-ease); }
+@keyframes flash { 0%, 100% { box-shadow: none; } 20%, 60% { box-shadow: 0 0 0 2.5px var(--hx-ink); } }
+
+/* ---------- 左：会话列表 ---------- */
+.side { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--hx-paper2); border-right: 1.5px dashed var(--hx-hair); }
+.brand { display: flex; align-items: center; gap: 8px; padding: 14px 14px 10px; }
+.brand b { font: 800 16px var(--hx-mono); letter-spacing: .22em; }
+.brand span { font-weight: 900; font-size: 15px; letter-spacing: .1em; }
+.brand i { font: normal 600 9.5px var(--hx-mono); letter-spacing: .12em; padding: 1px 5px; border: 1px solid var(--hx-ink); margin-left: auto; }
+.newb { margin: 0 12px; display: flex; align-items: center; gap: 8px; justify-content: center; }
+.srch { margin: 10px 12px 4px; position: relative; }
+.srch input { padding-left: 30px; min-height: 32px; font-size: 12.5px; background: var(--hx-paper); border-width: 1px; }
+.srch svg { position: absolute; left: 9px; top: 9px; width: 14px; height: 14px; color: var(--hx-faint); }
+.slist { flex: 1; min-height: 0; overflow: auto; padding: 4px 8px 16px; scrollbar-width: thin; }
+.sg { margin: 12px 6px 4px; }
+.si { width: 100%; display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 0 8px; padding: 7px 8px; text-align: left; transition: background var(--hx-t-s); }
+.si:hover { background: var(--hx-wash); }
+.si[aria-current="page"] { background: var(--hx-paper); box-shadow: inset 2px 0 0 var(--hx-ink), 0 1px 0 var(--hx-shade); }
+.si .gl { margin-top: 4px; }
+.si b { font-weight: 700; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.si small { grid-column: 2; font-size: 11.5px; color: var(--hx-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.si small.due { color: var(--hx-red); font-weight: 700; }
+.nores { margin: 16px 8px; font-size: 12.5px; color: var(--hx-faint); }
+
+/* ---------- 中：对话（主体） ---------- */
+.chat { position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column; container: chat / inline-size; }
+.ch { display: flex; align-items: center; gap: 8px; min-height: 60px; padding: 10px 14px; border-bottom: 1.5px dashed var(--hx-hair); }
+.ch .tt { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+.ch h2 { margin: 0; font-size: 15px; font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.concl { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; min-width: 0; }
+.concl span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.concl.wait, .concl.err { color: var(--hx-red); }
+.chip { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 10px; border: 1.5px solid var(--hx-ink); font-size: 12px; font-weight: 700; white-space: nowrap; transition: transform var(--hx-t-s) var(--hx-settle); }
+.chip:hover, .chip[aria-expanded="true"] { background: var(--hx-ink); color: var(--hx-on-ink); }
+.chip:active { transform: scale(1.02, .92); }
+.chip .meter { width: 34px; height: 6px; border: 1px solid currentColor; position: relative; }
+.chip .meter i { position: absolute; inset: 0 auto 0 0; background: currentColor; }
+.ch .menu { display: none; }
+
+.feed { flex: 1; min-height: 0; overflow: auto; padding: 18px 0 24px; scrollbar-width: thin; }
+.col { width: min(720px, 100% - 40px); margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.msg .who { margin: 0 0 4px; display: flex; gap: 8px; align-items: center; font: 500 10.5px var(--hx-mono); letter-spacing: .14em; color: var(--hx-faint); }
+.msg .who .lk { font-size: 10.5px; letter-spacing: .04em; color: var(--hx-sub); }
+.msg .tx { font-size: 14.5px; line-height: 1.8; overflow-wrap: anywhere; }
+.msg .tx p { margin: 0 0 6px; }
+.msg .tx p:last-child { margin-bottom: 0; }
+.msg .tx ul { margin: 2px 0 6px; padding-left: 1.3em; }
+.msg .tx b { font-weight: 900; }
+.msg.u { align-self: flex-end; max-width: 80%; padding: 9px 13px; background: var(--hx-paper2); border: 1.5px dashed var(--hx-hair); }
+.msg.u .who { justify-content: flex-end; }
+.caret { display: inline-block; width: .5em; height: 1.05em; margin-left: 2px; vertical-align: -.15em; background: var(--hx-ink); animation: caret 1s steps(1) infinite; }
+@keyframes caret { 50% { opacity: 0; } }
+.evt { margin: 0; display: flex; align-items: center; gap: 10px; font: 11.5px var(--hx-mono); color: var(--hx-faint); }
+.evt::before, .evt::after { content: ''; flex: 1; border-top: 1.5px dashed var(--hx-hair); }
+.macts { display: flex; gap: 4px; margin-top: 6px; }
+
+/* 思考块 */
+.think { margin: 0 0 8px; }
+.think > button { display: flex; align-items: center; gap: 8px; font: 12px var(--hx-mono); color: var(--hx-sub); min-height: 28px; }
+.think .dots { display: inline-flex; gap: 3px; }
+.think .dots i { width: 5px; height: 5px; background: currentColor; border-radius: 50%; animation: hop 1s var(--hx-ease) infinite; }
+.think .dots i:nth-child(2) { animation-delay: .12s; } .think .dots i:nth-child(3) { animation-delay: .24s; }
+@keyframes hop { 0%, 60%, 100% { transform: none; } 30% { transform: translateY(-4px) scaleY(1.15); } }
+.think ul { margin: 4px 0 0; padding: 6px 0 6px 14px; border-left: 1.5px solid var(--hx-hair); font-size: 13px; color: var(--hx-sub); list-style: none; }
+
+/* 工具调用行 */
+.tools { display: flex; flex-direction: column; margin: 0 0 8px; border-top: 1.5px dashed var(--hx-hair); border-bottom: 1.5px dashed var(--hx-hair); }
+.tool { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0 6px; padding: 2px 0; }
+.tool + .tool { border-top: 1px dotted var(--hx-hair); }
+.tr { display: grid; grid-template-columns: 14px auto minmax(0, 1fr) auto; align-items: center; gap: 8px; min-height: 32px; text-align: left; font-size: 12.5px; }
+.tr:hover { background: var(--hx-wash); }
+.tr b { font-weight: 700; font-size: 12px; }
+.tr .tg { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tr .rs { font: 11.5px var(--hx-mono); color: var(--hx-faint); white-space: nowrap; max-width: 22ch; overflow: hidden; text-overflow: ellipsis; }
+.tool.err .rs { color: var(--hx-red); font-weight: 700; }
+.out { grid-column: 1 / -1; margin: 4px 0 6px 22px; padding: 6px 10px; border-left: 1.5px solid var(--hx-ink); font: 12px/1.65 var(--hx-mono); white-space: pre-wrap; color: var(--hx-sub); }
+
+/* 消息里的卡片：每张都是一张小票，最上面一句是结论 */
+.card { margin: 6px 0 2px; max-width: 460px; }
+.card .rc { padding: 16px 16px 20px; }
+.cc { display: flex; align-items: flex-start; gap: 8px; }
+.cc .gl { margin-top: 5px; }
+.cc h3 { margin: 0; flex: 1; min-width: 0; font-size: 15.5px; font-weight: 900; line-height: 1.45; }
+.cc .tag { flex: none; padding: 0 6px; font: 700 10.5px/1.8 var(--hx-mono); letter-spacing: .1em; background: var(--hx-ink); color: var(--hx-on-ink); }
+.cc .tag.red { background: var(--hx-red); color: var(--hx-paper); }
+.sub { margin: 4px 0 0; font-size: 12.5px; color: var(--hx-sub); }
+.kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; margin: 10px 0 0; font-size: 13px; }
+.kv dt { color: var(--hx-faint); }
+.kv dd { margin: 0; overflow-wrap: anywhere; }
+.items { width: 100%; border-collapse: collapse; font: 12.5px var(--hx-mono); }
+.items td { padding: 2px 0; vertical-align: top; }
+.items td:first-child { font-family: var(--hx-font); }
+.items td:last-child { text-align: right; white-space: nowrap; }
+.items .q { color: var(--hx-faint); padding: 2px 8px; text-align: right; white-space: nowrap; }
+.items tr.tot td { padding-top: 6px; border-top: 1.5px dashed var(--hx-hair); font-weight: 800; font-size: 14px; }
+.items tr.due td { color: var(--hx-red); font-weight: 800; }
+.ck { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 8px 0; border-bottom: 1px dotted var(--hx-hair); }
+.ck:last-child { border-bottom: 0; }
+.ck label { display: contents; cursor: pointer; }
+.ck .v { font-size: 13px; line-height: 1.55; }
+.ck .v b { display: block; font: 500 10.5px var(--hx-mono); letter-spacing: .12em; color: var(--hx-faint); }
+.ck .ed { grid-column: 2 / -1; display: flex; flex-direction: column; gap: 6px; padding-top: 4px; }
+.ck .opt { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; cursor: pointer; }
+.alt { margin-top: 12px; padding: 9px 11px; border: 1.5px solid var(--hx-ink); font-size: 13px; }
+.alt p { margin: 3px 0 0; }
+.qrw { display: grid; justify-items: center; margin: 14px auto 0; width: 176px; position: relative; }
+.qr { width: 176px; height: 176px; display: block; }
+.qr .qbg { fill: #FBFAF6; } .qr .qfg { fill: #1A1815; }
+.qr .qfg rect { stroke: #1A1815; }
+.qrw .demo { margin-top: 4px; font: 10px var(--hx-mono); letter-spacing: .08em; color: var(--hx-faint); }
+.qrw .void { position: absolute; inset: 0 0 20px; display: grid; place-items: center; background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--hx-paper) 84%, transparent) 0 5px, transparent 5px 8px); }
+.qrw .void span { padding: 4px 12px; background: var(--hx-paper); border: 2.5px solid var(--hx-red); color: var(--hx-red); font-weight: 900; letter-spacing: .2em; }
+.cdbar { height: 4px; margin-top: 10px; background: var(--hx-hair); }
+.cdbar i { display: block; height: 100%; background: var(--hx-red); transform-origin: left; transition: transform 1s linear; }
+.note { margin: 10px 0 0; padding: 8px 10px; border: 1.5px dashed var(--hx-ink); font-size: 12.5px; }
+.warn { margin: 10px 0 0; padding: 8px 10px; background: var(--hx-red-wash); border: 1.5px solid var(--hx-red); font-size: 12.5px; }
+.pm { margin-top: 10px; padding: 8px 10px; border: 1.5px solid var(--hx-ink); display: flex; flex-direction: column; gap: 6px; }
+.pm label { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; cursor: pointer; }
+.pm label.off { color: var(--hx-faint); cursor: not-allowed; }
+.pm small { display: block; font-size: 11.5px; color: var(--hx-faint); }
+.stamp { display: block; width: max-content; margin: 10px 0 4px; padding: 6px 16px; border: 4px double var(--hx-red); color: var(--hx-red); transform: rotate(-4deg); text-align: center; font-weight: 900; font-size: 20px; letter-spacing: .16em; line-height: 1.25; }
+.stamp small { display: block; font: 600 11px var(--hx-mono); letter-spacing: .1em; }
+/* 盖章：先抬起（预备），砸下压扁（挤压），回弹落定（跟随）——只在付款成功这一刻夸张一次 */
+.stamp.go { animation: stamp 640ms var(--hx-ease) both; }
+@keyframes stamp { 0% { transform: rotate(-4deg) translateY(-18px) scale(1.25); opacity: 0; } 35% { transform: rotate(-4deg) translateY(-22px) scale(1.3); opacity: 1; } 62% { transform: rotate(-4deg) scale(1.06, .9); } 80% { transform: rotate(-4deg) scale(.98, 1.03); } 100% { transform: rotate(-4deg); } }
+.proof { margin: 10px 0 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 12px; font: 12px var(--hx-mono); }
+.proof dt { color: var(--hx-faint); font-family: var(--hx-font); }
+.proof dd { margin: 0; overflow-wrap: anywhere; }
+.plan { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; }
+.plan li { display: grid; grid-template-columns: 14px 24px minmax(0, 1fr) auto; gap: 8px; align-items: start; padding: 4px 0; font-size: 13px; }
+.plan .gl { margin-top: 4px; }
+.plan .n { font: 11.5px/1.9 var(--hx-mono); color: var(--hx-faint); }
+.plan .st { font-size: 11.5px; color: var(--hx-faint); white-space: nowrap; }
+.plan .st.due { color: var(--hx-red); font-weight: 700; }
+.plan li.done .t { color: var(--hx-sub); }
+
+/* 中断条 + 输入框 */
+.dock { flex: none; padding: 0 20px 16px; }
+.dock .col { gap: 8px; }
+.ibar { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 4px 6px 4px 12px; background: var(--hx-ink); color: var(--hx-on-ink); font-size: 13px; }
+.ibar.wait { background: var(--hx-red); color: var(--hx-paper); }
+.ibar .gl .k { stroke: var(--hx-ink); }
+.ibar.wait .gl .k { stroke: var(--hx-red); }
+.ibar .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.ibar .t .mono { font-weight: 600; opacity: .9; }
+.ibar .b { min-height: 30px; font-size: 12px; background: transparent; border-color: currentColor; color: inherit; }
+.ibar .b:hover { background: color-mix(in srgb, currentColor 18%, transparent); }
+.comp { border: 1.5px solid var(--hx-ink); background: var(--hx-paper); display: flex; flex-direction: column; transition: box-shadow var(--hx-t-s); }
+.comp:focus-within { box-shadow: 0 3px 0 var(--hx-ink); }
+.comp textarea { border: 0; min-height: 52px; max-height: 160px; resize: none; padding: 10px 12px 4px; background: transparent; font-size: 14px; }
+.comp textarea:focus-visible { outline: none; }
+.crow { display: flex; align-items: center; gap: 2px; padding: 4px 6px 6px; }
+.crow .hint { flex: 1; min-width: 0; padding-left: 6px; font-size: 11.5px; color: var(--hx-faint); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px 0; }
+.chips:empty { display: none; }
+.att { display: inline-flex; align-items: center; gap: 4px; padding: 0 4px 0 8px; border: 1.5px solid var(--hx-ink); font-size: 12px; line-height: 24px; }
+.att button { width: 22px; height: 22px; display: grid; place-items: center; }
+.cpop { position: absolute; z-index: 15; left: 50%; transform: translateX(-50%); bottom: 112px; width: min(520px, calc(100% - 40px)); padding: 6px; background: var(--hx-paper); border: 1.5px solid var(--hx-ink); filter: drop-shadow(0 4px 0 var(--hx-shade)); }
+.cpop button { width: 100%; display: flex; gap: 10px; align-items: baseline; padding: 7px 9px; text-align: left; font-size: 13px; }
+.cpop button small { color: var(--hx-faint); font-size: 11.5px; }
+.cpop button:hover, .cpop button.on { background: var(--hx-ink); color: var(--hx-on-ink); }
+.cpop button:hover small, .cpop button.on small { color: inherit; }
+.pill { position: absolute; left: 50%; bottom: 150px; transform: translateX(-50%); z-index: 4; }
+.empty { margin: 80px auto 0; width: min(520px, 100% - 40px); text-align: center; }
+.empty h3 { margin: 0 0 6px; font-size: 22px; font-weight: 900; }
+.empty p { margin: 0 0 18px; color: var(--hx-sub); }
+.empty .sugg { display: grid; gap: 8px; }
+.empty .sugg button { padding: 10px 14px; text-align: left; border: 1.5px dashed var(--hx-hair); }
+.empty .sugg button:hover { border-style: solid; border-color: var(--hx-ink); }
+
+/* 浮层：从按钮处先收一下再弹开（预备 + 过冲） */
+.pop { position: absolute; z-index: 20; top: 64px; right: 14px; width: 300px; filter: drop-shadow(0 4px 0 var(--hx-shade)) drop-shadow(0 12px 18px color-mix(in srgb, #000 12%, transparent)); transform-origin: top right; animation: popin var(--hx-t-m) var(--hx-settle) both; }
+@keyframes popin { 0% { transform: scale(.96, .9) translateY(-4px); opacity: 0; } 100% { transform: none; opacity: 1; } }
+.pop .rc { padding: 16px 16px 22px; }
+.pop h4 { margin: 0; font-size: 14px; font-weight: 900; }
+.pop dl { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 10px; margin: 10px 0 0; font-size: 12.5px; }
+.pop dt { color: var(--hx-sub); }
+.pop dd { margin: 0; text-align: right; font: 600 12.5px var(--hx-mono); }
+.pop fieldset { border: 0; padding: 0; margin: 10px 0 0; display: flex; flex-direction: column; gap: 6px; }
+.pop fieldset label { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; cursor: pointer; }
+.pop fieldset small { display: block; font-size: 11.5px; color: var(--hx-faint); }
+.pop .row { display: flex; gap: 6px; margin-top: 6px; }
+.seg { display: flex; border: 1.5px solid var(--hx-ink); margin-top: 6px; }
+.seg button { flex: 1; min-height: 30px; font-size: 12.5px; }
+.seg button[aria-pressed="true"] { background: var(--hx-ink); color: var(--hx-on-ink); }
+.bars { display: flex; height: 10px; margin-top: 10px; border: 1px solid var(--hx-ink); }
+.bars i { display: block; height: 100%; }
+.bars i:nth-child(1) { background: var(--hx-ink); } .bars i:nth-child(2) { background: repeating-linear-gradient(45deg, var(--hx-ink) 0 2px, transparent 2px 5px); } .bars i:nth-child(3) { background: var(--hx-hair); }
+
+/* ---------- 齿孔分隔线（能拖） ---------- */
+.split { position: relative; cursor: col-resize; touch-action: none; background: radial-gradient(circle, var(--hx-hair) 1.6px, transparent 2px) 50% 0 / 12px 10px repeat-y; }
+.split:hover, .split.on { background-image: radial-gradient(circle, var(--hx-ink) 1.8px, transparent 2.2px); }
+
+/* ---------- 右：产物（任务 / 订单） ---------- */
+.art { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: radial-gradient(var(--hx-hair) .7px, transparent 1.2px) 0 0 / 7px 7px, var(--hx-desk); }
+.at { display: flex; align-items: center; gap: 4px; min-height: 60px; padding: 10px 12px; background: var(--hx-paper); border-bottom: 1.5px dashed var(--hx-hair); }
+.tabs { display: flex; gap: 2px; flex: 1; }
+.tabs button { min-height: 34px; padding: 0 12px; font-size: 13px; font-weight: 700; color: var(--hx-sub); border-bottom: 2.5px solid transparent; transition: border-color var(--hx-t-s), color var(--hx-t-s); }
+.tabs button[aria-selected="true"] { color: var(--hx-ink); border-bottom-color: var(--hx-ink); }
+.ab { flex: 1; min-height: 0; overflow: auto; padding: 18px 18px 28px; scrollbar-width: thin; }
+.ab > .slip > .rc { padding: 18px 18px 24px; }
+.big { margin: 2px 0 0; font-size: 20px; font-weight: 900; line-height: 1.35; }
+.big.red { color: var(--hx-red); }
+.money { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.money div { padding: 8px 10px; border: 1.5px solid var(--hx-hair); }
+.money div.due { border-color: var(--hx-red); color: var(--hx-red); }
+.money b { display: block; font-size: 16px; font-weight: 800; }
+.money .ml { display: block; font-size: 11px; color: var(--hx-faint); }
+.money .due .ml { color: inherit; }
+.sgp { margin-top: 16px; }
+.srow { display: grid; grid-template-columns: 14px 24px minmax(0, 1fr); gap: 2px 8px; padding: 7px 6px; text-align: left; width: 100%; align-items: start; transition: background var(--hx-t-s); }
+.srow:hover { background: var(--hx-wash); }
+.srow .gl { margin-top: 4px; }
+.srow .n { font: 11.5px/1.9 var(--hx-mono); color: var(--hx-faint); }
+.srow .t { font-size: 13px; font-weight: 700; }
+.srow .d { grid-column: 3; font-size: 12px; color: var(--hx-sub); }
+.srow .d.due { color: var(--hx-red); font-weight: 700; }
+.sline { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 6px 6px 52px; }
+.more { display: flex; align-items: center; gap: 6px; padding: 6px; font: 600 11.5px var(--hx-mono); letter-spacing: .1em; color: var(--hx-faint); }
+.more svg { width: 10px; height: 10px; transition: transform var(--hx-t-s) var(--hx-ease); }
+.more[aria-expanded="true"] svg { transform: rotate(90deg); }
+.addf { display: flex; gap: 6px; margin-top: 10px; }
+.vers { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 14px; }
+.vers button.v { min-height: 30px; padding: 0 10px; border: 1.5px solid var(--hx-ink); font: 600 12px var(--hx-mono); background: var(--hx-paper); }
+.vers button.v[aria-pressed="true"] { background: var(--hx-ink); color: var(--hx-on-ink); }
+.vers .sp { flex: 1; }
+.doc { font-size: 13px; }
+.doc .row { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; }
+.doc .row span:first-child { color: var(--hx-faint); flex: none; }
+.doc .row span:last-child { text-align: right; }
+.doc .row.chg { background: var(--hx-wash); box-shadow: -8px 0 0 var(--hx-wash), 8px 0 0 var(--hx-wash); }
+.doc .row.chg span:first-child::before { content: '+ '; color: var(--hx-ink); font-weight: 800; }
+.doc .was { display: block; color: var(--hx-faint); text-decoration: line-through; font-size: 12px; }
+.blank { margin: 40px 10px; text-align: center; font-size: 13px; color: var(--hx-sub); }
+
+.toast { position: absolute; z-index: 30; left: 50%; bottom: 20px; transform: translate(-50%, 12px); max-width: min(440px, calc(100% - 32px)); padding: 9px 16px; background: var(--hx-ink); color: var(--hx-on-ink); font-size: 13px; opacity: 0; pointer-events: none; transition: opacity var(--hx-t-m) var(--hx-out), transform var(--hx-t-m) var(--hx-settle); }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+.scrim { display: none; }
+
+.skl { height: 12px; margin: 8px 0; background: repeating-linear-gradient(90deg, var(--hx-hair) 0 6px, transparent 6px 9px); }
+.skl.s { width: 55%; } .skl.m { width: 78%; }
+
+/* 对话栏变窄时，头部的标签收成图标 */
+@container chat (max-width: 620px) {
+  .chip .lb { display: none; }
+  .ch { gap: 4px; }
+  .msg.u { max-width: 92%; }
+}
+
+/* ---------- 窄屏：会话和产物收进抽屉 ---------- */
+@media (max-width: 959px) {
+  .hx, .hx.noside, .hx.noart, .hx.noside.noart { grid-template-columns: minmax(0, 1fr); }
+  .split { display: none; }
+  .side, .art { position: absolute; z-index: 25; top: 0; bottom: 0; visibility: visible !important; transition: transform var(--hx-t-m) var(--hx-ease); filter: drop-shadow(0 0 16px color-mix(in srgb, #000 18%, transparent)); }
+  .side { left: 0; width: min(280px, 84%); transform: translateX(-105%); }
+  .art { right: 0; width: min(420px, 92%); transform: translateX(105%); }
+  .hx.dside .side, .hx.dart .art { transform: none; }
+  .scrim { display: block; position: absolute; z-index: 24; inset: 0; background: color-mix(in srgb, #000 30%, transparent); opacity: 0; pointer-events: none; transition: opacity var(--hx-t-m); }
+  .hx.dside .scrim, .hx.dart .scrim { opacity: 1; pointer-events: auto; }
+  .ch .menu { display: grid; }
+  .ch .sidetog { display: none; }
+}
+@media (max-width: 599px) {
+  .hx { height: 760px; }
+  .ch { padding: 8px 8px; min-height: 56px; }
+  .ch h2 { font-size: 14px; }
+  .ch .model, .ch .ctx { display: none; }
+  .col { width: calc(100% - 24px); }
+  .dock { padding: 0 12px 12px; }
+  .card { max-width: none; }
+  .ibar .b.opt { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pr { animation: fade var(--hx-t-m) ease both; }
+  .flash, .spin, .caret, .think .dots i { animation: none; }
+  .stamp.go { animation: fade var(--hx-t-m) ease both; }
+  @keyframes fade { from { opacity: 0; } }
+  .odo .strip { transition-duration: 200ms; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="head">
+    <div>
+      <h1>LOOM 麓鸣（带支付的任务执行 harness） · 热敏小票</h1>
+      <p>让 Agent 替你办一件要花钱的事。对话是主体：Agent 在对话里思考、调工具、出核对单；走到付款这一步，收款码直接打印在对话里，和这笔钱付给谁、对应哪一步、还剩多久放在同一张小票上，你核对完自己扫码。左边是会话，右边是这次任务的进度和订单（订单有版本，能对比、能导出）。所有卡片最上面一行都是结论；金额和倒计时像里程表一样只滚变化的位；新卡片先出占位，字段一个个到齐，布局不跳。</p>
+      <p>适合的 harness：带支付的任务执行（AgentPay：任务、工具调用和付款在同一个工作流里；收款码为演示图样，不能付款）</p>
+    </div>
+    <button type="button" class="pbtn" id="theme" aria-pressed="false">深色</button>
+  </header>
+
+  <section class="sec" aria-label="模拟 Agent">
+    <h2>模拟 AGENT</h2>
+    <div class="simbar" id="sim"></div>
+  </section>
+
+  <div class="hx" id="main">
+    <aside class="side" id="side" aria-label="会话列表">
+      <div class="brand"><b>LOOM</b><span>麓鸣</span><i>AGENTPAY</i></div>
+      <button type="button" class="b newb" data-act="new"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 2.5v11M2.5 8h11" stroke="currentColor" stroke-width="1.8"/></svg>新对话</button>
+      <div class="srch"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.4 10.4 14 14" stroke="currentColor" stroke-width="1.8"/></svg><label class="sr" for="q">搜索会话</label><input type="search" id="q" placeholder="搜索会话" autocomplete="off"></div>
+      <nav class="slist" id="slist" aria-label="会话"></nav>
+    </aside>
+
+    <section class="chat" aria-label="对话">
+      <header class="ch">
+        <button type="button" class="ib menu" data-act="dside" aria-label="打开会话列表"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.6"/></svg></button>
+        <button type="button" class="ib sidetog" data-act="toggle-side" aria-label="收起会话列表" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 2.5h11v11h-11zM6 2.5v11" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+        <div class="tt"><h2 id="ctitle"></h2><div class="concl" id="concl" role="status" aria-live="polite"></div></div>
+        <button type="button" class="chip model" id="bModel" data-act="pop" data-pop="model" aria-haspopup="dialog" aria-expanded="false"></button>
+        <button type="button" class="chip ctx" id="bCtx" data-act="pop" data-pop="ctx" aria-haspopup="dialog" aria-expanded="false"></button>
+        <button type="button" class="chip cost" id="bCost" data-act="pop" data-pop="cost" aria-haspopup="dialog" aria-expanded="false"></button>
+        <button type="button" class="ib" data-act="toggle-art" id="bArt" aria-label="任务和订单" aria-pressed="true"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 2.5h11v11h-11zM10 2.5v11" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+      </header>
+      <div class="feed" id="feed" role="log" aria-label="对话记录"><div class="col" id="col"></div></div>
+      <button type="button" class="b sm pill" id="pill" data-act="pill" hidden>有新消息 ↓</button>
+      <div class="dock">
+        <div class="col">
+          <div class="ibar" id="ibar" role="status" hidden></div>
+          <form class="comp" id="comp">
+            <div class="chips" id="chips"></div>
+            <label class="sr" for="ta">给 LOOM 发消息</label>
+            <textarea id="ta" rows="2" placeholder="跟 LOOM 说要办什么……  @ 引用步骤或文件，/ 用命令" aria-controls="cpop" aria-expanded="false"></textarea>
+            <div class="crow">
+              <button type="button" class="ib" data-act="attach" aria-label="添加附件"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 4.5 5.8 9.2a1.6 1.6 0 0 0 2.3 2.3l5-5a3 3 0 0 0-4.3-4.3l-5 5a4.4 4.4 0 0 0 6.2 6.2l3.6-3.6" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></button>
+              <button type="button" class="ib" data-act="at" aria-label="引用步骤或文件" style="font-weight:800">@</button>
+              <button type="button" class="ib" data-act="slash" aria-label="命令" style="font-weight:800">/</button>
+              <span class="hint">Enter 发送 · Shift+Enter 换行</span>
+              <button type="submit" class="b p sm" id="send">发送</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="cpop" id="cpop" role="listbox" aria-label="候选" hidden></div>
+      <div class="pop" id="pop" role="dialog" hidden></div>
+    </section>
+
+    <div class="split" id="split" role="separator" aria-orientation="vertical" aria-label="拖动调整对话和产物的宽度" tabindex="0" aria-valuemin="300" aria-valuemax="620"></div>
+
+    <aside class="art" id="art" aria-label="任务和订单">
+      <div class="at">
+        <div class="tabs" role="tablist" aria-label="产物">
+          <button type="button" role="tab" id="tab-task" aria-controls="ab" data-act="tab" data-tab="task">任务</button>
+          <button type="button" role="tab" id="tab-order" aria-controls="ab" data-act="tab" data-tab="order">订单</button>
+        </div>
+        <button type="button" class="ib" data-act="close-art" aria-label="关闭任务和订单"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6"/></svg></button>
+      </div>
+      <div class="ab" id="ab" role="tabpanel"></div>
+    </aside>
+    <div class="scrim" data-act="close-drawers"></div>
+    <div class="toast" id="toast" role="status"></div>
+  </div>
+
+  <section class="sec" aria-label="Agent 回传">
+    <h2>AGENT 回传</h2>
+    <pre class="log" id="log" aria-live="polite">（核对、允许、扫码付款、换模型、切版本、拖分隔线……这里显示 hx-action）</pre>
+  </section>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = (id) => document.getElementById(id);
+  const root = $('main');
+  const esc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const clone = (x) => JSON.parse(JSON.stringify(x));
+  const emit = (name, params, part) => document.dispatchEvent(new CustomEvent('hx-action', { detail: { name, params: params || {}, part } }));
+  const T = (ms) => (reduce ? Math.round(ms * 1.2) : ms);
+  const pad = (n) => String(n).padStart(2, '0');
+  const yuan = (n) => '¥' + Number(n).toFixed(2);
+  const narrowQ = matchMedia('(max-width: 959px)');
+  const t0 = Date.now();
+  const now = () => { const m = 14 * 60 + 2 + Math.floor((Date.now() - t0) / 60000); return pad(Math.floor(m / 60) % 24) + ':' + pad(m % 60); };
+
+  /* ---------- 图形：状态靠形状区分，不只靠颜色 ---------- */
+  const G = {
+    queue: '<svg class="gl" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
+    doing: '<svg class="gl spin" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 2a5 5 0 0 1 0 10z" fill="currentColor"/></svg>',
+    still: '<svg class="gl" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 2a5 5 0 0 1 0 10z" fill="currentColor"/></svg>',
+    wait: '<svg class="gl" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 1 13 7 7 13 1 7z" fill="currentColor"/></svg>',
+    pay: '<svg class="gl" viewBox="0 0 14 14" aria-hidden="true"><rect x="1" y="1" width="12" height="12" fill="currentColor"/><path class="k" d="M4.4 3.6 7 6.8l2.6-3.2M7 6.8v4M4.8 7.8h4.4M4.8 9.6h4.4" fill="none" stroke-width="1.3"/></svg>',
+    done: '<svg class="gl" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="6" fill="currentColor"/><path class="k" d="M4.1 7.2 6.1 9.1 9.9 5" fill="none" stroke-width="1.7"/></svg>',
+    skip: '<svg class="gl" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3.4 10.6l7.2-7.2" stroke="currentColor" stroke-width="1.6"/></svg>',
+    err: '<svg class="gl" viewBox="0 0 14 14" aria-hidden="true"><rect x="1.8" y="1.8" width="10.4" height="10.4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4.6 4.6l4.8 4.8M9.4 4.6l-4.8 4.8" stroke="currentColor" stroke-width="1.6"/></svg>',
+    hollow: '<svg class="gl" viewBox="0 0 14 14" aria-hidden="true"><rect x="1.8" y="1.8" width="10.4" height="10.4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
+    pause: '<svg class="gl" viewBox="0 0 14 14" aria-hidden="true"><rect x="2.5" y="2" width="3" height="10" fill="currentColor"/><rect x="8.5" y="2" width="3" height="10" fill="currentColor"/></svg>',
+    hand: '<svg class="gl" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>',
+    plan: '<svg class="gl" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 3h10M2 7h10M2 11h6" stroke="currentColor" stroke-width="1.6"/></svg>'
+  };
+  const TG = {
+    search: '<svg class="gl" viewBox="0 0 14 14" aria-hidden="true"><circle cx="6" cy="6" r="3.8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.8 8.8 12.6 12.6" stroke="currentColor" stroke-width="1.8"/></svg>',
+    read: '<svg class="gl" viewBox="0 0 14 14" aria-hidden="true"><rect x="2" y="2" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4.5 5.5h5M4.5 8.5h5" stroke="currentColor" stroke-width="1.3"/></svg>',
+    edit: '<svg class="gl" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 12 2.6 9.4 9.8 2.2 11.8 4.2 4.6 11.4z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>',
+    run: '<svg class="gl" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 2v10l9-5z" fill="currentColor"/></svg>'
+  };
+  function rng(seed) { let h = 2166136261; for (const c of seed) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return () => { h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return ((h >>> 0) % 10000) / 10000; }; }
+  function barcode(seed) { const r = rng(seed); let x = 0, p = ''; while (x < 200) { const w = 1 + Math.floor(r() * 3); if (r() > 0.4) p += `M${x} 0h${w}v30h-${w}z`; x += w + (r() > 0.7 ? 1 : 0); } return `<svg class="bc" viewBox="0 0 200 30" preserveAspectRatio="none" aria-hidden="true"><path d="${p}" fill="currentColor"/></svg><p class="bcn" aria-hidden="true">${esc(seed)}</p>`; }
+  // 演示用的收款码图样：只是码的样子，不含任何可识别的内容
+  function qr(seed) {
+    const N = 25, r = rng(seed); let p = '';
+    const fin = (x, y) => (x < 8 && y < 8) || (x > N - 9 && y < 8) || (x < 8 && y > N - 9);
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      if (fin(x, y) || (x >= 16 && x <= 20 && y >= 16 && y <= 20) || (x >= 10 && x <= 14 && y >= 10 && y <= 14)) continue;
+      if ((y === 6 || x === 6) ? (x + y) % 2 === 0 : r() < 0.48) p += `M${x} ${y}h1v1h-1z`;
+    }
+    [[0, 0], [N - 7, 0], [0, N - 7]].forEach(([x, y]) => { p += `M${x} ${y}h7v7h-7zM${x + 1} ${y + 1}v5h5v-5zM${x + 2} ${y + 2}h3v3h-3z`; });
+    p += 'M16 16h5v5h-5zM17 17v3h3v-3zM18 18h1v1h-1z';
+    return `<svg class="qr" viewBox="-2 -2 29 29" shape-rendering="crispEdges" role="img" aria-label="收款码（演示图样，不能付款）"><rect class="qbg" x="-2" y="-2" width="29" height="29"/><g class="qfg"><path d="${p}" fill-rule="evenodd"/><rect x="10.5" y="10.5" width="4" height="4" fill="none" stroke-width=".9"/><circle cx="12.5" cy="12.5" r="1"/></g></svg>`;
+  }
+
+  /* ---------- 数据 ---------- */
+  const SLOTS = { 'sat-am': '11 月 28 日 周六 9:00–12:00', 'sat-pm': '11 月 28 日 周六 14:00–17:00', 'sun-am': '11 月 29 日 周日 9:00–12:00' };
+  const VENDOR = '洁居到家（杭州）家政服务有限公司';
+  const ORDER_NO = 'JJ20261128-0417';
+  const MODELS = { fast: ['LOOM 轻快', 0.01, '比价慢一点，结论一样要你核对'], std: ['LOOM 标准', 0.03, '比价和核对更细'], deep: ['LOOM 深思', 0.08, '多想几步，适合复杂的事'] };
+  const STEPS = () => [
+    { id: 's1', n: 1, t: '问清要洗什么', d: '挂机空调 2 台、侧吸油烟机 1 台', col: 'queue', kind: 'plain' },
+    { id: 's2', n: 2, t: '比价三家上门清洗', d: '选了洁居到家 ¥318', col: 'queue', kind: 'plain' },
+    { id: 's3', n: 3, t: '查周六上午的空档', d: '11/28 上午剩 2 个名额', col: 'queue', kind: 'plain' },
+    { id: 's4', n: 4, t: '核对订单', d: '收款方、金额、时间、发票', col: 'queue', kind: 'review' },
+    { id: 's5', n: 5, t: '提交预约', d: '要把地址和手机号发给服务商', col: 'queue', kind: 'perm' },
+    { id: 's6', n: 6, t: '付定金 ¥60', d: '你扫码付', col: 'queue', kind: 'pay' },
+    { id: 's7', n: 7, t: '完工后付尾款 ¥258', d: '验收以后才出码', col: 'queue', kind: 'pay2' },
+    { id: 's8', n: 8, t: '前一晚提醒你清场', d: '11/27 20:00', col: 'queue', kind: 'plain' }
+  ];
+  const TOOLS = {
+    search: { k: 'search', n: '搜索', tgt: '上门家电清洗 · 西湖区', res: '9 家，留 3 家', ms: 1800, out: '评分 4.7 以上且接周六单的：\n洁居到家 4.9（1,284 单）\n小蜜蜂家政 4.8（862 单）\n清清家电 4.7（2,031 单）' },
+    price: { k: 'read', n: '读取', tgt: '三家的价目表和近 30 天评价', res: '3 份', ms: 2400, out: '洁居到家：空调 ¥98/台，油烟机 ¥168，新客券 -¥46\n清清家电：合计 ¥298，近 30 天 11 条“没洗干净”\n小蜜蜂家政：合计 ¥356，不用券' },
+    cmp: { k: 'run', n: '运行', tgt: '比价', res: '洁居到家 ¥318', ms: 300, out: '预算 ¥350 以内、差评率最低：洁居到家 ¥318' },
+    slot: { k: 'read', n: '读取', tgt: '洁居到家 · 11/28 空档', res: '上午剩 2 个', ms: 1100, out: '11/28 周六 9:00–12:00 剩 2\n11/28 周六 14:00–17:00 剩 4\n11/29 周日 9:00–12:00 剩 1' },
+    submit: { k: 'run', n: '运行', tgt: '提交预约 · 洁居到家', res: '名额锁 15 分钟', ms: 900, out: '订单 ' + ORDER_NO + '\n定金 ¥60.00 · 收款方 ' + VENDOR },
+    status: { k: 'read', n: '读取', tgt: '支付状态 · ' + ORDER_NO, res: '已到账 ¥60.00', ms: 600, out: '交易状态：成功\n到账：¥60.00\n凭证号 LP2611260417' },
+    statusErr: { k: 'read', n: '读取', tgt: '支付状态 · ' + ORDER_NO, res: '码已作废', ms: 700, err: true, out: '交易状态：未支付\n原因：服务商已作废这张收款码（订单改价）\n未扣款 · 已自动重试 1 次' },
+    remind: { k: 'edit', n: '编辑', tgt: '提醒 · 11/27 20:00', res: '已设', ms: 200, out: '11/27 20:00：空调下方留出 1 米，油烟机下面的台面清空' },
+    redo: { k: 'edit', n: '编辑', tgt: '订单草稿 · ' + ORDER_NO, res: '已改', ms: 1500, out: '按你的意见重做了订单草稿' }
+  };
+  const tool = (k, extra) => Object.assign(clone(TOOLS[k]), extra || {});
+  const TX = {
+    m1: '帮我约个上门清洗：两台挂机空调加一台油烟机，周六上午，总共别超过 350。',
+    m2: '好，我分 8 步办，计划在下面。付钱那一步我会把收款码放在对话里，你核对完自己扫，我不会替你付。',
+    m3: '我选了**洁居到家，¥318**，在你的 350 以内。清清家电便宜 20 块，但近 30 天有 11 条“没洗干净”的差评。',
+    m4: '周六上午还剩 2 个名额，先按 9:00–12:00 写进订单草稿。',
+    m5: '订单草稿在下面，**四项请你自己勾一遍**：收款方、金额、时间、发票。',
+    m6: '提交预约要把地址和手机号发给洁居到家，**这一步要你点头**。我也备了一个只发到楼栋的做法。',
+    m7: '预约提交好了，名额锁 15 分钟。**扫码付定金 ¥60**，付给洁居到家的企业账户：\n- 用支付宝扫下面的码\n- 付完点「我已付款」，我去查到账',
+    m8: '**定金到账了。** 尾款 ¥258 等师傅做完、你验收以后再出码；凭证在订单里。',
+    m9: '设好了提醒：11/27 20:00 告诉你把空调下方留出 1 米、油烟机下面的台面清空。',
+    err: '**付款没成功，钱没有扣。** 洁居到家刚改了订单价格，旧码作废了。点「重新出码」，我会先核对新码的金额还是不是 ¥60。',
+    what: '**这是洁居到家的上门定金**，对应第 6 步：\n- 付给：' + VENDOR + '（企业账户，不是个人）\n- 师傅上门后从总价 ¥318 里扣掉，尾款 ¥258 验收后再付\n- 11/27 18:00 前取消，定金原路退回'
+  };
+  const SESS = [
+    { id: 'clean', t: '上门清洗预约', g: '等你处理' },
+    { id: 'ticket', t: '退掉多订的话剧票', g: '进行中', note: '在等票务客服回复' },
+    { id: 'net', t: '比较两家宽带套餐', g: '今天', note: '推荐 300M · ¥89/月' },
+    { id: 'fee', t: '帮妈妈交物业费', g: '今天', note: '已付 ¥1,280.00' },
+    { id: 'domain', t: '续费个人网站域名', g: '更早', note: '已付 ¥69.00' },
+    { id: 'gift', t: '挑结婚纪念日礼物', g: '更早', note: '3 个候选' }
+  ];
+  const OTHER = {
+    ticket: ['退掉周五多订的那张话剧票。', '已经联系票务客服，**退票手续费 ¥18**，退款原路返回。客服说 2 小时内回复，我在等。'],
+    net: ['帮我比一下电信和联通的宽带。', '**推荐联通 300M，¥89/月**：比电信同速率便宜 ¥20，安装费免。合约 12 个月，提前退要付 ¥200。'],
+    fee: ['帮我妈交一下物业费，翠苑三区 7 幢 402。', '**已付 ¥1,280.00**，物业开的电子收据在订单里。下次到期是明年 11 月。'],
+    domain: ['我的域名快到期了，续一年。', '**已续费 ¥69.00**，有效期到 2027-11-03。顺手关掉了自动续费里那张过期的卡。'],
+    gift: ['结婚纪念日送什么好？预算 800。', '**挑了 3 个候选**：手工陶瓷对杯 ¥460、胶片相机 ¥720、两人陶艺课 ¥598。都能在 12/3 前送到。']
+  };
+  const V1 = () => ({ v: 1, label: '草稿', time: 'sat-am', invoice: 'personal', status: '草稿 · 待核对', addr: '—' });
+
+  function initial() {
+    return {
+      phase: 'mid', cur: 'clean', q: '', goal: '周六上午请人上门清洗两台挂机空调和一台油烟机，总价不超过 ¥350', goalEdit: false,
+      paused: false, manual: false, budget: 400, model: 'std', effort: 'mid', usage: 0.38, ctx: 0.31, paid: 0,
+      steps: STEPS(), nextN: 9, showDone: false,
+      order: { time: 'sat-am', invoice: 'personal', checks: { payee: false, amount: false, time: false, invoice: false }, edit: null, state: 'open', ret: false, note: '' },
+      perm: { state: 'ask', denying: false },
+      pay: { state: 'none', left: 900, method: 'qr', pm: false, proof: false, refundAsk: false, ver: 1, stampGo: false },
+      vers: [V1()], ver: 1, cmp: false,
+      msgs: [], att: [], tab: 'task', pop: null
+    };
+  }
+  let S = initial(), uid = 0;
+  const step = (id) => S.steps.find((s) => s.id === id);
+  const total = () => 318;
+  const allChecked = () => Object.values(S.order.checks).every(Boolean);
+  const pending = () => (['qr', 'link', 'scanned', 'timeout', 'failed'].includes(S.pay.state) ? 60 : 0);
+  const over = () => total() + S.usage > S.budget;
+  const doneCount = () => S.steps.filter((s) => s.col === 'done').length;
+
+  /* ---------- 定时器 ---------- */
+  let timers = [], held = [];
+  function later(fn, ms) { const run = () => { if (S.paused) { held.push(run); return; } fn(); }; timers.push(setTimeout(run, T(ms))); }
+  function clearAll() { timers.forEach(clearTimeout); timers = []; held = []; }
+
+  /* ---------- 渲染工具：没变就不动 DOM；输入框的值和焦点跨渲染保留 ---------- */
+  function setHTML(el, html) {
+    if (el._h === html) return false;
+    const keep = {}; let af = null;
+    el.querySelectorAll('input[id], textarea[id]').forEach((i) => { keep[i.id] = i.value; });
+    const ae = document.activeElement;
+    if (ae && el.contains(ae)) af = { id: ae.id, f: ae.getAttribute('data-f'), s: ae.selectionStart, e: ae.selectionEnd };
+    el.innerHTML = html; el._h = html;
+    Object.keys(keep).forEach((id) => { const i = el.querySelector('#' + CSS.escape(id)); if (i && i.type !== 'checkbox' && i.type !== 'radio') i.value = keep[id]; });
+    if (af) { const t = (af.id && el.querySelector('#' + CSS.escape(af.id))) || (af.f && el.querySelector('[data-f="' + af.f + '"]')); if (t) { t.focus({ preventScroll: true }); if (af.s != null && t.setSelectionRange) try { t.setSelectionRange(af.s, af.e); } catch (e) {} } }
+    return true;
+  }
+  let quiet = true;
+  function patch(box, list) {
+    const have = {};
+    [].forEach.call(box.children, (el) => { if (el.dataset.k) have[el.dataset.k] = el; else el.remove(); });
+    let prev = null;
+    list.forEach((it) => {
+      let el = have[it.k];
+      if (!el) { el = document.createElement(it.tag || 'div'); el.dataset.k = it.k; if (!quiet) { el.classList.add('pr'); el.addEventListener('animationend', function f(e) { if (e.target === el) { el.classList.remove('pr'); el.removeEventListener('animationend', f); } }); } }
+      else delete have[it.k];
+      const cls = it.cls + (el.classList.contains('pr') ? ' pr' : '');
+      if (el.className !== cls) el.className = cls;
+      setHTML(el, it.html);
+      const ref = prev ? prev.nextSibling : box.firstChild;
+      if (el !== ref) box.insertBefore(el, ref);
+      prev = el;
+    });
+    Object.values(have).forEach((el) => el.remove());
+  }
+
+  /* ---------- 数字翻滚 ---------- */
+  const VAL = {
+    pay: () => '60.00', total: () => total().toFixed(2), paid: () => S.paid.toFixed(2), due: () => pending().toFixed(2),
+    usage: () => S.usage.toFixed(2), cd: () => pad(Math.floor(S.pay.left / 60)) + ':' + pad(S.pay.left % 60), ctx: () => String(Math.round(S.ctx * 100)), steps: () => doneCount() + '/' + S.steps.length
+  };
+  const odo = (k) => `<span class="odo" data-odo="${k}" role="img"></span>`;
+  function setCol(col, d, delay, anim) {
+    const cur = col._i == null ? 10 + d : col._i; let best = 10 + d;
+    [d, 10 + d, 20 + d].forEach((i) => { if (Math.abs(i - cur) < Math.abs(best - cur)) best = i; });
+    col._i = best; col.style.transition = anim ? '' : 'none'; col.style.transitionDelay = anim ? delay + 'ms' : '0ms';
+    col.style.transform = `translateY(${-best * 1.15}em)`;
+    clearTimeout(col._t);
+    if (best !== 10 + d) col._t = setTimeout(() => { col.style.transition = 'none'; col._i = 10 + d; col.style.transform = `translateY(${-(10 + d) * 1.15}em)`; }, delay + 560);
+  }
+  const DIG = '<span class="strip">' + '0123456789'.repeat(3).split('').map((c) => `<span>${c}</span>`).join('') + '</span>';
+  function odoSync() {
+    document.querySelectorAll('#main [data-odo]').forEach((el) => {
+      const v = VAL[el.dataset.odo](); el.setAttribute('aria-label', v);
+      if (el._v === v) return;
+      const digits = v.replace(/\D/g, '').split('').map(Number);
+      if (el._v == null || el._v.length !== v.length) {
+        el.innerHTML = v.split('').map((c) => (/\d/.test(c) ? `<span class="dg">${DIG}</span>` : `<span class="oc">${esc(c)}</span>`)).join('');
+        const cols = [...el.querySelectorAll('.strip')];
+        if (quiet || reduce) cols.forEach((c, i) => setCol(c, digits[i], 0, false));
+        else { // 第一次出现：从 0 滚到目标值，低位先动，高位跟上
+          cols.forEach((c) => setCol(c, 0, 0, false));
+          requestAnimationFrame(() => requestAnimationFrame(() => cols.forEach((c, i) => setCol(c, digits[i], (cols.length - 1 - i) * 45, true))));
+        }
+      } else {
+        const cols = [...el.querySelectorAll('.strip')], old = el._v.replace(/\D/g, '');
+        cols.forEach((c, i) => { if (+old[i] !== digits[i]) setCol(c, digits[i], (cols.length - 1 - i) * 45, !reduce); });
+      }
+      el._v = v;
+    });
+  }
+
+  /* ---------- 状态文字（金字塔：先一句结论） ---------- */
+  function gOf(s) {
+    if (s.skip) return G.skip;
+    if (s.kind === 'pay' && s.col === 'wait' && S.pay.state === 'failed') return G.err;
+    if (s.col === 'done') return G.done;
+    if (s.col === 'doing') return S.paused || S.manual ? G.still : G.doing;
+    if (s.col === 'wait') return s.kind === 'pay' ? G.pay : G.wait;
+    return G.queue;
+  }
+  function stOf(s) {
+    if (s.skip) return '已跳过';
+    if (s.col === 'done') return s.by === '你' ? '完成 · 你' : '完成';
+    if (s.col === 'doing') return S.paused ? '暂停中' : 'Agent 在做';
+    if (s.col === 'wait') return s.kind === 'pay' ? ({ failed: '付款没成功', timeout: '码过期了', scanned: '在查到账' }[S.pay.state] || '等你付款') : '等你确认';
+    if (s.kind === 'pay' && S.pay.state === 'deferred') return '暂不付';
+    if (s.kind === 'pay' && S.pay.state === 'refunded') return '已退款';
+    if (s.kind === 'pay2') return '完工后';
+    return '排队';
+  }
+  function conclusion() {
+    if (S.cur === 'new') return ['', G.plan, '新对话'];
+    if (S.cur !== 'clean') { const s = SESS.find((x) => x.id === S.cur); return ['done', G.done, s.note]; }
+    if (S.phase === 'loading') return ['run', G.doing, '正在打开…'];
+    const p = S.pay.state, s6 = step('s6');
+    if (s6.col === 'wait' && p === 'failed') return ['err', G.err, '付款没成功 · 钱没扣，重新出码就能付'];
+    if (s6.col === 'wait' && p === 'timeout') return ['wait', G.hollow, '收款码过期了 · 重新出码'];
+    if (s6.col === 'wait' && ['qr', 'link'].includes(p)) return ['wait', G.pay, '等你付款 · 定金 ¥60'];
+    if (s6.col === 'wait' && p === 'scanned') return ['run', G.doing, '在查到账 · 定金 ¥60'];
+    if (S.paused) return ['run', G.pause, '已暂停 · 第 ' + doneCount() + '/8 步'];
+    if (S.manual) return ['run', G.hand, '你在操作 · Agent 只看不动'];
+    const w = S.steps.find((x) => x.col === 'wait');
+    if (w) return ['wait', G.wait, '等你确认 · ' + w.t];
+    const d = S.steps.find((x) => x.col === 'doing');
+    if (d) return ['run', G.doing, 'Agent 在做 · ' + d.t];
+    if (p === 'success') return ['done', G.done, '定金已付 · 11/28 周六上午上门'];
+    return ['', G.queue, '第 ' + doneCount() + '/8 步'];
+  }
+
+  /* ---------- 左：会话（按“等你处理 / 进行中 / 今天 / 更早”分组） ---------- */
+  function renderSide() {
+    const q = S.q.trim();
+    const note = (s) => s.id === 'clean' ? (S.pay.state === 'success' ? '定金已付 ¥60.00' : step('s6').col === 'wait' ? '待付 ¥60.00' : S.steps.some((x) => x.col === 'wait') ? '等你确认' : '在办') : s.note;
+    const grp = (s) => s.id === 'clean' && S.pay.state === 'success' ? '今天' : s.g;
+    const glyph = (s) => s.id === 'clean' ? (S.pay.state === 'success' ? G.done : step('s6').col === 'wait' ? G.pay : G.wait) : s.g === '进行中' ? G.doing : G.done;
+    const list = SESS.filter((s) => !q || s.t.includes(q) || note(s).includes(q));
+    const html = ['等你处理', '进行中', '今天', '更早'].map((g) => { const its = list.filter((s) => grp(s) === g); if (!its.length) return ''; return `<p class="lbl sg">${g}</p>` + its.map((s) => `<button type="button" class="si" data-act="sess" data-id="${s.id}" data-f="sess-${s.id}" ${S.cur === s.id ? 'aria-current="page"' : ''}>${glyph(s)}<b>${esc(s.t)}</b><small class="${s.id === 'clean' && step('s6').col === 'wait' ? 'due' : ''}">${esc(note(s))}</small></button>`).join(''); }).join('');
+    setHTML($('slist'), html || '<p class="nores">没有找到相关的会话</p>');
+  }
+
+  /* ---------- 中：对话头部 ---------- */
+  function renderHead() {
+    const s = SESS.find((x) => x.id === S.cur);
+    $('ctitle').textContent = s ? s.t : '新对话';
+    const [tone, g, t] = conclusion();
+    setHTML($('concl'), `${g}<span>${esc(t)}</span>`); $('concl').className = 'concl ' + tone;
+    setHTML($('bModel'), `<span class="lb">${MODELS[S.model][0]}</span><span class="sr">模型：${MODELS[S.model][0]}</span><svg viewBox="0 0 10 10" width="9" height="9" aria-hidden="true"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>`);
+    setHTML($('bCtx'), `<span class="meter" aria-hidden="true"><i style="width:${Math.round(S.ctx * 100)}%"></i></span><span class="lb">上下文</span><span class="sr">上下文用了 ${Math.round(S.ctx * 100)}%</span>`);
+    setHTML($('bCost'), `<span class="lb">花费</span> ¥${odo('usage')}${over() ? ' <b aria-hidden="true">!</b>' : ''}`);
+    $('bCost').setAttribute('aria-label', '花费：模型用量 ' + yuan(S.usage) + (over() ? '，这件事会超预算上限' : ''));
+    $('bModel').setAttribute('aria-expanded', S.pop === 'model'); $('bCtx').setAttribute('aria-expanded', S.pop === 'ctx'); $('bCost').setAttribute('aria-expanded', S.pop === 'cost');
+    $('bArt').setAttribute('aria-pressed', narrowQ.matches ? !!S.dart : !root.classList.contains('noart'));
+    const st = root.querySelector('.sidetog'); st.setAttribute('aria-pressed', root.classList.contains('noside')); st.setAttribute('aria-label', root.classList.contains('noside') ? '展开会话列表' : '收起会话列表');
+    const pop = $('pop'); pop.hidden = !S.pop;
+    if (S.pop === 'model') { pop.setAttribute('aria-label', '换模型'); setHTML(pop, `<div class="rc"><h4>现在用 ${MODELS[S.model][0]} · 本月额度还剩 ¥42.60</h4><fieldset><legend class="sr">模型</legend>${Object.keys(MODELS).map((k) => `<label><input type="radio" name="model" value="${k}" data-act="model" ${S.model === k ? 'checked' : ''}><span>${MODELS[k][0]} · 约 ${yuan(MODELS[k][1])}/分钟<small>${MODELS[k][2]}</small></span></label>`).join('')}</fieldset><p class="lbl" style="margin-top:12px">思考强度</p><div class="seg" role="group" aria-label="思考强度">${[['low', '低'], ['mid', '中'], ['high', '高']].map(([k, n]) => `<button type="button" data-act="effort" data-v="${k}" aria-pressed="${S.effort === k}">${n}</button>`).join('')}</div></div>`); }
+    if (S.pop === 'ctx') { const c = Math.round(S.ctx * 100); pop.setAttribute('aria-label', '上下文用量'); setHTML(pop, `<div class="rc"><h4>上下文用了 ${odo('ctx')}%${c > 80 ? '，快满了' : '，还早'}</h4><div class="bars" aria-hidden="true"><i style="width:${Math.round(c * .55)}%"></i><i style="width:${Math.round(c * .3)}%"></i><i style="width:${Math.round(c * .15)}%"></i></div><dl><dt>对话</dt><dd>${Math.round(c * .55)}%</dd><dt>工具输出（价目表、空档）</dt><dd>${Math.round(c * .3)}%</dd><dt>订单和记忆</dt><dd>${Math.round(c * .15)}%</dd></dl><div class="acts"><button type="button" class="b sm" data-act="compact">压缩工具输出</button><button type="button" class="b sm" data-act="new">新开会话</button></div></div>`); }
+    if (S.pop === 'cost') { pop.setAttribute('aria-label', '花费'); setHTML(pop, `<div class="rc"><h4>这件事预计花 ${yuan(total() + S.usage)}${over() ? '，超上限了' : ''}</h4><dl><dt>已付给服务商</dt><dd>${yuan(S.paid)}</dd><dt>待付（定金）</dt><dd>${yuan(pending())}</dd><dt>完工后（尾款）</dt><dd>${yuan(258)}</dd><dt>模型用量 · ${MODELS[S.model][0]}</dt><dd>${yuan(S.usage)}</dd></dl><hr class="hr"><label class="lbl" for="budget">预算上限（服务费 + 模型）</label><div class="row"><input type="number" id="budget" min="0" step="10" value="${S.budget}"><button type="button" class="b sm" data-act="budget">设定</button></div><div class="acts"><button type="button" class="lk" data-act="model-cheap">切到更便宜的模型</button></div></div>`); }
+  }
+
+  /* ---------- 中：消息 ---------- */
+  function md(t) {
+    const safe = esc(t).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/\*\*[^*]*$/, (m) => '<b>' + m.slice(2) + '</b>');
+    let out = '', ul = false;
+    safe.split('\n').forEach((l) => { if (/^- /.test(l)) { if (!ul) { out += '<ul>'; ul = true; } out += '<li>' + l.slice(2) + '</li>'; } else { if (ul) { out += '</ul>'; ul = false; } if (l) out += '<p>' + l + '</p>'; } });
+    return out + (ul ? '</ul>' : '');
+  }
+  // 流式进场：字段 i 还没到时是同大小的占位
+  const F = (m, i, html, tag) => `<${tag || 'span'} class="fld${(m.fill || 0) > i ? '' : ' sk'}">${html}</${tag || 'span'}>`;
+  function toolHTML(t, m, i) {
+    const st = t.run ? (S.paused ? '已暂停' : '进行中…') : t.res + (t.ms ? ' · ' + (t.ms >= 1000 ? (t.ms / 1000).toFixed(1) + 's' : t.ms + 'ms') : '');
+    return `<div class="tool${t.err ? ' err' : ''}"><button type="button" class="tr" data-act="tool" data-m="${m.id}" data-i="${i}" data-f="tool-${m.id}-${i}" aria-expanded="${!!t.open}">${t.run && !S.paused ? G.doing : t.err ? G.err : TG[t.k]}<b>${t.n}</b><span class="tg">${esc(t.tgt)}</span><span class="rs">${esc(st)}</span></button>${t.run ? `<button type="button" class="b sm" data-act="tool-stop" data-m="${m.id}" data-i="${i}">停止</button>` : `<button type="button" class="b sm" data-act="tool-rerun" data-m="${m.id}" data-i="${i}">重跑</button>`}${t.open ? `<pre class="out">${esc(t.out)}</pre>` : ''}</div>`;
+  }
+  function planCard() {
+    const rows = S.steps.map((s) => `<li class="${s.col === 'done' ? 'done' : ''}">${gOf(s)}<span class="n">${pad(s.n)}</span><span class="t">${esc(s.t)}</span><span class="st${s.col === 'wait' && s.kind === 'pay' ? ' due' : ''}">${stOf(s)}</span></li>`).join('');
+    return `<div class="card slip"><div class="rc"><div class="cc">${G.plan}<h3>计划 ${S.steps.length} 步 · 已完成 ${doneCount()} 步</h3></div><p class="sub">${esc(S.goal)}</p><ol class="plan">${rows}</ol><div class="acts"><button type="button" class="b sm" data-act="open-task">在右边看进度</button><button type="button" class="lk" data-act="edit-goal">改计划</button></div></div></div>`;
+  }
+  function reviewCard(m) {
+    const o = S.order, c = o.checks, s4 = step('s4');
+    if (s4.col === 'done') return `<div class="card slip"><div class="rc"><div class="cc">${G.done}<h3>订单核对过了 · 合计 ¥318</h3></div><p class="sub">${esc(SLOTS[o.time])} · ${o.invoice === 'company' ? '公司发票' : '个人发票'}</p></div></div>`;
+    if (s4.col !== 'wait') return `<div class="card slip"><div class="rc"><div class="cc">${G.doing}<h3>Agent 在改订单草稿</h3></div><p class="sub">改好了会重新放到这里，四项要重新勾。</p></div></div>`;
+    const row = (k, label, val, edit, i) => {
+      let ed = '';
+      if (o.edit === k && k === 'time') ed = `<div class="ed" role="radiogroup" aria-label="改上门时间">${Object.keys(SLOTS).map((v) => `<label class="opt"><input type="radio" name="slot" value="${v}" data-act="slot" ${o.time === v ? 'checked' : ''}><span>${SLOTS[v]}${v === 'sun-am' ? '（只剩 1 个）' : ''}</span></label>`).join('')}<div><button type="button" class="b sm" data-act="edit-done" data-f="edit-done">改好了</button></div></div>`;
+      if (o.edit === k && k === 'invoice') ed = `<div class="ed" role="radiogroup" aria-label="改发票"><label class="opt"><input type="radio" name="inv" value="personal" data-act="inv" ${o.invoice === 'personal' ? 'checked' : ''}><span>电子普通发票 · 个人</span></label><label class="opt"><input type="radio" name="inv" value="company" data-act="inv" ${o.invoice === 'company' ? 'checked' : ''}><span>电子普通发票 · 公司（要税号）</span></label><div><button type="button" class="b sm" data-act="edit-done" data-f="edit-done">改好了</button></div></div>`;
+      return `<div class="ck"><label><input type="checkbox" id="ck-${k}" data-act="check" data-k="${k}" ${c[k] ? 'checked' : ''}><span class="v"><b>${label}${c[k] ? ' · 已核对' : ''}</b>${F(m, i, esc(val))}</span></label>${edit ? `<button type="button" class="lk" data-act="edit" data-k="${k}" data-f="edit-${k}" aria-expanded="${o.edit === k}">改</button>` : `<button type="button" class="lk" data-act="wrong" data-k="${k}">不对</button>`}${ed}</div>`;
+    };
+    const n = Object.values(c).filter(Boolean).length;
+    return `<div class="card slip"><div class="rc">
+      <div class="cc">${G.wait}<h3>${n === 4 ? '四项都核对了 · 可以提交预约' : '核对订单：还差 ' + (4 - n) + ' 项'} · 合计 ¥318</h3><span class="tag">第 4 步</span></div>
+      <p class="sub">勾完四项才会提交预约；不对就点「改」或「不对」。</p>
+      <hr class="hr">
+      <table class="items"><tbody>
+        <tr><td>${F(m, 0, '挂机空调深度清洗')}</td><td class="q">×2</td><td>${F(m, 0, yuan(196))}</td></tr>
+        <tr><td>${F(m, 1, '侧吸油烟机拆洗')}</td><td class="q">×1</td><td>${F(m, 1, yuan(168))}</td></tr>
+        <tr><td>${F(m, 2, '新客券')}</td><td class="q"></td><td>${F(m, 2, '-' + yuan(46))}</td></tr>
+        <tr class="tot"><td>合计</td><td class="q"></td><td>${F(m, 3, yuan(318))}</td></tr>
+        <tr class="due"><td>今天付定金</td><td class="q"></td><td>${F(m, 3, yuan(60))}</td></tr>
+        <tr><td>完工验收后付尾款</td><td class="q"></td><td>${F(m, 3, yuan(258))}</td></tr>
+      </tbody></table>
+      ${o.note ? `<p class="note">${esc(o.note)}</p>` : ''}
+      <hr class="hr">
+      <fieldset style="border:0;padding:0;margin:0"><legend class="lbl">你自己核对（${n}/4）</legend>
+        ${row('payee', '收款方', VENDOR + ' · 企业账户', false, 4)}
+        ${row('amount', '金额', '定金 ¥60.00 + 尾款 ¥258.00 = ¥318.00', false, 4)}
+        ${row('time', '上门时间', SLOTS[o.time], true, 5)}
+        ${row('invoice', '发票', o.invoice === 'company' ? '电子普通发票 · 公司' : '电子普通发票 · 个人', true, 5)}
+      </fieldset>
+      ${o.ret ? `<div style="margin-top:10px"><label class="lbl" for="retIn">哪里不对？Agent 会按这个重做</label><textarea id="retIn" rows="2"></textarea><div class="acts" style="margin-top:6px"><button type="button" class="b sm p" data-act="ret-send" data-f="ret-send">退回给 Agent</button><button type="button" class="b sm" data-act="ret-cancel">算了</button></div></div>`
+      : `<div class="acts"><button type="button" class="b p" data-act="review-ok" data-f="review-ok" ${allChecked() ? '' : 'disabled'}>核对无误，提交预约</button><button type="button" class="b" data-act="review-ret" data-f="review-ret">退回重做</button></div>`}
+    </div></div>`;
+  }
+  function permCard(m) {
+    const p = S.perm, s5 = step('s5');
+    if (s5.col === 'done') return `<div class="card slip"><div class="rc"><div class="cc">${G.done}<h3>${p.state === 'alt' ? '只发了楼栋，门牌号到时电话问' : '已发地址和手机号'}</h3></div></div></div>`;
+    if (p.state === 'deny') return `<div class="card slip"><div class="rc"><div class="cc">${G.skip}<h3>你没同意发地址 · 预约先不提交</h3></div><div class="acts"><button type="button" class="b sm" data-act="perm-again">我改主意了</button></div></div></div>`;
+    if (s5.col !== 'wait') return `<div class="card slip"><div class="rc"><div class="cc">${G.doing}<h3>正在提交预约</h3></div></div></div>`;
+    return `<div class="card slip"><div class="rc">
+      <div class="cc">${G.wait}<h3>要把你的地址和手机号发给洁居到家</h3><span class="tag">第 5 步</span></div>
+      <p class="sub">${F(m, 0, '发出去以后服务商会保存这两项，师傅上门前一小时打电话。')}</p>
+      <dl class="kv"><dt>地址</dt><dd>${F(m, 1, '文一西路 枫桥苑 3 幢 1202')}</dd><dt>手机</dt><dd>${F(m, 2, '138 **** 5276')}</dd></dl>
+      <div class="alt"><p class="lbl">更稳妥 · Agent 建议</p><p>${F(m, 3, '只发到楼栋「枫桥苑 3 幢」，门牌号等师傅到楼下再打电话问你。')}</p></div>
+      ${p.denying ? `<div style="margin-top:10px"><label class="lbl" for="denyIn">为什么不发？</label><textarea id="denyIn" rows="2" placeholder="比如：我想自己打电话约"></textarea><div class="acts" style="margin-top:6px"><button type="button" class="b sm p" data-act="deny-send" data-f="deny-send">拒绝并告诉 Agent</button><button type="button" class="b sm" data-act="deny-cancel">算了</button></div></div>`
+      : `<div class="acts"><button type="button" class="b p" data-act="perm-alt" data-f="perm-alt">只发楼栋</button><button type="button" class="b" data-act="perm-allow" data-f="perm-allow">发完整地址</button><button type="button" class="b" data-act="perm-deny" data-f="perm-deny">拒绝…</button></div>`}
+    </div></div>`;
+  }
+  function payCard(m) {
+    const p = S.pay;
+    const info = `<dl class="kv"><dt>付给</dt><dd>${F(m, 0, esc(VENDOR) + '（企业账户）')}</dd><dt>对应</dt><dd>${F(m, 1, '第 6 步 · 上门清洗定金，从总价 ¥318 里先付')}</dd><dt>订单</dt><dd class="mono">${F(m, 2, ORDER_NO)}</dd></dl>`;
+    const qrb = (v) => `<div class="qrw">${F(m, 3, qr(ORDER_NO + '#' + p.ver), 'div')}<span class="demo">演示图样 · 不能付款</span>${v ? `<div class="void"><span>${v}</span></div>` : ''}</div>`;
+    const proof = p.proof ? `<dl class="proof"><dt>凭证号</dt><dd>LP2611260417</dd><dt>交易号</dt><dd>2026112622001404170060</dd><dt>付款方式</dt><dd>支付宝</dd><dt>时间</dt><dd>2026-11-26 14:06:31</dd>${p.state === 'refunded' ? `<dt>退款</dt><dd>${yuan(60)} · 1–3 个工作日原路退回</dd>` : ''}</dl>` : '';
+    switch (p.state) {
+      case 'qr': case 'link':
+        return `<div class="card slip"><div class="rc">
+          <div class="cc">${G.pay}<h3>扫码付定金 ¥${odo('pay')} · 剩 ${odo('cd')}</h3><span class="tag red">第 6 步</span></div>
+          ${info}
+          ${p.method === 'qr' ? qrb() + `<p class="sub" style="text-align:center">打开<b>支付宝</b>扫一扫</p>` : `<p class="note">付款链接已发到 138 **** 5276 的短信，在支付宝里打开付。</p>`}
+          <div class="cdbar" aria-hidden="true"><i data-cdbar></i></div>
+          ${over() ? `<p class="warn">加上这笔，这件事的总花费 ${yuan(total() + S.usage)} 会超过你设的上限 ${yuan(S.budget)}。可以照付，也可以先改上限。</p>` : ''}
+          ${p.pm ? `<div class="pm" role="radiogroup" aria-label="换一种付法"><label><input type="radio" name="pm" value="qr" data-act="pm-set" ${p.method === 'qr' ? 'checked' : ''}><span>支付宝扫码<small>扫这张码</small></span></label><label><input type="radio" name="pm" value="link" data-act="pm-set" ${p.method === 'link' ? 'checked' : ''}><span>付款链接发到手机<small>短信发到 138 **** 5276</small></span></label><label class="off"><input type="radio" name="pm" disabled><span>完工后一起付<small>洁居到家不支持：定金用来锁名额</small></span></label></div>` : ''}
+          <div class="acts"><button type="button" class="b pay" data-act="paid" data-f="paid">我已付款</button><button type="button" class="b" data-act="pm" aria-expanded="${p.pm}">换一种付法</button><button type="button" class="b" data-act="defer">暂不付款</button></div>
+          <div class="acts" style="margin-top:6px"><button type="button" class="lk" data-act="ask">这 60 块是什么钱？</button></div>
+          ${barcode('LP2611260417')}
+        </div></div>`;
+      case 'scanned':
+        return `<div class="card slip"><div class="rc"><div class="cc">${G.doing}<h3>已扫码，在查到账 · ¥60.00</h3></div>${info}<p class="sub">一般几秒钟，查到了会在这里盖章。</p><div class="acts"><button type="button" class="b" data-act="refresh">刷新状态</button></div></div></div>`;
+      case 'success':
+        return `<div class="card slip"><div class="rc"><div class="cc">${G.done}<h3>定金 ¥60 已付 · 尾款 ¥258 完工后付</h3></div><span class="stamp${p.stampGo ? ' go' : ''}" role="img" aria-label="已付 60 元">已付 ¥60<small>LP2611260417</small></span>${info}${proof}
+          ${p.refundAsk ? `<p class="warn"><b>退定金 ¥60？</b>11/27 18:00 前退，原路退回；周六的名额会被释放。</p><div class="acts"><button type="button" class="b p" data-act="refund-yes">确定退款</button><button type="button" class="b" data-act="refund-no">不退了</button></div>`
+          : `<div class="acts"><button type="button" class="b" data-act="proof" aria-expanded="${p.proof}">${p.proof ? '收起凭证' : '看凭证'}</button><button type="button" class="b" data-act="refund">申请退款</button></div>`}</div></div>`;
+      case 'timeout':
+        return `<div class="card slip"><div class="rc"><div class="cc">${G.hollow}<h3>收款码过期了 · 钱没扣</h3></div><p class="sub">15 分钟没扫，这张码不能用了；名额保留到今天 18:00。</p>${qrb('已过期')}<div class="acts"><button type="button" class="b pay" data-act="reissue">重新出码</button><button type="button" class="b" data-act="defer">暂不付款</button></div></div></div>`;
+      case 'failed':
+        return `<div class="card slip"><div class="rc"><div class="cc">${G.err}<h3>付款没成功 · 钱没有扣</h3><span class="tag red">出错</span></div><p class="sub">洁居到家改了订单价格，这张码被作废了。已自动重试 1 次。</p>${qrb('已作废')}<div class="acts"><button type="button" class="b pay" data-act="reissue">重新出码</button><button type="button" class="b" data-act="refresh">刷新状态</button><button type="button" class="b" data-act="defer">稍后再付</button></div></div></div>`;
+      case 'refunded':
+        return `<div class="card slip"><div class="rc"><div class="cc">${G.skip}<h3>定金已退 ¥60 · 1–3 个工作日到账</h3></div>${proof}<div class="acts"><button type="button" class="b" data-act="proof" aria-expanded="${p.proof}">${p.proof ? '收起凭证' : '看凭证'}</button><button type="button" class="b" data-act="reissue">重新约，再出码</button></div></div></div>`;
+      case 'deferred':
+        return `<div class="card slip"><div class="rc"><div class="cc">${G.queue}<h3>先不付 · 名额保留到今天 18:00</h3></div><div class="acts"><button type="button" class="b pay" data-act="reissue">现在付</button></div></div></div>`;
+    }
+    return '';
+  }
+  const CARDS = { plan: planCard, review: reviewCard, perm: permCard, pay: payCard };
+  function msgHTML(m, isLast) {
+    if (m.evt) return { k: m.id, cls: 'evt', tag: 'p', html: esc(m.evt) };
+    const s = m.step && step(m.step);
+    const who = `<p class="who">${m.u ? '你' : 'LOOM'} · ${m.time}${s ? ` · <button type="button" class="lk" data-act="step-go" data-id="${s.id}">#${pad(s.n)} ${esc(s.t)}</button>` : ''}</p>`;
+    const think = m.think ? `<div class="think"><button type="button" data-act="think" data-m="${m.id}" aria-expanded="${!!m.think.open}">${m.think.done ? `已思考 ${m.think.secs}s` : '在想<span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>'}</button>${m.think.open ? `<ul>${m.think.sum.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}</div>` : '';
+    const tools = m.tools && m.tools.length ? `<div class="tools">${m.tools.map((t, i) => toolHTML(t, m, i)).join('')}</div>` : '';
+    const tx = m.text || m.streaming ? `<div class="tx">${md(m.text || '')}${m.streaming ? '<i class="caret" aria-hidden="true"></i>' : ''}</div>` : '';
+    const card = m.card && !m.streaming ? CARDS[m.card](m) : '';
+    let acts = '';
+    if (!m.u && m.text && isLast) acts = m.streaming ? `<div class="macts"><button type="button" class="b sm" data-act="stop">停止输出</button></div>` : `<div class="macts"><button type="button" class="b sm" data-act="copy" data-m="${m.id}">复制</button><button type="button" class="b sm" data-act="regen" data-m="${m.id}">重新生成</button></div>`;
+    return { k: m.id, cls: 'msg' + (m.u ? ' u' : ''), html: who + think + tools + tx + card + acts };
+  }
+  let pinned = true;
+  function renderFeed() {
+    const col = $('col'), feed = $('feed');
+    if (S.cur !== 'clean') {
+      if (S.cur === 'new') { patch(col, [{ k: 'empty', cls: 'empty', html: `<h3>想让 LOOM 替你办什么？</h3><p>说清楚要办的事和预算。要花钱的那一步，LOOM 会把收款码和这笔钱是什么放在一起给你看。</p><div class="sugg">${['帮我交这个季度的水电燃气费', '约周末上门修一下漏水的水龙头', '给爸妈订下周六去苏州的高铁票'].map((x) => `<button type="button" data-act="sugg">${x}</button>`).join('')}</div>` }]); return; }
+      const o = OTHER[S.cur]; patch(col, [{ k: 'o1' + S.cur, cls: 'msg u', html: `<p class="who">你</p><div class="tx">${md(o[0])}</div>` }, { k: 'o2' + S.cur, cls: 'msg', html: `<p class="who">LOOM</p><div class="tx">${md(o[1])}</div>` }]); return;
+    }
+    if (S.phase === 'loading') { patch(col, [{ k: 'sk1', cls: 'msg', html: '<div class="skl s"></div>' }, { k: 'sk2', cls: 'msg', html: '<div class="skl m"></div><div class="skl"></div><div class="skl s"></div>' }, { k: 'sk3', cls: 'msg', html: '<div class="card slip"><div class="rc"><div class="skl s"></div><div class="skl"></div><div class="skl"></div><div class="skl m"></div></div></div>' }]); return; }
+    const lastA = S.msgs.map((m) => !m.u && !m.evt && !!m.text).lastIndexOf(true);
+    const before = feed.scrollHeight;
+    patch(col, S.msgs.map((m, i) => msgHTML(m, i === lastA)));
+    if (pinned) feed.scrollTop = feed.scrollHeight; else if (feed.scrollHeight > before + 4) $('pill').hidden = false;
+  }
+  $('feed').addEventListener('scroll', () => { const f = $('feed'); pinned = f.scrollHeight - f.scrollTop - f.clientHeight < 60; if (pinned) $('pill').hidden = true; });
+
+  /* ---------- 中断条：结论先行——等你什么，或 Agent 在做什么 ---------- */
+  const running = () => S.msgs.some((m) => (m.tools || []).some((t) => t.run) || m.streaming || (m.think && !m.think.done));
+  function renderBar() {
+    const bar = $('ibar');
+    $('send').textContent = S.msgs.some((m) => m.streaming) ? '停止' : '发送';
+    setHTML($('chips'), S.att.map((a, i) => `<span class="att">${esc(a)}<button type="button" data-act="unattach" data-i="${i}" aria-label="移除附件 ${esc(a)}"><svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true"><path d="M2 2l6 6M8 2 2 8" stroke="currentColor" stroke-width="1.5"/></svg></button></span>`).join(''));
+    if (S.cur !== 'clean' || S.phase === 'loading') { bar.hidden = true; return; }
+    const s6 = step('s6'), w = S.steps.find((x) => x.col === 'wait'), d = S.steps.find((x) => x.col === 'doing');
+    let html = '', cls = 'ibar';
+    if (S.paused) html = `${G.pause}<span class="t">已暂停 · 进行中的工具停在原地</span><button type="button" class="b" data-act="pause">继续</button>`;
+    else if (S.manual) html = `${G.hand}<span class="t">你在操作 · LOOM 只看不动</span><button type="button" class="b" data-act="takeover">交还给 LOOM</button>`;
+    else if (s6.col === 'wait' && ['qr', 'link'].includes(S.pay.state)) { cls += ' wait'; html = `${G.pay}<span class="t">等你付定金 ¥60 · 码剩 ${odo('cd')}</span><button type="button" class="b" data-act="jump" data-id="s6">去付款</button>`; }
+    else if (running()) html = `${G.doing}<span class="t">LOOM 在做：${esc(d ? d.t : '回复你')} <span class="mono">· 第 ${Math.min(8, doneCount() + 1)}/8 步</span></span><button type="button" class="b opt" data-act="pause">暂停</button><button type="button" class="b opt" data-act="takeover">接手</button><button type="button" class="b" data-act="stop-all">停止</button>`;
+    else if (w) { cls += ' wait'; html = `${w.kind === 'pay' ? G.pay : G.wait}<span class="t">等你：${esc(w.t)} · ${esc(stOf(w))}</span><button type="button" class="b" data-act="jump" data-id="${w.id}">去处理</button>`; }
+    bar.hidden = !html; bar.className = cls; setHTML(bar, html);
+  }
+
+  /* ---------- 右：任务 / 订单 ---------- */
+  function renderArt() {
+    $('tab-task').setAttribute('aria-selected', S.tab === 'task'); $('tab-order').setAttribute('aria-selected', S.tab === 'order');
+    $('tab-task').tabIndex = S.tab === 'task' ? 0 : -1; $('tab-order').tabIndex = S.tab === 'order' ? 0 : -1;
+    $('tab-order').textContent = '订单 v' + S.ver;
+    $('ab').setAttribute('aria-labelledby', 'tab-' + S.tab);
+    const ab = $('ab');
+    if (S.cur !== 'clean') { setHTML(ab, `<p class="blank">${S.cur === 'new' ? '开始办一件事后，这里会出现步骤和订单。' : '这件事已经办完，记录都在对话里。'}</p>`); return; }
+    if (S.phase === 'loading') { setHTML(ab, '<div class="slip"><div class="rc"><div class="skl s"></div><div class="skl"></div><div class="skl m"></div><div class="skl"></div><div class="skl s"></div></div></div>'); return; }
+    if (S.tab === 'task') {
+      const [tone, , concl] = conclusion();
+      const nowS = S.steps.filter((s) => s.col === 'wait' || s.col === 'doing'), next = S.steps.filter((s) => s.col === 'queue' && !s.skip), done = S.steps.filter((s) => s.col === 'done' || s.skip);
+      const can = (s) => !s.skip && ['s3', 's4', 's5'].includes(s.id) && S.pay.state !== 'success' && s.col === 'done';
+      const row = (s) => `<button type="button" class="srow" data-act="step-go" data-id="${s.id}" data-f="srow-${s.id}">${gOf(s)}<span class="n">${pad(s.n)}</span><span class="t">${esc(s.t)}</span><span class="d${s.col === 'wait' && s.kind === 'pay' ? ' due' : ''}">${stOf(s)} · ${esc(s.d)}</span></button>` +
+        (s.col === 'queue' && s.kind === 'plain' && !s.skip ? `<div class="sline"><button type="button" class="b sm" data-act="skip" data-id="${s.id}">跳过</button></div>` : '') +
+        (s.skip ? `<div class="sline"><button type="button" class="b sm" data-act="unskip" data-id="${s.id}">恢复</button></div>` : '') +
+        (can(s) ? `<div class="sline"><button type="button" class="b sm" data-act="rewind" data-id="${s.id}">回退到这步之前</button></div>` : '');
+      setHTML(ab, `<div class="slip"><div class="rc">
+        <p class="lbl">任务 No.0417 · 第 ${odo('steps')} 步</p>
+        <p class="big${tone === 'wait' || tone === 'err' ? ' red' : ''}">${esc(concl)}</p>
+        <div class="money"><div><b>¥${odo('paid')}</b><span class="ml">已付</span></div><div class="${pending() ? 'due' : ''}"><b>¥${odo('due')}</b><span class="ml">待付</span></div><div><b>¥${odo('total')}</b><span class="ml">预计总价</span></div></div>
+        ${nowS.length ? `<div class="sgp"><p class="lbl">现在</p>${nowS.map(row).join('')}</div>` : ''}
+        ${next.length ? `<div class="sgp"><p class="lbl">接下来</p>${next.map(row).join('')}</div>` : ''}
+        <div class="sgp"><button type="button" class="more" data-act="show-done" aria-expanded="${S.showDone}"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3 2l4 3-4 3z" fill="currentColor"/></svg>已完成 ${done.length} 步</button>${S.showDone ? done.map(row).join('') : ''}</div>
+        <form class="addf" data-form="add"><label class="sr" for="addIn">插入一步</label><input type="text" id="addIn" placeholder="插入一步，比如：问能不能开公司发票" autocomplete="off"><button type="submit" class="b sm">插入</button></form>
+        <hr class="hr">
+        <p class="lbl">目标</p>
+        ${S.goalEdit ? `<label class="sr" for="goalIn">改目标</label><textarea id="goalIn" rows="3">${esc(S.goal)}</textarea><div class="acts" style="margin-top:6px"><button type="button" class="b sm p" data-act="goal-save">保存</button><button type="button" class="b sm" data-act="goal-cancel">取消</button></div>` : `<p style="margin:4px 0 0;font-size:13px">${esc(S.goal)}</p><button type="button" class="lk" data-act="edit-goal" data-f="edit-goal">改目标</button>`}
+        <div class="acts"><button type="button" class="b sm${S.paused ? ' p' : ''}" data-act="pause" aria-pressed="${S.paused}">${S.paused ? '继续' : '暂停'}</button><button type="button" class="b sm${S.manual ? ' p' : ''}" data-act="takeover" aria-pressed="${S.manual}">${S.manual ? '交还给 LOOM' : '接手'}</button></div>
+        ${barcode('NO.0417-' + ORDER_NO)}
+      </div></div>`);
+    } else {
+      const v = S.vers.find((x) => x.v === S.ver), pv = S.cmp && S.vers.find((x) => x.v === S.ver - 1);
+      const line = (k, label, val) => { const chg = pv && pv[k] !== v[k]; return `<div class="row${chg ? ' chg' : ''}"><span>${label}</span><span>${esc(val(v))}${chg ? `<span class="was">${esc(val(pv))}</span>` : ''}</span></div>`; };
+      setHTML(ab, `<div class="vers" role="group" aria-label="订单版本">${S.vers.map((x) => `<button type="button" class="v" data-act="ver" data-v="${x.v}" aria-pressed="${x.v === S.ver}" title="${esc(x.label)}">v${x.v}</button>`).join('')}<span class="sp"></span><button type="button" class="b sm" data-act="cmp" aria-pressed="${S.cmp}" ${S.ver === 1 ? 'disabled' : ''}>对比上一版</button><button type="button" class="b sm" data-act="export">导出</button></div>
+      <div class="slip"><div class="rc doc">
+        <p class="lbl" style="text-align:center">${esc(VENDOR)}</p>
+        <p class="lbl" style="text-align:center">订单 ${ORDER_NO} · v${v.v} ${esc(v.label)}</p>
+        <p class="big${v.status.includes('待付') ? ' red' : ''}" style="text-align:center;margin-top:8px">${esc(v.status)}</p>
+        <hr class="hr">
+        <table class="items"><tbody><tr><td>挂机空调深度清洗</td><td class="q">×2</td><td>${yuan(196)}</td></tr><tr><td>侧吸油烟机拆洗</td><td class="q">×1</td><td>${yuan(168)}</td></tr><tr><td>新客券</td><td class="q"></td><td>-${yuan(46)}</td></tr><tr class="tot"><td>合计</td><td class="q"></td><td>${yuan(318)}</td></tr></tbody></table>
+        <hr class="hr">
+        ${line('time', '上门时间', (x) => SLOTS[x.time])}
+        ${line('invoice', '发票', (x) => x.invoice === 'company' ? '电子普通发票 · 公司' : '电子普通发票 · 个人')}
+        ${line('addr', '发给服务商的地址', (x) => x.addr)}
+        ${line('status', '状态', (x) => x.status)}
+        ${barcode(ORDER_NO)}
+      </div></div>`);
+    }
+  }
+
+  function render() {
+    root.classList.toggle('dside', !!S.dside); root.classList.toggle('dart', !!S.dart);
+    renderSide(); renderHead(); renderFeed(); renderBar(); renderArt();
+    odoSync(); tickBar();
+    quiet = false;
+  }
+  function tickBar() { document.querySelectorAll('[data-cdbar]').forEach((el) => { el.style.transform = `scaleX(${S.pay.left / 900})`; }); }
+
+  setInterval(() => {
+    if (S.phase === 'loading') return;
+    if (['qr', 'link'].includes(S.pay.state)) {
+      S.pay.left = Math.max(0, S.pay.left - 1);
+      if (!S.pay.left) { S.pay.state = 'timeout'; S.pay.pm = false; addEvt('收款码过期了'); emit('timeout', { order: ORDER_NO }, 'pay-status'); render(); }
+      else { odoSync(); tickBar(); }
+    }
+    if (running() && !S.paused && Math.random() < 0.4) { S.usage = +(S.usage + MODELS[S.model][1] / 6).toFixed(2); odoSync(); }
+  }, 1000);
+
+  /* ---------- 消息与流式 ---------- */
+  function addEvt(t) { S.msgs.push({ id: 'e' + ++uid, evt: t + ' · ' + now() }); }
+  function addMsg(m) { m.id = m.id || 'm' + ++uid; m.time = m.time || now(); m.fill = m.fill == null ? 0 : m.fill; S.msgs.push(m); S.ctx = Math.min(0.92, S.ctx + 0.01); return m; }
+  // 卡片的字段一段一段到：先占位，再逐个填上（重叠动作：每个字段错开一点）
+  function fillIn(m, n) { m.fill = 0; const go = () => { m.fill++; render(); if (m.fill < n) later(go, 110); }; later(go, 240); }
+  function stream(m, full, done) {
+    m.full = full; m.streaming = true; m.text = ''; let i = 0;
+    const go = () => {
+      if (!m.streaming) return;
+      if (S.paused) { held.push(go); return; }
+      i = Math.min(full.length, i + (reduce ? 6 : 2)); m.text = full.slice(0, i);
+      if (i >= full.length) { m.streaming = false; if (m.card && (m.fill || 0) < 6) fillIn(m, 6); render(); done && done(); return; }
+      renderFeed(); renderBar();
+      timers.push(setTimeout(go, /[，。：；！？\n]/.test(full[i - 1]) ? T(160) : T(24)));
+    };
+    render(); go();
+  }
+  const say = (text, opt) => new Promise((res) => { const m = addMsg(Object.assign({ text: '' }, opt || {})); stream(m, text, res); });
+  function startTool(m, k, ms, then) {
+    const t = tool(k, { run: true }); m.tools = m.tools || []; m.tools.push(t); render();
+    later(() => { if (!t.run) return; t.run = false; S.usage = +(S.usage + 0.02).toFixed(2); render(); then && then(t); }, ms);
+    return t;
+  }
+  function addVer(label, pv) { const last = S.vers[S.vers.length - 1]; const v = Object.assign({}, last, pv, { v: last.v + 1, label }); S.vers.push(v); S.ver = v.v; S.cmp = false; }
+
+  /* ---------- 流程 ---------- */
+  function reviewOk() {
+    if (!allChecked()) return;
+    S.order.state = 'ok'; S.order.edit = null;
+    const s4 = step('s4'); s4.col = 'done'; s4.by = '你';
+    const s3 = step('s3'); if (s3.col !== 'done') { s3.col = 'done'; S.msgs.forEach((m) => (m.tools || []).forEach((t) => { t.run = false; })); }
+    addVer('已核对', { status: '已核对 · 待提交', time: S.order.time, invoice: S.order.invoice });
+    addEvt('你核对了订单（4/4）');
+    emit('approve', { order: ORDER_NO, checks: clone(S.order.checks), time: S.order.time, invoice: S.order.invoice }, 'order-review');
+    render(); later(advance, 600);
+  }
+  function advance() {
+    if (S.paused || S.manual) return;
+    const s5 = step('s5'), s6 = step('s6');
+    if (S.order.state === 'ok' && s5.col === 'queue' && S.perm.state === 'ask') { s5.col = 'wait'; say(TX.m6, { step: 's5', card: 'perm' }); return; }
+    if (['allow', 'alt'].includes(S.perm.state) && s5.col !== 'done') {
+      s5.col = 'doing'; const m = addMsg({ step: 's5', tools: [], think: { done: false, secs: 1, sum: ['先锁名额再出码，避免付了钱没名额。'] } }); render();
+      later(() => { m.think.done = true; startTool(m, 'submit', 1000, () => {
+        s5.col = 'done'; s6.col = 'wait'; Object.assign(S.pay, { state: 'qr', left: 900, method: 'qr', pm: false, ver: S.pay.ver + 1 });
+        addVer('已提交', { status: '待付定金 ¥60', addr: S.perm.state === 'alt' ? '枫桥苑 3 幢（门牌到时电话问）' : '文一西路 枫桥苑 3 幢 1202' });
+        m.step = 's6'; m.card = 'pay'; stream(m, TX.m7); emit('issue_qr', { order: ORDER_NO, amount: 60, payee: VENDOR, expires_in: 900 }, 'pay-qr');
+      }); }, 700);
+    }
+  }
+  function paySuccess(m) {
+    const s6 = step('s6'), s8 = step('s8');
+    S.pay.state = 'success'; S.pay.proof = false; S.pay.stampGo = true; S.paid = 60; s6.col = 'done';
+    addVer('已付定金', { status: '定金已付 ¥60 · 尾款完工后付' });
+    emit('paid', { order: ORDER_NO, amount: 60, proof: 'LP2611260417' }, 'pay-status');
+    later(() => { S.pay.stampGo = false; }, 900);
+    stream(m, TX.m8, () => {
+      if (s8.col === 'queue' && !s8.skip) { s8.col = 'doing'; const m2 = addMsg({ step: 's8', tools: [] }); startTool(m2, 'remind', 800, () => { s8.col = 'done'; stream(m2, TX.m9); }); }
+    });
+  }
+  function payNow() {
+    if (!['qr', 'link'].includes(S.pay.state)) return;
+    S.pay.state = 'scanned'; S.pay.pm = false; addEvt('你点了「我已付款」'); emit('i_paid', { order: ORDER_NO }, 'pay-qr');
+    const m = addMsg({ step: 's6', tools: [] });
+    startTool(m, 'status', 1300, () => paySuccess(m));
+  }
+  function permDecide(kind, reason) {
+    const s5 = step('s5');
+    S.perm.state = kind; S.perm.denying = false;
+    emit(kind === 'deny' ? 'deny' : kind === 'alt' ? 'use_alternative' : 'allow_once', kind === 'deny' ? { reason } : { send: kind === 'alt' ? '楼栋' : '完整地址' }, 'permission-prompt');
+    if (kind === 'deny') { s5.col = 'queue'; addEvt('你拒绝了发地址'); say('好，不发。没有地址服务商没法派单，定金也就先不出码。想自己约可以打 400-826-0417；改主意了点上面的「我改主意了」。', { step: 's5' }); return; }
+    addEvt(kind === 'alt' ? '你选了：只发楼栋' : '你允许了：发完整地址'); render(); later(advance, 400);
+  }
+  function deferPay() { const s6 = step('s6'); S.pay.state = 'deferred'; S.pay.pm = false; s6.col = 'queue'; addEvt('你选了暂不付款'); emit('defer', { order: ORDER_NO }, 'pay-qr'); render(); }
+  function reissue() {
+    const s6 = step('s6'); if (!['allow', 'alt'].includes(S.perm.state)) { toast('先提交预约，才会出定金收款码'); return; }
+    Object.assign(S.pay, { state: 'qr', left: 900, method: 'qr', pm: false, proof: false, refundAsk: false, ver: S.pay.ver + 1 }); s6.col = 'wait'; S.paid = 0;
+    emit('reissue', { order: ORDER_NO, amount: 60 }, 'pay-status'); addEvt('重新出了码 · 金额核对过仍是 ¥60.00');
+    addMsg({ step: 's6', card: 'pay', fill: 0 }); fillIn(S.msgs[S.msgs.length - 1], 6); render();
+  }
+  function rewind(id) {
+    if (id === 's3' || id === 's4') { ['s4', 's5', 's6'].forEach((x) => (step(x).col = 'queue')); step('s4').col = 'wait'; S.order.state = 'open'; Object.keys(S.order.checks).forEach((k) => (S.order.checks[k] = false)); }
+    else { ['s5', 's6'].forEach((x) => (step(x).col = 'queue')); step('s5').col = 'wait'; }
+    S.perm.state = 'ask'; S.pay.state = 'none';
+    const card = id === 's5' ? 'perm' : 'review';
+    addEvt('回退到 #' + pad(step(id).n) + ' ' + step(id).t + ' 之前'); emit('rewind', { to: id }, 'checkpoint-rewind');
+    addMsg({ step: id === 's5' ? 's5' : 's4', card, text: '回退好了，之后的步骤重新排队，**没有扣过钱**。', fill: 9 });
+    toast('回退了：之后的步骤重新排队'); render();
+  }
+  function jump(id) {
+    const m = [...S.msgs].reverse().find((x) => x.step === id && x.card) || [...S.msgs].reverse().find((x) => x.step === id);
+    if (!m) return;
+    const el = $('col').querySelector(`[data-k="${m.id}"]`); if (!el) return;
+    el.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' });
+    const c = el.querySelector('.card .rc') || el; c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 1300);
+  }
+  function openArt(tab) { if (tab) S.tab = tab; if (narrowQ.matches) S.dart = true; else root.classList.remove('noart'); }
+
+  /* ---------- 点击 ---------- */
+  root.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
+    if (b.type === 'radio' || b.type === 'checkbox') return;
+    const a = b.dataset.act, id = b.dataset.id, o = S.order, p = S.pay;
+    const msgOf = () => S.msgs.find((x) => x.id === b.dataset.m);
+    switch (a) {
+      case 'sess': S.dside = false; if (S.cur !== id) { S.cur = id; pinned = true; $('col').innerHTML = ''; quiet = true; emit('switch_session', { session: id }, 'session-list'); } render(); if (id === 'clean') requestAnimationFrame(() => { $('feed').scrollTop = $('feed').scrollHeight; }); break;
+      case 'new': case 'sugg': S.cur = 'new'; S.pop = null; S.dside = false; $('col').innerHTML = ''; quiet = true; emit('new_session', {}, 'session-list'); render(); if (a === 'sugg') $('ta').value = b.textContent; $('ta').focus(); break;
+      case 'dside': S.dside = true; render(); break;
+      case 'close-drawers': S.dside = false; S.dart = false; render(); break;
+      case 'toggle-side': root.classList.toggle('noside'); emit(root.classList.contains('noside') ? 'collapse' : 'expand', {}, 'session-list'); render(); break;
+      case 'toggle-art': if (narrowQ.matches) S.dart = !S.dart; else root.classList.toggle('noart'); render(); break;
+      case 'close-art': if (narrowQ.matches) S.dart = false; else root.classList.add('noart'); render(); $('bArt').focus(); break;
+      case 'tab': S.tab = b.dataset.tab; emit('tab', { tab: S.tab }, 'artifact-pane'); render(); break;
+      case 'pop': S.pop = S.pop === b.dataset.pop ? null : b.dataset.pop; render(); if (S.pop === 'cost') setTimeout(() => $('budget') && $('budget').focus(), 0); else if (S.pop) setTimeout(() => { const f = $('pop').querySelector('input:checked, button'); f && f.focus(); }, 0); break;
+      case 'effort': S.effort = b.dataset.v; emit('set_effort', { effort: S.effort }, 'model-switcher'); render(); break;
+      case 'model-cheap': S.model = 'fast'; S.pop = null; emit('switch_model', { model: 'fast' }, 'cost-ticker'); toast('切到 LOOM 轻快：约 ¥0.01/分钟'); render(); break;
+      case 'budget': { const v = Math.max(0, Math.round(+$('budget').value || 0)); S.budget = v; emit('set_budget', { limit: v }, 'cost-ticker'); toast('预算上限设为 ' + yuan(v) + (over() ? '，这件事会超' : '')); render(); break; }
+      case 'compact': S.ctx = Math.max(0.12, S.ctx - 0.12); emit('compact', {}, 'context-meter'); toast('压缩了工具输出，上下文腾出 12%'); render(); break;
+      case 'step-go': if (narrowQ.matches && S.dart) { S.dart = false; render(); } jump(id); emit('focus_step', { step: id }, 'task-run'); break;
+      case 'jump': jump(id); break;
+      case 'open-task': openArt('task'); render(); break;
+      case 'edit-goal': S.goalEdit = true; openArt('task'); render(); setTimeout(() => $('goalIn') && $('goalIn').focus(), 0); break;
+      case 'goal-cancel': S.goalEdit = false; render(); break;
+      case 'goal-save': { const v = $('goalIn').value.trim(); S.goalEdit = false; if (v && v !== S.goal) { S.goal = v; addEvt('你改了目标'); emit('edit_goal', { goal: v }, 'task-run'); say('目标改了。已经核对和付过的部分不会动，后面的步骤我按新目标调整。'); } else render(); break; }
+      case 'show-done': S.showDone = !S.showDone; render(); break;
+      case 'skip': { const s = step(id); s.skip = true; emit('skip', { step: id }, 'plan-checklist'); addEvt('你跳过了 #' + pad(s.n)); render(); break; }
+      case 'unskip': { const s = step(id); s.skip = false; emit('unskip', { step: id }, 'plan-checklist'); render(); break; }
+      case 'rewind': rewind(id); break;
+      case 'pause': S.paused = !S.paused; emit(S.paused ? 'pause' : 'resume', {}, 'interrupt-bar'); if (!S.paused) { const h = held; held = []; h.forEach((f) => f()); } render(); break;
+      case 'takeover': S.manual = !S.manual; emit(S.manual ? 'take_over' : 'hand_back', {}, 'interrupt-bar'); addEvt(S.manual ? '你接手了' : '你交还给了 LOOM'); render(); if (!S.manual) later(advance, 300); break;
+      case 'stop-all': clearAll(); S.msgs.forEach((m) => { (m.tools || []).forEach((t) => { if (t.run) { t.run = false; t.res = '已停止'; t.ms = 0; } }); if (m.streaming) { m.streaming = false; m.text += '…（已停止）'; } if (m.think && !m.think.done) m.think.done = true; }); S.steps.forEach((s) => { if (s.col === 'doing') s.col = 'queue'; }); emit('stop', {}, 'interrupt-bar'); addEvt('你停下了 LOOM'); render(); break;
+      case 'think': { const m = msgOf(); m.think.open = !m.think.open; emit(m.think.open ? 'expand' : 'collapse', {}, 'thinking-block'); render(); break; }
+      case 'tool': { const m = msgOf(), t = m.tools[+b.dataset.i]; t.open = !t.open; emit(t.open ? 'expand' : 'collapse', { tool: t.tgt }, 'tool-call-row'); render(); break; }
+      case 'tool-stop': { const m = msgOf(), t = m.tools[+b.dataset.i]; t.run = false; t.res = '已停止'; t.ms = 0; emit('stop', { tool: t.tgt }, 'tool-call-row'); const s = m.step && step(m.step); if (s && s.col === 'doing') s.col = 'queue'; render(); break; }
+      case 'tool-rerun': { const m = msgOf(), t = m.tools[+b.dataset.i]; emit('rerun', { tool: t.tgt }, 'tool-call-row'); t.run = true; t.open = false; render(); later(() => { t.run = false; const src = Object.values(TOOLS).find((x) => x.tgt === t.tgt && !x.err); if (src) { t.res = src.res; t.err = false; t.out = src.out; } t.ms = Math.round((src ? src.ms : 400) * (0.8 + Math.random() * 0.4)); render(); }, 1000); break; }
+      case 'stop': S.msgs.forEach((m) => { if (m.streaming) { m.streaming = false; m.text += '…（已停止）'; } }); emit('stop', {}, 'streaming-text'); render(); break;
+      case 'copy': { const m = msgOf(); try { navigator.clipboard.writeText(m.full || m.text); } catch (err) {} emit('copy', { message: m.id }, 'streaming-text'); toast('复制了'); break; }
+      case 'regen': { const m = msgOf(); emit('regenerate', { message: m.id }, 'streaming-text'); stream(m, m.full || m.text); break; }
+      case 'edit': o.edit = o.edit === b.dataset.k ? null : b.dataset.k; render(); break;
+      case 'edit-done': { const k = o.edit; o.edit = null; o.checks[k] = false; addVer('改了' + (k === 'time' ? '时间' : '发票'), { time: o.time, invoice: o.invoice }); emit('edit_item', { item: k, time: o.time, invoice: o.invoice }, 'order-review'); toast('改好了，订单到了 v' + S.ver + '；这一项请重新勾'); render(); break; }
+      case 'wrong': o.ret = true; render(); setTimeout(() => { const t = $('retIn'); if (t) { t.value = (b.dataset.k === 'payee' ? '收款方不对：' : '金额不对：'); t.focus(); } }, 0); break;
+      case 'review-ok': reviewOk(); break;
+      case 'review-ret': o.ret = true; render(); setTimeout(() => $('retIn') && $('retIn').focus(), 0); break;
+      case 'ret-cancel': o.ret = false; render(); break;
+      case 'ret-send': {
+        const why = ($('retIn').value || '').trim() || '再核一遍';
+        o.ret = false; o.state = 'returned'; Object.keys(o.checks).forEach((k) => (o.checks[k] = false));
+        const s4 = step('s4'); s4.col = 'doing'; addEvt('你退回了订单：' + why); emit('return', { reason: why }, 'order-review');
+        const m = addMsg({ step: 's4', tools: [] });
+        startTool(m, 'redo', 1500, () => { s4.col = 'wait'; o.state = 'open'; o.note = '按你的意见改过：' + why; addVer('按意见重做', {}); m.card = 'review'; stream(m, '按你说的改了（「' + why + '」），**四项请重新勾一遍**。'); });
+        break;
+      }
+      case 'perm-allow': permDecide('allow'); break;
+      case 'perm-alt': permDecide('alt'); break;
+      case 'perm-deny': S.perm.denying = true; render(); setTimeout(() => $('denyIn') && $('denyIn').focus(), 0); break;
+      case 'deny-cancel': S.perm.denying = false; render(); break;
+      case 'deny-send': permDecide('deny', ($('denyIn').value || '').trim()); break;
+      case 'perm-again': S.perm.state = 'ask'; step('s5').col = 'wait'; addEvt('你改主意了'); addMsg({ step: 's5', card: 'perm', fill: 9 }); render(); break;
+      case 'paid': payNow(); break;
+      case 'pm': p.pm = !p.pm; render(); break;
+      case 'defer': deferPay(); break;
+      case 'ask': addMsg({ u: true, text: '这 60 块是什么钱？', step: 's6' }); emit('ask_about_payment', { order: ORDER_NO }, 'pay-qr'); pinned = true; say(TX.what, { step: 's6' }); break;
+      case 'refresh': emit('refresh', { order: ORDER_NO }, 'pay-status'); if (p.state === 'scanned') { const m = addMsg({ step: 's6', tools: [] }); startTool(m, 'status', 600, () => paySuccess(m)); } else toast(p.state === 'failed' ? '查过了：这张码还是作废状态，需要重新出码' : '查过了，没有变化'); break;
+      case 'reissue': reissue(); break;
+      case 'proof': p.proof = !p.proof; emit('view_proof', { proof: 'LP2611260417' }, 'pay-status'); render(); break;
+      case 'refund': p.refundAsk = true; render(); break;
+      case 'refund-no': p.refundAsk = false; render(); break;
+      case 'refund-yes': p.refundAsk = false; p.state = 'refunded'; S.paid = 0; step('s6').col = 'queue'; addVer('已退定金', { status: '定金已退 · 名额已释放' }); emit('refund', { order: ORDER_NO, amount: 60 }, 'pay-status'); addEvt('你申请了退定金'); say('退款申请提交了，¥60 会在 1–3 个工作日原路退回。周六的名额已经释放。', { step: 's6' }); break;
+      case 'ver': S.ver = +b.dataset.v; if (S.ver === 1) S.cmp = false; emit('switch_version', { version: S.ver }, 'artifact-pane'); render(); break;
+      case 'cmp': S.cmp = !S.cmp; emit(S.cmp ? 'compare' : 'uncompare', { version: S.ver }, 'artifact-pane'); render(); break;
+      case 'export': emit('export', { order: ORDER_NO, version: S.ver, format: 'pdf' }, 'artifact-pane'); toast('导出了 订单-' + ORDER_NO + '-v' + S.ver + '.pdf'); break;
+      case 'pill': pinned = true; $('feed').scrollTop = $('feed').scrollHeight; $('pill').hidden = true; break;
+      case 'attach': S.att.push(['户型图.jpg', '空调型号铭牌.jpg', '上次清洗发票.pdf'][S.att.length % 3]); emit('attach', { file: S.att[S.att.length - 1] }, 'composer'); render(); $('ta').focus(); break;
+      case 'unattach': S.att.splice(+b.dataset.i, 1); render(); $('ta').focus(); break;
+      case 'at': insertAtCaret('@'); break;
+      case 'slash': if (!$('ta').value) insertAtCaret('/'); break;
+    }
+  });
+  root.addEventListener('change', (e) => {
+    const b = e.target.closest('[data-act]'); if (!b) return;
+    const a = b.dataset.act, o = S.order;
+    if (a === 'check') { o.checks[b.dataset.k] = b.checked; emit(b.checked ? 'check' : 'uncheck', { item: b.dataset.k }, 'order-review'); render(); const n = $('ck-' + b.dataset.k); n && n.focus(); }
+    if (a === 'slot') { o.time = b.value; render(); }
+    if (a === 'inv') { o.invoice = b.value; render(); }
+    if (a === 'pm-set') { S.pay.method = b.value; S.pay.left = 900; emit('change_method', { method: b.value }, 'pay-qr'); if (b.value === 'link') addEvt('付款链接已发到 138 **** 5276'); render(); }
+    if (a === 'model') { S.model = b.value; emit('switch_model', { model: b.value }, 'model-switcher'); render(); }
+  });
+  root.addEventListener('submit', (e) => {
+    if (e.target.dataset.form !== 'add') return;
+    e.preventDefault(); const i = $('addIn'), v = i.value.trim(); if (!v) return;
+    const s = { id: 'x' + S.nextN, n: S.nextN++, t: v, d: '你插入的', col: 'queue', kind: 'plain' };
+    S.steps.splice(S.steps.indexOf(step('s7')), 0, s); i.value = '';
+    emit('insert_step', { step: s.id, title: v }, 'plan-checklist'); addEvt('你插入了一步：' + v); render(); $('addIn').focus();
+  });
+  $('q').addEventListener('input', (e) => { S.q = e.target.value; emit('search', { q: S.q }, 'session-list'); renderSide(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (S.pop) { const k = S.pop; S.pop = null; render(); $({ model: 'bModel', ctx: 'bCtx', cost: 'bCost' }[k]).focus(); }
+      else if (!$('cpop').hidden) closePop();
+      else if (S.dside || S.dart) { S.dside = S.dart = false; render(); }
+    }
+    if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && e.target.getAttribute && e.target.getAttribute('role') === 'tab') { S.tab = S.tab === 'task' ? 'order' : 'task'; render(); $('tab-' + S.tab).focus(); }
+  });
+  document.addEventListener('pointerdown', (e) => {
+    if (S.pop && e.target.isConnected && !e.target.closest('#pop, [data-pop]')) { S.pop = null; render(); }
+    if (!$('cpop').hidden && e.target.isConnected && !e.target.closest('#cpop, .crow')) closePop();
+  });
+
+  /* ---------- 分隔线：拖动或用方向键 ---------- */
+  const split = $('split');
+  let sd = null;
+  const setArt = (w) => { const max = Math.min(620, root.clientWidth - (root.classList.contains('noside') ? 0 : 248) - 380); w = Math.max(300, Math.min(max, w)); root.style.setProperty('--art', w + 'px'); split.setAttribute('aria-valuenow', Math.round(w)); return w; };
+  split.addEventListener('pointerdown', (e) => { sd = { x: e.clientX, w: $('art').getBoundingClientRect().width, on: false }; split.setPointerCapture(e.pointerId); e.preventDefault(); });
+  split.addEventListener('pointermove', (e) => { if (!sd) return; const dx = sd.x - e.clientX; if (!sd.on && Math.abs(dx) < 4) return; sd.on = true; split.classList.add('on'); setArt(sd.w + dx); });
+  const sEnd = () => { if (sd && sd.on) emit('resize', { artifact_width: Math.round($('art').getBoundingClientRect().width) }, 'artifact-pane'); sd = null; split.classList.remove('on'); };
+  split.addEventListener('pointerup', sEnd); split.addEventListener('pointercancel', sEnd);
+  split.addEventListener('keydown', (e) => { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; e.preventDefault(); setArt($('art').getBoundingClientRect().width + (e.key === 'ArrowLeft' ? 24 : -24)); });
+
+  /* ---------- 输入框 ---------- */
+  const ta = $('ta');
+  const AT = [['#04 核对订单', '步骤'], ['#06 付定金 ¥60', '步骤'], ['洁居到家价目表.pdf', '文件'], ['订单 ' + ORDER_NO, '产物']];
+  const SL = [['/暂停', '让 LOOM 停在原地'], ['/接手', '你自己来，LOOM 只看'], ['/只看待付', '把要付钱的步骤挑出来'], ['/上限', '设预算上限，比如 /上限 350']];
+  let popSel = 0, popList = [];
+  function insertAtCaret(t) { const s = ta.selectionStart, v = ta.value; ta.value = v.slice(0, s) + t + v.slice(ta.selectionEnd); ta.focus(); ta.setSelectionRange(s + t.length, s + t.length); onInput(); }
+  function closePop() { $('cpop').hidden = true; ta.setAttribute('aria-expanded', 'false'); popList = []; }
+  function onInput() {
+    const v = ta.value.slice(0, ta.selectionStart), mAt = v.match(/@([^\s@]*)$/), mSl = v.match(/^\/(\S*)$/);
+    popList = mAt ? AT.filter((x) => x[0].includes(mAt[1])).map((x) => ({ t: x[0], s: x[1], rep: mAt[0].length })) : mSl ? SL.filter((x) => x[0].includes(mSl[1])).map((x) => ({ t: x[0], s: x[1], rep: mSl[0].length, cmd: true })) : [];
+    if (!popList.length) { closePop(); return; }
+    popSel = Math.min(popSel, popList.length - 1);
+    $('cpop').innerHTML = popList.map((x, i) => `<button type="button" role="option" class="${i === popSel ? 'on' : ''}" aria-selected="${i === popSel}" data-pi="${i}">${esc(x.t)}<small>${esc(x.s)}</small></button>`).join('');
+    $('cpop').hidden = false; ta.setAttribute('aria-expanded', 'true');
+  }
+  function pick(i) { const x = popList[i]; if (!x) return; const s = ta.selectionStart; ta.value = ta.value.slice(0, s - x.rep) + (x.cmd ? x.t : '@' + x.t) + ' ' + ta.value.slice(s); closePop(); ta.focus(); emit(x.cmd ? 'command' : 'mention', { value: x.t }, 'composer'); }
+  $('cpop').addEventListener('click', (e) => { const b = e.target.closest('[data-pi]'); if (b) pick(+b.dataset.pi); });
+  ta.addEventListener('input', onInput);
+  ta.addEventListener('keydown', (e) => {
+    if (!$('cpop').hidden) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); popSel = (popSel + (e.key === 'ArrowDown' ? 1 : -1) + popList.length) % popList.length; onInput(); return; }
+      if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); pick(popSel); return; }
+    }
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); $('comp').requestSubmit(); }
+  });
+  $('comp').addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (S.msgs.some((m) => m.streaming)) { S.msgs.forEach((m) => { if (m.streaming) { m.streaming = false; m.text += '…（已停止）'; } }); emit('stop', {}, 'composer'); render(); return; }
+    const v = ta.value.trim(); if (!v && !S.att.length) return;
+    if (S.cur !== 'clean') { toast(S.cur === 'new' ? '演示里只有「上门清洗预约」这件事是活的，已切回去' : '这件事已经办完了，已切回进行中的那件'); S.cur = 'clean'; $('col').innerHTML = ''; quiet = true; }
+    const files = S.att.slice(); S.att = []; ta.value = ''; closePop(); pinned = true;
+    addMsg({ u: true, text: v + (files.length ? '\n- 附件：' + files.join('、') : '') }); emit('send', { text: v, attachments: files }, 'composer');
+    if (/^\/暂停/.test(v)) { S.paused = true; emit('pause', {}, 'interrupt-bar'); render(); return; }
+    if (/^\/接手/.test(v)) { if (!S.manual) { S.manual = true; addEvt('你接手了'); } render(); return; }
+    const mm = v.match(/^\/上限\s*(\d+)/); if (mm) { S.budget = +mm[1]; emit('set_budget', { limit: S.budget }, 'cost-ticker'); say('预算上限改成 **' + yuan(S.budget) + '**' + (over() ? '。这件事预计 ' + yuan(total() + S.usage) + '，会超，付款前我会再提醒你。' : '，这件事在范围内。')); return; }
+    if (/^\/只看待付/.test(v)) { say('**要付钱的有两步**：\n- #06 定金 ¥60：' + stOf(step('s6')) + '\n- #07 尾款 ¥258：完工验收后才出码'); return; }
+    const m = addMsg({ text: '', think: { done: false, secs: 1, sum: ['先看这句话和订单、付款哪一步有关。'] } }); render();
+    later(() => { m.think.done = true; stream(m, /钱|定金|付/.test(v) ? TX.what : /时间|下午|周日/.test(v) ? '可以改时间：在核对单「上门时间」那一项点「改」，周六下午还剩 4 个名额。改完那一项要重新勾。' : /发票|公司/.test(v) ? '发票能开公司抬头：在核对单「发票」那一项点「改」就行。' : '**收到，记下了。**' + (files.length ? '附件看过了，和订单对得上。' : '有要你点头的地方，我还是先放到对话里给你看。')); }, 800);
+  });
+
+  let toastT = null;
+  function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2600); }
+
+  /* ---------- 预设 / 演一遍 ---------- */
+  function build(level) {
+    const s = initial(), st = (id) => s.steps.find((x) => x.id === id), done = (...ids) => ids.forEach((id) => (st(id).col = 'done'));
+    let n = 0; const M = (o) => Object.assign({ id: 'p' + ++n, fill: 9 }, o);
+    s.msgs = [M({ u: true, text: TX.m1, time: '13:40' }), M({ text: TX.m2, step: 's1', time: '13:40', card: 'plan', think: { done: true, secs: 3, sum: ['预算 350，要比价至少三家。', '付款必须用户自己来，收款方要是企业账户。'] } }),
+      M({ step: 's2', time: '13:43', tools: [tool('search'), tool('price'), tool('cmp')], text: TX.m3 })];
+    done('s1', 's2');
+    if (level === 'mid') { st('s3').col = 'doing'; st('s4').col = 'wait'; s.msgs.push(M({ step: 's3', time: '13:51', tools: [tool('slot', { run: true })] }), M({ step: 's4', time: '13:51', text: TX.m5, card: 'review' })); s.order.checks.payee = true; return s; }
+    s.msgs.push(M({ step: 's3', time: '13:46', tools: [tool('slot')], text: TX.m4 }), M({ step: 's4', time: '13:47', text: TX.m5, card: 'review' }));
+    done('s3', 's4'); st('s4').by = '你'; Object.keys(s.order.checks).forEach((k) => (s.order.checks[k] = true)); s.order.state = 'ok';
+    s.vers.push({ v: 2, label: '已核对', time: 'sat-am', invoice: 'personal', status: '已核对 · 待提交', addr: '—' });
+    s.msgs.push(M({ evt: '你核对了订单（4/4） · 13:55' }), M({ step: 's5', time: '13:55', text: TX.m6, card: 'perm' }), M({ evt: '你选了：只发楼栋 · 14:01' }));
+    s.perm.state = 'alt'; done('s5'); s.usage = 0.52; s.ctx = 0.38;
+    s.vers.push({ v: 3, label: '已提交', time: 'sat-am', invoice: 'personal', status: '待付定金 ¥60', addr: '枫桥苑 3 幢（门牌到时电话问）' }); s.ver = 3;
+    s.msgs.push(M({ step: 's6', time: '14:01', tools: [tool('submit')], text: TX.m7, card: 'pay' }));
+    st('s6').col = 'wait'; Object.assign(s.pay, { state: 'qr', left: 852, ver: 2 });
+    if (level === 'error') { s.pay.state = 'failed'; s.msgs.push(M({ evt: '你点了「我已付款」 · 14:05' }), M({ step: 's6', time: '14:05', tools: [tool('statusErr')], text: TX.err })); s.usage = 0.55; }
+    if (level === 'done') {
+      s.pay.state = 'success'; s.paid = 60; done('s6', 's8'); s.usage = 0.61; s.ctx = 0.42;
+      s.vers.push({ v: 4, label: '已付定金', time: 'sat-am', invoice: 'personal', status: '定金已付 ¥60 · 尾款完工后付', addr: '枫桥苑 3 幢（门牌到时电话问）' }); s.ver = 4;
+      s.msgs.push(M({ evt: '你点了「我已付款」 · 14:06' }), M({ step: 's6', time: '14:06', tools: [tool('status')], text: TX.m8 }), M({ step: 's8', time: '14:06', tools: [tool('remind')], text: TX.m9 }));
+    }
+    return s;
+  }
+  let playTok = 0;
+  function resetView() { $('col').innerHTML = ''; quiet = true; pinned = true; $('pill').hidden = true; document.querySelectorAll('#main [data-odo]').forEach((el) => { el._v = null; }); }
+  function load(kind) {
+    clearAll(); playTok++;
+    const keep = { model: S.model, budget: S.budget, effort: S.effort, tab: S.tab };
+    S = kind === 'loading' ? Object.assign(initial(), { phase: 'loading' }) : build(kind);
+    Object.assign(S, keep); if (kind === 'error' || kind === 'waiting') S.tab = 'task';
+    resetView(); render();
+    if (kind !== 'loading') requestAnimationFrame(() => { if (kind === 'mid') jump('s4'); else if (kind !== 'done') jump('s6'); });
+  }
+  async function play() {
+    load('loading'); const tok = playTok;
+    const w = (ms) => new Promise((r) => later(r, ms)), alive = () => tok === playTok;
+    await w(800); if (!alive()) return;
+    S = Object.assign(initial(), { model: S.model, budget: S.budget, usage: 0, ctx: 0.08 });
+    resetView(); render();
+    addMsg({ u: true, text: TX.m1 }); step('s1').col = 'doing'; render();
+    const m2 = addMsg({ step: 's1', think: { done: false, secs: 3, sum: ['预算 350，要比价至少三家。', '付款必须用户自己来，收款方要是企业账户。'] }, card: 'plan' }); render();
+    await w(1300); if (!alive()) return; m2.think.done = true;
+    await new Promise((r) => stream(m2, TX.m2, r)); if (!alive()) return;
+    step('s1').col = 'done'; step('s2').col = 'doing'; const m3 = addMsg({ step: 's2', tools: [] }); render();
+    for (const k of ['search', 'price', 'cmp']) { const t = tool(k, { run: true }); m3.tools.push(t); render(); await w(k === 'cmp' ? 400 : 850); if (!alive()) return; t.run = false; S.usage = +(S.usage + 0.07).toFixed(2); render(); }
+    await new Promise((r) => stream(m3, TX.m3, r)); if (!alive()) return;
+    step('s2').col = 'done'; step('s3').col = 'doing'; const m4 = addMsg({ step: 's3', tools: [tool('slot', { run: true })] }); render();
+    await w(1000); if (!alive()) return; m4.tools[0].run = false;
+    await new Promise((r) => stream(m4, TX.m4, r)); if (!alive()) return;
+    step('s3').col = 'done'; step('s4').col = 'wait';
+    await say(TX.m5, { step: 's4', card: 'review' }); if (!alive()) return;
+    await w(900);
+    for (const k of ['payee', 'amount', 'time', 'invoice']) { await w(500); if (!alive()) return; S.order.checks[k] = true; render(); }
+    await w(500); if (!alive()) return; reviewOk();
+    await w(3600); if (!alive()) return; permDecide('alt');
+    await w(5200); if (!alive()) return; payNow();
+  }
+  window.harness = {
+    set(p) {
+      p = p || {};
+      if (p.preset) { if (p.preset === 'play') play(); else load(p.preset); return; }
+      if (p.message) addMsg(typeof p.message === 'string' ? { text: p.message, fill: 9 } : Object.assign({ fill: 9 }, p.message));
+      if (p.step) { const s = step(p.step.id); s ? Object.assign(s, p.step) : S.steps.push(Object.assign({ n: S.nextN++, col: 'queue', kind: 'plain' }, p.step)); }
+      ['order', 'perm', 'pay'].forEach((k) => { if (p[k]) Object.assign(S[k], clone(p[k])); });
+      ['goal', 'steps', 'msgs', 'budget', 'usage', 'ctx', 'paid', 'paused', 'manual', 'model'].forEach((k) => { if (k in p) S[k] = clone(p[k]); });
+      if (S.phase === 'loading') S.phase = 'mid';
+      render();
+    },
+    get() { return clone(S); }
+  };
+  document.addEventListener('hx-action', (e) => { $('log').textContent = 'hx-action ' + JSON.stringify(e.detail); });
+  [['刚打开（加载）', () => load('loading')], ['做到一半', () => load('mid')], ['等你付款', () => load('waiting')], ['出错', () => load('error')], ['做完了', () => load('done')], ['演一遍', play]].forEach(([t, f]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'pbtn'; b.textContent = t; b.addEventListener('click', f); $('sim').appendChild(b); });
+  narrowQ.addEventListener('change', () => { S.dside = S.dart = false; render(); });
+
+  // 中等宽度：先收起会话列表，把地方让给对话
+  if (!narrowQ.matches && root.getBoundingClientRect().width < 1240) root.classList.add('noside');
+  S.phase = 'loading'; render();
+  setTimeout(() => load('waiting'), T(700));
+
+  const th = $('theme'), html = document.documentElement;
+  const isDark = () => (html.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')) === 'dark';
+  const syncTheme = () => { th.setAttribute('aria-pressed', isDark()); th.textContent = isDark() ? '浅色' : '深色'; };
+  th.addEventListener('click', () => { html.setAttribute('data-theme', isDark() ? 'light' : 'dark'); syncTheme(); });
+  syncTheme();
+})();
+</script>
+</body>
+</html>

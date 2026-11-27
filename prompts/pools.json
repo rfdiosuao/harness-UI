@@ -81,6 +81,10 @@
     {"id": "agent-handoff", "name": "Agent 交接卡", "spec": "从哪个 Agent 转给哪个、为什么转、带过去哪些上下文 → 同意交接、改派给别人、拉回给自己", "harness": ["团队群聊"]},
     {"id": "decision-log", "name": "决定记录卡", "spec": "群里拍板的事、谁拍的板、依据是哪几条消息、影响到哪些任务 → 确认、修改、撤回", "harness": ["团队群聊"]},
     {"id": "thread-reply", "name": "线程回复", "spec": "原消息、几条回复、谁参与了、有没有结论 → 展开、回复、标为已解决", "harness": ["团队群聊", "通用核心"]},
+    {"id": "pay-qr", "name": "收款码卡", "spec": "这笔钱付给谁、多少、对应任务里的哪一步、收款码和有效期倒计时 → 扫码后点“我已付款”、换一种付法、暂不付款、问 Agent 这笔钱是什么", "harness": ["带支付的任务执行", "金融支付助手"]},
+    {"id": "order-review", "name": "付款前核对卡", "spec": "服务内容、费用明细、合计、要用户自己核对的几项（收款方、金额、时间、发票）→ 逐项勾选核对、改某一项、退回让 Agent 重做", "harness": ["带支付的任务执行", "出行差旅助手"]},
+    {"id": "pay-status", "name": "支付结果卡", "spec": "等待扫码、已扫码待确认、支付成功、已超时、失败、已退款 → 刷新状态、重新出码、看凭证、申请退款", "harness": ["带支付的任务执行", "金融支付助手"]},
+    {"id": "task-run", "name": "任务执行侧栏", "form": "sidebar", "spec": "目标、拆好的步骤、每一步的状态（Agent 在做、等你确认、等你付款、已完成）、累计花了多少 → 跳到某一步、接手、暂停、改目标", "harness": ["带支付的任务执行", "通用核心"]},
     {"id": "agent-profile", "name": "Agent 名片", "spec": "名字、擅长什么、能用哪些工具和权限、最近做过的事 → 拉进群、私聊、调权限", "harness": ["团队群聊"]}
   ],
   "worlds": [
@@ -169,16 +173,27 @@
     {"id": "research", "name": "研究检索 harness", "who": "做调研的学生、分析师", "job": "按问题搜资料、读原文、摘录并标注可信度、写成带引用的报告", "risk": "中：引错了会误导结论", "scene": "一个研究生要在三天内写完一份关于城市共享单车停放治理的文献综述", "parts": ["research-notes", "source-card", "confidence-card", "outline-nav", "context-shelf", "thinking-block", "streaming-text", "composer"]},
     {"id": "coding", "name": "编程 harness", "who": "写代码的人", "job": "读代码、改文件、跑测试、开 PR，每一步都看得见、改得回去", "risk": "中：会改到用户的代码", "scene": "用户是个独立开发者，今晚要发布 1.0，但支付回调还有一个 bug", "parts": ["file-tree", "task-queue", "tool-call-row", "diff-viewer", "permission-prompt", "context-meter", "checkpoint-rewind", "slash-palette", "composer"]},
     {"id": "studio", "name": "自由职业工作室 harness", "who": "一个人接活的设计师、插画师", "job": "排期、跟进客户反馈、导出交付物、开发票，几个客户同时推进", "risk": "低到中：拖延会丢客户", "scene": "用户是个自由插画师，同时有三个客户在催稿", "parts": ["task-queue", "session-list", "meeting-summary", "schedule-conflict", "photo-pick", "expense-report", "cost-ticker", "composer"]},
+    {"id": "task-pay", "name": "带支付的任务执行 harness", "who": "想让 Agent 替自己办一件要花钱的事的人", "job": "把目标拆成步骤、调工具去办，走到付款这一步时把收款码和这笔钱对应什么放在一起，用户核对后自己扫码付", "risk": "高：涉及真实的钱", "scene": "用户让 Agent 预约一次上门家电清洗（两台空调加一台油烟机），要先付 60 元定金，完工后付尾款", "parts": ["task-run", "plan-checklist", "tool-call-row", "order-review", "pay-qr", "pay-status", "permission-prompt", "cost-ticker", "streaming-text", "composer"]},
     {"id": "general", "name": "通用助手 harness", "who": "所有人", "job": "什么都能聊、能动手做事，但每次动手前讲清楚要做什么", "risk": "看具体任务", "scene": "用户在筹备一场 12 个人的生日聚会，预算 2400 元，地点还没定", "parts": ["session-list", "composer", "mention-picker", "attachment-card", "model-switcher", "thinking-block", "tool-call-row", "permission-prompt", "artifact-pane", "context-meter", "new-message-pill", "share-export"]},
     {"id": "team-group", "name": "团队群聊 harness", "who": "一起推进同一件事的几个人和几个 Agent", "job": "在一个群里讨论、拍板、@ Agent 派活、Agent 之间交接，所有决定和产出都留在群里", "risk": "中：派错活或记错决定会让大家白忙", "scene": "一个 6 人的小团队下周五要上线新版本，群里还有负责研发、测试和文案的 3 个 Agent", "parts": ["session-list", "member-roster", "mention-task", "agent-handoff", "decision-log", "thread-reply", "agent-profile", "mention-picker", "composer"]}
+  ],
+  "skeleton": [
+    {"id": "chat", "name": "对话流", "cards": ["streaming-text"], "need": "消息流是页面的主体：用户消息、Agent 逐字流式到达的回答，行业组件（核对单、收款码、条款……）直接作为卡片出现在消息里；能停止、复制、重新生成"},
+    {"id": "composer", "name": "输入框", "cards": ["composer"], "need": "多行输入、附件、@ 引用、/ 命令；Agent 在跑时发送键变成停止；中文输入法回车不误发"},
+    {"id": "sessions", "name": "会话列表", "cards": ["session-list"], "need": "新建对话、切换、搜索历史，看得出哪些在运行、哪些在等你回复"},
+    {"id": "work", "name": "Agent 干活的过程", "cards": ["thinking-block", "plan-checklist", "tool-call-row"], "need": "思考或计划、每一次工具调用都看得见（读取、搜索、编辑、运行），能展开输出、能停、能重跑"},
+    {"id": "hitl", "name": "人在回路", "cards": ["permission-prompt", "interrupt-bar"], "need": "有风险的操作先问（允许一次、改用备选、拒绝并说明）；需要用户亲手操作的那一步（付款、签字、登录）把控制权明确交给用户；随时能暂停或接手"},
+    {"id": "status", "name": "运行状态", "cards": ["status-chip", "model-switcher", "context-meter", "cost-ticker"], "need": "一眼看到在做什么、做到哪一步、用的哪个模型、花了多少、上下文还剩多少；能换模型"},
+    {"id": "artifact", "name": "产物", "cards": ["artifact-pane"], "need": "Agent 做出来的东西（文档、订单、代码、行程）有固定的地方放，能看版本、能导出"},
+    {"id": "recover", "name": "出错和恢复", "cards": ["error-banner", "checkpoint-rewind"], "need": "出错时说清原因、有没有扣钱或改动东西，能重试、跳过、回退到之前的状态"}
   ],
   "layouts": [
     {"id": "three-pane", "name": "三栏", "text": "左边侧边栏、中间对话流、右边面板（产出、任务或证据），两侧都能收起，收起后对话流居中变宽。"},
     {"id": "chat-drawer", "name": "对话 + 抽屉", "text": "对话流占满宽度，点到某个对象（文件、条款、订单）时右边滑出详情抽屉，抽屉可以钉住。"},
     {"id": "split-artifact", "name": "对话 | 产物分屏", "text": "左边对话，右边是 Agent 正在做出来的东西（文档、代码、表格、行程），中间的分隔线可以拖动。"},
-    {"id": "cockpit", "name": "驾驶舱", "text": "顶部一条状态带（运行状态、费用、上下文用量、模型），下面三块等高的面板并排，对话只是其中一块。"},
+    {"id": "cockpit", "name": "对话 + 仪表栏", "text": "顶部一条状态带（运行状态、模型、费用、上下文用量），中间对话为主，右边一列窄的仪表面板（进度、花费、关键数字），点仪表里的数字对话跳到出处；仪表栏能收起。"},
     {"id": "focus", "name": "单栏专注", "text": "窄单栏居中，所有组件按时间顺序出现在对话里；侧边信息收成顶部几个胶囊，点开是浮层。"},
-    {"id": "board", "name": "看板", "text": "任务按列排开（排队、进行中、等你确认、完成），卡片能拖；对话收在右下角，可以展开成半屏。"},
-    {"id": "group-chat", "name": "群聊", "text": "左边会话列表（私聊、群聊、Agent 混在一起，未读数和“有人 @ 你”分开标），中间是群消息流（人和 Agent 都是群成员，消息里能带卡片和线程），右边是群信息（成员、共享文件、群里定下的事），两侧都能收起。"}
+    {"id": "board", "name": "对话 + 任务看板", "text": "左边会话列表，中间对话为主，右边是这次任务的看板（排队、进行中、等你确认、完成，列可以横向滑），点看板上的卡片对话跳到对应消息，Agent 推进一步卡片跟着挪；看板能收起。"},
+    {"id": "group-chat", "name": "群聊", "only": ["team-group"], "text": "左边会话列表（私聊、群聊、Agent 混在一起，未读数和“有人 @ 你”分开标），中间是群对话的消息流，占主体（人和 Agent 都是群成员，消息里能带卡片和线程），右边是群信息（成员、共享文件、群里定下的事），两侧都能收起。"}
   ]
 }
